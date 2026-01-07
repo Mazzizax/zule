@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
@@ -20,6 +20,8 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
 
   // Get callback URL
   const callbackUrl = searchParams.get('callback');
@@ -30,6 +32,37 @@ export default function Auth() {
     callbackUrl.startsWith('exp://') || // Expo development
     callbackUrl.startsWith('https://')
   );
+
+  // Handle redirect after successful auth
+  useEffect(() => {
+    if (redirectUrl) {
+      console.log('[AUTH] Attempting redirect to:', redirectUrl);
+
+      // For custom schemes on mobile, try multiple approaches
+      if (redirectUrl.startsWith('dawgtag://') || redirectUrl.startsWith('exp://')) {
+        // Try iframe first (works better on iOS Safari)
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = redirectUrl;
+        document.body.appendChild(iframe);
+
+        // Then try direct location change
+        setTimeout(() => {
+          window.location.href = redirectUrl;
+        }, 500);
+
+        // Clean up iframe after attempt
+        setTimeout(() => {
+          if (iframe.parentNode) {
+            iframe.parentNode.removeChild(iframe);
+          }
+        }, 2000);
+      } else {
+        // Standard HTTPS redirect
+        window.location.href = redirectUrl;
+      }
+    }
+  }, [redirectUrl]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,28 +91,29 @@ export default function Auth() {
       }
 
       // Build callback URL with user_id
-      const redirectUrl = new URL(callbackUrl!);
-      redirectUrl.searchParams.set('user_id', data.user.id);
-      redirectUrl.searchParams.set('status', 'success');
+      const finalRedirectUrl = new URL(callbackUrl!);
+      finalRedirectUrl.searchParams.set('user_id', data.user.id);
+      finalRedirectUrl.searchParams.set('status', 'success');
 
       // Sign out from web session (we only needed to verify credentials)
       // The user_id is what Dawg Tag needs, not a session
       await supabase.auth.signOut();
 
-      // Redirect to Dawg Tag
-      window.location.href = redirectUrl.toString();
+      // Set state to trigger redirect
+      setRedirecting(true);
+      setRedirectUrl(finalRedirectUrl.toString());
     } catch (err: any) {
       setError(err.message || 'Login failed');
-    } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
     if (callbackUrl) {
-      const redirectUrl = new URL(callbackUrl);
-      redirectUrl.searchParams.set('status', 'cancelled');
-      window.location.href = redirectUrl.toString();
+      const cancelUrl = new URL(callbackUrl);
+      cancelUrl.searchParams.set('status', 'cancelled');
+      setRedirecting(true);
+      setRedirectUrl(cancelUrl.toString());
     }
   };
 
@@ -94,6 +128,36 @@ export default function Auth() {
           </div>
           <div className="error-message">
             Invalid or missing callback URL. This page should be opened from Dawg Tag.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show redirecting message
+  if (redirecting) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card">
+          <div className="auth-header">
+            <h1>GATEKEEPER</h1>
+            <p>Redirecting to Dawg Tag...</p>
+          </div>
+          <div style={{ textAlign: 'center', padding: '24px' }}>
+            <div className="loading-spinner" style={{ margin: '0 auto 16px' }} />
+            <p style={{ color: '#666', fontSize: '14px' }}>
+              If you're not redirected automatically,{' '}
+              <a
+                href={redirectUrl || '#'}
+                style={{ color: '#4CAF50' }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (redirectUrl) window.location.href = redirectUrl;
+                }}
+              >
+                click here
+              </a>
+            </p>
           </div>
         </div>
       </div>
