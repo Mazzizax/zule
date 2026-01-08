@@ -58,7 +58,7 @@ export default function Developer() {
       setError(null);
 
       const response = await fetch(
-        `${import.meta.env.VITE_GATEKEEPER_URL}/functions/v1/app-register`,
+        `${import.meta.env.GATEKEEPER_URL}/functions/v1/app-register`,
         {
           method: 'GET',
           headers: {
@@ -117,7 +117,7 @@ export default function Developer() {
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_GATEKEEPER_URL}/functions/v1/app-register`,
+        `${import.meta.env.GATEKEEPER_URL}/functions/v1/app-register`,
         {
           method: 'POST',
           headers: {

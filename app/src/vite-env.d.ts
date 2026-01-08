@@ -1,8 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_GATEKEEPER_URL: string;
-  readonly VITE_GATEKEEPER_ANON_KEY: string;
+  readonly GATEKEEPER_URL: string;
+  readonly GATEKEEPER_PUBLISHABLE_KEY: string;
 }
 
 interface ImportMeta {

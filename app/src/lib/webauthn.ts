@@ -7,7 +7,7 @@
 import { supabase } from './supabase';
 
 // Gatekeeper edge function URL
-const GATEKEEPER_URL = import.meta.env.VITE_GATEKEEPER_URL;
+const GATEKEEPER_URL = import.meta.env.GATEKEEPER_URL;
 
 /**
  * Check if WebAuthn is supported in this browser

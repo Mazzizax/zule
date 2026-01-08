@@ -35,7 +35,7 @@ export default function Dashboard() {
     try {
       setLoading(true);
       const response = await fetch(
-        `${import.meta.env.VITE_GATEKEEPER_URL}/functions/v1/user-profile`,
+        `${import.meta.env.GATEKEEPER_URL}/functions/v1/user-profile`,
         {
           method: 'GET',
           headers: {

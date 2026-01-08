@@ -8,12 +8,12 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
  */
 
 // Gatekeeper project credentials (from environment)
-const gatekeeperUrl = import.meta.env.VITE_GATEKEEPER_URL;
-const gatekeeperAnonKey = import.meta.env.VITE_GATEKEEPER_ANON_KEY;
+const gatekeeperUrl = import.meta.env.GATEKEEPER_URL;
+const gatekeeperPublishableKey = import.meta.env.GATEKEEPER_PUBLISHABLE_KEY;
 
-if (!gatekeeperUrl || !gatekeeperAnonKey) {
+if (!gatekeeperUrl || !gatekeeperPublishableKey) {
   console.warn(
-    'Gatekeeper configuration missing. Create .env file with VITE_GATEKEEPER_URL and VITE_GATEKEEPER_ANON_KEY'
+    'Gatekeeper configuration missing. Create .env file with GATEKEEPER_URL and GATEKEEPER_PUBLISHABLE_KEY'
   );
 }
 
@@ -23,7 +23,7 @@ if (!gatekeeperUrl || !gatekeeperAnonKey) {
  */
 export const supabase: SupabaseClient = createClient(
   gatekeeperUrl || '',
-  gatekeeperAnonKey || '',
+  gatekeeperPublishableKey || '',
   {
     auth: {
       autoRefreshToken: true,
