@@ -9,7 +9,10 @@ import { supabase } from '../lib/supabase';
  * Flow:
  * 1. Dawg Tag opens: /auth?callback=dawgtag://auth-callback
  * 2. User logs in with email/password
- * 3. On success, redirect to callback with user_id
+ * 3. On success, call issue-attestation to get signed JWT
+ * 4. Redirect to callback with attestation (NOT user_id)
+ *
+ * The attestation proves "a valid user authenticated" without revealing identity.
  *
  * This is specifically for the Dawg Tag auth flow.
  */
@@ -86,17 +89,34 @@ export default function Auth() {
         throw authError;
       }
 
-      if (!data.user) {
-        throw new Error('Login failed - no user returned');
+      if (!data.user || !data.session) {
+        throw new Error('Login failed - no user or session returned');
       }
 
-      // Build callback URL with user_id
+      // Call issue-attestation edge function to get signed JWT
+      const { data: attestationData, error: attestationError } = await supabase.functions.invoke(
+        'issue-attestation',
+        {
+          headers: {
+            Authorization: `Bearer ${data.session.access_token}`,
+          },
+        }
+      );
+
+      if (attestationError) {
+        throw new Error(`Attestation failed: ${attestationError.message}`);
+      }
+
+      if (!attestationData?.attestation) {
+        throw new Error('No attestation returned');
+      }
+
+      // Build callback URL with attestation (NOT user_id)
       const finalRedirectUrl = new URL(callbackUrl!);
-      finalRedirectUrl.searchParams.set('user_id', data.user.id);
+      finalRedirectUrl.searchParams.set('attestation', attestationData.attestation);
       finalRedirectUrl.searchParams.set('status', 'success');
 
-      // Sign out from web session (we only needed to verify credentials)
-      // The user_id is what Dawg Tag needs, not a session
+      // Sign out from web session (we only needed to get the attestation)
       await supabase.auth.signOut();
 
       // Set state to trigger redirect
