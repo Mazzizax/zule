@@ -94,25 +94,18 @@ export default function Auth() {
       }
 
       // Call issue-attestation edge function to get signed JWT
-      // Using direct fetch() instead of supabase.functions.invoke() for better cross-browser compatibility
-      const supabaseUrl = import.meta.env.GATEKEEPER_URL;
-      const attestationResponse = await fetch(
-        `${supabaseUrl}/functions/v1/issue-attestation`,
+      const { data: attestationData, error: attestationError } = await supabase.functions.invoke(
+        'issue-attestation',
         {
-          method: 'POST',
           headers: {
-            'Authorization': `Bearer ${data.session.access_token}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${data.session.access_token}`,
           },
         }
       );
 
-      if (!attestationResponse.ok) {
-        const errorData = await attestationResponse.json().catch(() => ({}));
-        throw new Error(errorData.error || `Attestation failed: ${attestationResponse.status}`);
+      if (attestationError) {
+        throw new Error(`Attestation failed: ${attestationError.message}`);
       }
-
-      const attestationData = await attestationResponse.json();
 
       if (!attestationData?.attestation) {
         throw new Error('No attestation returned');
