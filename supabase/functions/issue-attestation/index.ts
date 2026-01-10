@@ -14,7 +14,7 @@ import { SignJWT, importJWK } from "https://deno.land/x/jose@v5.2.0/index.ts";
  *
  * Environment variables required:
  * - SUPABASE_URL: Gatekeeper Supabase URL
- * - SUPABASE_ANON_KEY: Gatekeeper Supabase anon key
+ * - SUPABASE_PUBLISHABLE_KEY: Gatekeeper Supabase publishable key (new format: sb_publishable_*)
  * - ATTESTATION_SIGNING_KEY: Key to sign attestations (ES256/P-256 JWK)
  */
 
@@ -49,9 +49,10 @@ serve(async (req) => {
 
     // Verify the user's session with Supabase
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    // Support both new publishable key format and legacy anon key
+    const supabaseKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    const supabase = createClient(supabaseUrl, supabaseKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
