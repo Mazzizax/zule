@@ -18,11 +18,14 @@ export async function registerPasskey(email: string): Promise<{ success: boolean
     if (!isSupported) return { success: false, error: 'Passkeys not supported' };
 
     const challenge = toBase64URL(Crypto.getRandomBytes(32));
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: 'Not authenticated' };
+    
+    // Ensure we have a fresh session
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (!currentSession) return { success: false, error: 'Not authenticated' };
 
-    // Use the actual Supabase project domain as the RP ID
-    const rpId = 'sgjulzvgcyotebbexfue.supabase.co';
+    // The RP ID must match a domain associated with the app in app.json
+    // and verified via /.well-known/assetlinks.json (Android) or apple-app-site-association (iOS)
+    const rpId = 'gatekeeper-nine.vercel.app'; 
 
     const request = {
       challenge,
@@ -31,12 +34,12 @@ export async function registerPasskey(email: string): Promise<{ success: boolean
         id: rpId, 
       },
       user: {
-        id: toBase64URL(new TextEncoder().encode(user.id)),
+        id: toBase64URL(new TextEncoder().encode(currentSession.user.id)),
         name: email,
         displayName: email,
       },
       pubKeyCredParams: [
-        { type: 'public-key', alg: -7 },
+        { type: 'public-key', alg: -7 }, // ES256
       ],
       authenticatorSelection: {
         authenticatorAttachment: 'platform',
@@ -53,6 +56,9 @@ export async function registerPasskey(email: string): Promise<{ success: boolean
         public_key: credential.rawId,
         device_name: `${Platform.OS} - Device Key`,
         authenticator_type: 'platform',
+      },
+      headers: {
+        Authorization: `Bearer ${currentSession.access_token}`
       }
     });
 
@@ -66,12 +72,14 @@ export async function registerPasskey(email: string): Promise<{ success: boolean
 
 export async function authenticateWithPasskey(): Promise<{ success: boolean; error?: string }> {
   try {
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    
     const { data: challengeData, error: challengeError } = await supabase.functions.invoke('passkey-auth', {
       method: 'GET'
     });
     if (challengeError) throw challengeError;
 
-    const rpId = 'sgjulzvgcyotebbexfue.supabase.co';
+    const rpId = 'gatekeeper-nine.vercel.app';
 
     const assertion = await Passkey.get({
       challenge: challengeData.challenge,

@@ -17,7 +17,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.xenon.gatekeeper",
       "associatedDomains": [
-        "applinks:gatekeeper-nine.vercel.app"
+        "applinks:gatekeeper-nine.vercel.app",
+        "applinks:sgjulzvgcyotebbexfue.supabase.co"
       ]
     },
     "android": {
@@ -36,6 +37,10 @@
               "scheme": "https",
               "host": "gatekeeper-nine.vercel.app",
               "pathPrefix": "/auth"
+            },
+            {
+              "scheme": "https",
+              "host": "sgjulzvgcyotebbexfue.supabase.co"
             }
           ],
           "category": [
