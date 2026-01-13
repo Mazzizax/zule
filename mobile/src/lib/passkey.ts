@@ -7,6 +7,12 @@ import { supabase } from './supabase';
  * Gatekeeper Production-Grade Passkey Manager
  */
 
+// Standard base64 (with padding) - required for Android userId
+function toBase64(buffer: Uint8Array): string {
+  return btoa(String.fromCharCode(...buffer));
+}
+
+// Base64URL (no padding) - required for challenge
 function toBase64URL(buffer: Uint8Array): string {
   const base64 = btoa(String.fromCharCode(...buffer));
   return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
@@ -34,7 +40,8 @@ export async function registerPasskey(email: string): Promise<{ success: boolean
         id: rpId, 
       },
       user: {
-        id: toBase64URL(new TextEncoder().encode(currentSession.user.id)),
+        // Android requires standard base64 with padding for userId
+        id: toBase64(new TextEncoder().encode(currentSession.user.id)),
         name: email,
         displayName: email,
       },
