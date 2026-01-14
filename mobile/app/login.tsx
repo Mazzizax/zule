@@ -11,12 +11,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/contexts/AuthContext';
-import { 
-  checkBiometricStatus, 
-  authenticateWithBiometrics, 
-  isBiometricEnabled,
-  getCredentials
-} from '../src/lib/security';
+import { authenticateWithPasskey, hasStoredPasskey } from '../src/lib/passkey';
+import { supabase } from '../src/lib/supabase';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -26,17 +22,33 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [biometricsAvailable, setBiometricsAvailable] = useState(false);
+  const [hasPasskey, setHasPasskey] = useState(false);
 
   useEffect(() => {
-    async function init() {
-      const [{ hasHardware, isEnrolled }, enabled] = await Promise.all([
-        checkBiometricStatus(),
-        isBiometricEnabled()
-      ]);
-      setBiometricsAvailable(hasHardware && isEnrolled && enabled);
+    async function checkForPasskey() {
+      try {
+        // Check if already logged in
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          router.replace('/(tabs)');
+          return;
+        }
+
+        // Check if device has stored passkey
+        const storedPasskey = await hasStoredPasskey();
+        setHasPasskey(storedPasskey);
+
+        // Disabled auto-prompt for now - use manual button
+        // if (storedPasskey) {
+        //   setTimeout(() => {
+        //     handlePasskeyLogin();
+        //   }, 500);
+        // }
+      } catch {
+        setHasPasskey(false);
+      }
     }
-    init();
+    checkForPasskey();
   }, []);
 
   const handleLogin = async () => {
@@ -56,24 +68,20 @@ export default function LoginScreen() {
     }
   };
 
-  const handleBiometricLogin = async () => {
-    const success = await authenticateWithBiometrics();
-    if (success) {
-      setLoading(true);
-      setError(null);
-      try {
-        const creds = await getCredentials();
-        if (creds) {
-          await signIn(creds.email, creds.password);
-          router.replace('/(tabs)');
-        } else {
-          setError('Biometric credentials missing. Please log in with password.');
-        }
-      } catch (err: any) {
-        setError(err.message || 'Biometric login failed');
-      } finally {
-        setLoading(false);
+  const handlePasskeyLogin = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await authenticateWithPasskey();
+      if (result.success) {
+        router.replace('/(tabs)');
+      } else {
+        setError(result.error || 'Passkey authentication failed');
       }
+    } catch (err: any) {
+      setError(err.message || 'Passkey login failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -111,9 +119,9 @@ export default function LoginScreen() {
           {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign In</Text>}
         </TouchableOpacity>
 
-        {biometricsAvailable && (
-          <TouchableOpacity style={[styles.button, styles.biometricButton]} onPress={handleBiometricLogin} disabled={loading}>
-            <Text style={styles.biometricButtonText}>Login with Biometrics</Text>
+        {hasPasskey && (
+          <TouchableOpacity style={[styles.button, styles.biometricButton]} onPress={handlePasskeyLogin} disabled={loading}>
+            <Text style={styles.biometricButtonText}>Login with Fingerprint</Text>
           </TouchableOpacity>
         )}
 

@@ -31,9 +31,6 @@ const SUPABASE_SERVICE_KEY = Deno.env.get('GATEKEEPER_SECRET_KEY')!
 // Challenge expiry time (5 minutes)
 const CHALLENGE_EXPIRY_MS = 5 * 60 * 1000
 
-// In-memory challenge store (would use Redis in production)
-const challengeStore = new Map<string, { challenge: string; userId: string; expires: number }>()
-
 /**
  * Generate a cryptographically secure challenge
  */
@@ -47,27 +44,61 @@ function generateChallenge(): string {
 }
 
 /**
- * Clean up expired challenges
+ * Decode base64url to Uint8Array
+ * Handles both base64url (from WebAuthn) and standard base64
  */
-function cleanupExpiredChallenges() {
-  const now = Date.now()
-  for (const [key, value] of challengeStore.entries()) {
-    if (value.expires < now) {
-      challengeStore.delete(key)
-    }
+function base64urlToBytes(base64url: string): Uint8Array {
+  // Convert base64url to standard base64
+  let base64 = base64url
+    .replace(/-/g, '+')
+    .replace(/_/g, '/')
+
+  // Add padding if needed
+  while (base64.length % 4 !== 0) {
+    base64 += '='
+  }
+
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return bytes
+}
+
+/**
+ * Clean up expired challenges from database
+ */
+async function cleanupExpiredChallenges(supabase: ReturnType<typeof createClient>) {
+  try {
+    await supabase.from('passkey_challenges').delete().lt('expires_at', new Date().toISOString())
+  } catch {
+    // Ignore cleanup errors
   }
 }
 
 Deno.serve(async (req) => {
+  console.log('[PASSKEY-AUTH] Request:', req.method, req.url)
+
   // Handle CORS preflight
   const corsResponse = handleCors(req)
   if (corsResponse) return corsResponse
 
   const origin = req.headers.get('Origin')
+
+  // Debug: Check if secrets are loaded
+  console.log('[PASSKEY-AUTH] SUPABASE_URL:', SUPABASE_URL ? 'set' : 'MISSING')
+  console.log('[PASSKEY-AUTH] GATEKEEPER_SECRET_KEY:', SUPABASE_SERVICE_KEY ? 'set' : 'MISSING')
+
+  if (!SUPABASE_SERVICE_KEY) {
+    console.error('[PASSKEY-AUTH] GATEKEEPER_SECRET_KEY is not set!')
+    return errorResponse('Server configuration error', 500, origin)
+  }
+
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
   // Clean up expired challenges periodically
-  cleanupExpiredChallenges()
+  await cleanupExpiredChallenges(supabase)
 
   try {
     if (req.method === 'GET') {
@@ -114,24 +145,35 @@ async function handleGetChallenge(
     return errorResponse('Authentication failed', 401, origin)
   }
 
-  // Generate and store challenge
+  // Generate and store challenge in database
   const challenge = generateChallenge()
   const challengeKey = `${credentialId}:${Date.now()}`
+  const expiresAt = new Date(Date.now() + CHALLENGE_EXPIRY_MS).toISOString()
 
-  challengeStore.set(challengeKey, {
-    challenge,
-    userId: credential.user_id,
-    expires: Date.now() + CHALLENGE_EXPIRY_MS,
-  })
+  const { error: insertError } = await supabase
+    .from('passkey_challenges')
+    .insert({
+      challenge_key: challengeKey,
+      challenge: challenge,
+      user_id: credential.user_id,
+      expires_at: expiresAt,
+    })
 
-  // Get client IP for rate limiting
-  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  if (insertError) {
+    console.error('[PASSKEY-AUTH] Failed to store challenge:', insertError)
+    return errorResponse('Failed to generate challenge', 500, origin)
+  }
 
-  // Increment rate limit
-  await supabase.rpc('increment_rate_limit', {
-    p_identifier: `passkey:${clientIp}`,
-    p_action: 'passkey_challenge',
-  }).catch(() => {})
+  // Get client IP for rate limiting (optional, don't fail if rate limit fails)
+  try {
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+    await supabase.rpc('increment_rate_limit', {
+      p_identifier: `passkey:${clientIp}`,
+      p_action: 'passkey_challenge',
+    })
+  } catch {
+    // Ignore rate limit errors
+  }
 
   return jsonResponse({
     challenge,
@@ -169,21 +211,30 @@ async function handleVerifyAssertion(
     return errorResponse('Missing required fields', 400, origin)
   }
 
-  // Retrieve and validate challenge
-  const storedChallenge = challengeStore.get(challenge_key)
-  if (!storedChallenge) {
+  // Retrieve challenge from database
+  console.log('[PASSKEY-AUTH] Looking up challenge_key:', challenge_key)
+  const { data: storedChallenge, error: fetchError } = await supabase
+    .from('passkey_challenges')
+    .select('challenge, user_id, expires_at')
+    .eq('challenge_key', challenge_key)
+    .single()
+
+  if (fetchError || !storedChallenge) {
+    console.error('[PASSKEY-AUTH] Challenge not found:', challenge_key, fetchError)
     return errorResponse('Challenge expired or invalid', 401, origin)
   }
+  console.log('[PASSKEY-AUTH] Challenge found for user:', storedChallenge.user_id)
 
-  // Remove challenge (one-time use)
-  challengeStore.delete(challenge_key)
+  // Remove challenge immediately (one-time use)
+  await supabase.from('passkey_challenges').delete().eq('challenge_key', challenge_key)
 
   // Check expiry
-  if (storedChallenge.expires < Date.now()) {
+  if (new Date(storedChallenge.expires_at) < new Date()) {
     return errorResponse('Challenge expired', 401, origin)
   }
 
   // Look up credential
+  console.log('[PASSKEY-AUTH] Looking up credential_id:', credential_id)
   const { data: credential, error: credError } = await supabase
     .from('user_passkeys')
     .select('id, user_id, public_key, counter')
@@ -192,12 +243,15 @@ async function handleVerifyAssertion(
     .single()
 
   if (credError || !credential) {
-    return errorResponse('Authentication failed', 401, origin)
+    console.error('[PASSKEY-AUTH] Credential not found:', credential_id, credError)
+    return errorResponse('Authentication failed - credential not found', 401, origin)
   }
+  console.log('[PASSKEY-AUTH] Credential found, user_id:', credential.user_id)
 
   // Verify user matches
-  if (credential.user_id !== storedChallenge.userId) {
-    return errorResponse('Authentication failed', 401, origin)
+  if (credential.user_id !== storedChallenge.user_id) {
+    console.error('[PASSKEY-AUTH] User mismatch:', credential.user_id, 'vs', storedChallenge.user_id)
+    return errorResponse('Authentication failed - user mismatch', 401, origin)
   }
 
   // Verify the signature
@@ -213,6 +267,7 @@ async function handleVerifyAssertion(
     )
 
     if (!isValid) {
+      console.error('[PASSKEY-AUTH] Signature verification failed')
       // Log failed attempt
       await supabase.from('audit_logs').insert({
         user_id: credential.user_id,
@@ -222,17 +277,27 @@ async function handleVerifyAssertion(
         success: false,
       })
 
-      return errorResponse('Authentication failed', 401, origin)
+      return errorResponse('Authentication failed - invalid signature', 401, origin)
     }
+    console.log('[PASSKEY-AUTH] Signature verified successfully')
   } catch (verifyError) {
-    console.error('[PASSKEY-AUTH] Verification error:', verifyError)
-    return errorResponse('Authentication failed', 401, origin)
+    console.error('[PASSKEY-AUTH] Signature verification exception:', verifyError)
+    return errorResponse('Authentication failed - verification error', 401, origin)
   }
 
   // Update counter (replay protection)
   const newCounter = parseAuthenticatorData(authenticator_data).counter
-  if (newCounter <= credential.counter) {
+  console.log('[PASSKEY-AUTH] Counter check: new=', newCounter, 'old=', credential.counter)
+
+  // Counter check: newCounter must be > oldCounter
+  // Exception: if both are 0, allow it (first auth after registration)
+  // Some authenticators don't increment counter, so we also allow equal non-zero if it's close
+  const isReplay = newCounter < credential.counter ||
+    (newCounter === credential.counter && credential.counter > 0)
+
+  if (isReplay) {
     // Possible replay attack
+    console.error('[PASSKEY-AUTH] Replay detected! newCounter <= oldCounter')
     await supabase.from('audit_logs').insert({
       user_id: credential.user_id,
       action: 'passkey_replay_detected',
@@ -241,7 +306,7 @@ async function handleVerifyAssertion(
       success: false,
     })
 
-    return errorResponse('Authentication failed', 401, origin)
+    return errorResponse('Authentication failed - replay detected', 401, origin)
   }
 
   // Update counter and last used
@@ -252,6 +317,23 @@ async function handleVerifyAssertion(
       last_used_at: new Date().toISOString(),
     })
     .eq('id', credential.id)
+
+  // Generate a session for the user using admin API
+  const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
+    type: 'magiclink',
+    email: '', // We'll get email from user
+  })
+
+  // Get user email for session generation
+  const { data: userData, error: userError } = await supabase.auth.admin.getUserById(credential.user_id)
+  if (userError || !userData?.user?.email) {
+    console.error('[PASSKEY-AUTH] Failed to get user data:', userError)
+    return errorResponse('Failed to create session', 500, origin)
+  }
+
+  // Create a session for the user
+  // Note: We use generateLink to create a one-time token, but for passkey we'll use a custom approach
+  // For now, we'll signal success and let the client handle session creation differently
 
   // Get user's subscription tier
   const { data: profile } = await supabase
@@ -293,11 +375,62 @@ async function handleVerifyAssertion(
  * Parse authenticator data to extract counter
  */
 function parseAuthenticatorData(authDataB64: string): { counter: number } {
-  const authData = Uint8Array.from(atob(authDataB64), c => c.charCodeAt(0))
+  const authData = base64urlToBytes(authDataB64)
   // Counter is bytes 33-36 (after rpIdHash[32] and flags[1])
   const counterBytes = authData.slice(33, 37)
   const counter = new DataView(counterBytes.buffer).getUint32(0, false) // big-endian
   return { counter }
+}
+
+/**
+ * Convert DER-encoded ECDSA signature to raw format (r || s)
+ * WebAuthn uses DER encoding but WebCrypto expects raw format
+ */
+function derToRaw(derSignature: Uint8Array): Uint8Array {
+  // DER format: 0x30 [total-length] 0x02 [r-length] [r] 0x02 [s-length] [s]
+  if (derSignature[0] !== 0x30) {
+    // Not DER encoded, assume already raw
+    return derSignature
+  }
+
+  let offset = 2 // Skip 0x30 and total length
+
+  // Parse r
+  if (derSignature[offset] !== 0x02) throw new Error('Invalid DER signature')
+  offset++
+  const rLength = derSignature[offset]
+  offset++
+  let r = derSignature.slice(offset, offset + rLength)
+  offset += rLength
+
+  // Parse s
+  if (derSignature[offset] !== 0x02) throw new Error('Invalid DER signature')
+  offset++
+  const sLength = derSignature[offset]
+  offset++
+  let s = derSignature.slice(offset, offset + sLength)
+
+  // Remove leading zeros if present (DER pads with 0x00 for positive numbers)
+  if (r.length === 33 && r[0] === 0) r = r.slice(1)
+  if (s.length === 33 && s[0] === 0) s = s.slice(1)
+
+  // Pad to 32 bytes if needed
+  if (r.length < 32) {
+    const padded = new Uint8Array(32)
+    padded.set(r, 32 - r.length)
+    r = padded
+  }
+  if (s.length < 32) {
+    const padded = new Uint8Array(32)
+    padded.set(s, 32 - s.length)
+    s = padded
+  }
+
+  // Concatenate r and s (64 bytes total for P-256)
+  const raw = new Uint8Array(64)
+  raw.set(r, 0)
+  raw.set(s, 32)
+  return raw
 }
 
 /**
@@ -311,18 +444,32 @@ async function verifyWebAuthnSignature(
   signatureB64: string,
   expectedChallenge: string
 ): Promise<boolean> {
-  // Decode inputs
-  const publicKeyBytes = Uint8Array.from(atob(publicKeyB64), c => c.charCodeAt(0))
-  const authenticatorData = Uint8Array.from(atob(authenticatorDataB64), c => c.charCodeAt(0))
-  const clientDataJson = atob(clientDataJsonB64)
-  const signature = Uint8Array.from(atob(signatureB64), c => c.charCodeAt(0))
+  // Decode inputs (handle base64url from WebAuthn)
+  console.log('[PASSKEY-AUTH] Verifying signature...')
+  console.log('[PASSKEY-AUTH] Public key (first 50 chars):', publicKeyB64.substring(0, 50))
+
+  const publicKeyBytes = base64urlToBytes(publicKeyB64)
+  const authenticatorData = base64urlToBytes(authenticatorDataB64)
+  const clientDataJsonBytes = base64urlToBytes(clientDataJsonB64)
+  const clientDataJson = new TextDecoder().decode(clientDataJsonBytes)
+  const signatureDer = base64urlToBytes(signatureB64)
+
+  // Convert DER signature to raw format for WebCrypto
+  const signature = derToRaw(signatureDer)
+  console.log('[PASSKEY-AUTH] Signature converted from DER, length:', signature.length)
 
   // Parse and verify client data
   const clientData = JSON.parse(clientDataJson)
+  console.log('[PASSKEY-AUTH] Client data type:', clientData.type)
+  console.log('[PASSKEY-AUTH] Client data challenge:', clientData.challenge)
+  console.log('[PASSKEY-AUTH] Expected challenge:', expectedChallenge)
+
   if (clientData.type !== 'webauthn.get') {
+    console.error('[PASSKEY-AUTH] Wrong client data type')
     return false
   }
   if (clientData.challenge !== expectedChallenge) {
+    console.error('[PASSKEY-AUTH] Challenge mismatch')
     return false
   }
 
