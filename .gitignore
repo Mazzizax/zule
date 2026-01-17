@@ -25,5 +25,8 @@ npm-debug.log*
 # Supabase
 supabase/.temp/
 
+# Expo
+.expo/
+
 .vercel
 .env*.local
