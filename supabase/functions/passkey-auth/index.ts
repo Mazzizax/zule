@@ -10,7 +10,7 @@
  * 1. Client requests challenge (GET with credential_id)
  * 2. Client signs challenge with passkey
  * 3. Client sends signed assertion (POST)
- * 4. Server verifies and returns user_id + tier
+ * 4. Server verifies using @simplewebauthn/server and returns user_id + tier
  *
  * ENDPOINTS:
  * - GET: Request authentication challenge
@@ -20,11 +20,20 @@
  * - Dawg Tag receives user_id, computes ghost_id locally, discards user_id
  * - Gatekeeper never knows which app the user is accessing
  * - Gatekeeper never knows the resulting ghost_id
+ * - Full WebAuthn verification using battle-tested @simplewebauthn/server library
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { SignJWT, importJWK } from 'https://deno.land/x/jose@v5.2.0/index.ts'
 import { handleCors, jsonResponse, errorResponse } from '../_shared/cors.ts'
+import {
+  generateAuthenticationOptions,
+  verifyAuthenticationResponse,
+} from 'jsr:@simplewebauthn/server'
+import type {
+  AuthenticationResponseJSON,
+  AuthenticatorTransportFuture,
+} from 'jsr:@simplewebauthn/types'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_KEY = Deno.env.get('GATEKEEPER_SECRET_KEY')!
@@ -32,17 +41,16 @@ const SUPABASE_SERVICE_KEY = Deno.env.get('GATEKEEPER_SECRET_KEY')!
 // Challenge expiry time (5 minutes)
 const CHALLENGE_EXPIRY_MS = 5 * 60 * 1000
 
-/**
- * Generate a cryptographically secure challenge
- */
-function generateChallenge(): string {
-  const array = new Uint8Array(32)
-  crypto.getRandomValues(array)
-  return btoa(String.fromCharCode(...array))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '')
-}
+// Relying Party configuration
+const RP_ID = new URL(SUPABASE_URL).hostname
+const RP_NAME = 'Gatekeeper'
+
+// Expected origins for WebAuthn (Gatekeeper web app and mobile deep links)
+const EXPECTED_ORIGINS = [
+  `https://${RP_ID}`,
+  'https://gatekeeper.app', // Production web
+  'gatekeeper://auth', // Mobile deep link
+]
 
 /**
  * Decode base64url to Uint8Array
@@ -65,6 +73,20 @@ function base64urlToBytes(base64url: string): Uint8Array {
     bytes[i] = binary.charCodeAt(i)
   }
   return bytes
+}
+
+/**
+ * Encode Uint8Array to base64url string
+ */
+function bytesToBase64url(bytes: Uint8Array): string {
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i])
+  }
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '')
 }
 
 /**
@@ -136,7 +158,7 @@ async function handleGetChallenge(
   // Look up the credential to get the user
   const { data: credential, error: credError } = await supabase
     .from('user_passkeys')
-    .select('user_id, public_key, counter')
+    .select('user_id, public_key, counter, transports')
     .eq('credential_id', credentialId)
     .eq('is_active', true)
     .single()
@@ -146,8 +168,18 @@ async function handleGetChallenge(
     return errorResponse('Authentication failed', 401, origin)
   }
 
-  // Generate and store challenge in database
-  const challenge = generateChallenge()
+  // Generate authentication options using @simplewebauthn/server
+  const options = await generateAuthenticationOptions({
+    rpID: RP_ID,
+    userVerification: 'preferred',
+    timeout: CHALLENGE_EXPIRY_MS,
+    allowCredentials: [{
+      id: credentialId,
+      transports: (credential.transports || ['internal', 'hybrid']) as AuthenticatorTransportFuture[],
+    }],
+  })
+
+  // Store challenge in database for verification
   const challengeKey = `${credentialId}:${Date.now()}`
   const expiresAt = new Date(Date.now() + CHALLENGE_EXPIRY_MS).toISOString()
 
@@ -155,7 +187,7 @@ async function handleGetChallenge(
     .from('passkey_challenges')
     .insert({
       challenge_key: challengeKey,
-      challenge: challenge,
+      challenge: options.challenge,
       user_id: credential.user_id,
       expires_at: expiresAt,
     })
@@ -177,16 +209,19 @@ async function handleGetChallenge(
   }
 
   return jsonResponse({
-    challenge,
+    challenge: options.challenge,
     challenge_key: challengeKey,
     timeout: CHALLENGE_EXPIRY_MS,
-    rp_id: new URL(SUPABASE_URL).hostname,
+    rp_id: RP_ID,
+    // Include full options for clients that want them
+    options: options,
   }, 200, origin)
 }
 
 /**
  * POST: Verify signed assertion
- * Body: { challenge_key, credential_id, authenticator_data, client_data_json, signature }
+ * Body: { challenge_key, credential_id, authenticator_data, client_data_json, signature, user_handle? }
+ * OR: { challenge_key, response } where response is AuthenticationResponseJSON
  */
 async function handleVerifyAssertion(
   supabase: ReturnType<typeof createClient>,
@@ -200,16 +235,10 @@ async function handleVerifyAssertion(
     return errorResponse('Invalid JSON body', 400, origin)
   }
 
-  const {
-    challenge_key,
-    credential_id,
-    authenticator_data,
-    client_data_json,
-    signature,
-  } = body
+  const { challenge_key } = body
 
-  if (!challenge_key || !credential_id || !authenticator_data || !client_data_json || !signature) {
-    return errorResponse('Missing required fields', 400, origin)
+  if (!challenge_key) {
+    return errorResponse('Missing challenge_key', 400, origin)
   }
 
   // Retrieve challenge from database
@@ -234,17 +263,61 @@ async function handleVerifyAssertion(
     return errorResponse('Challenge expired', 401, origin)
   }
 
+  // Build AuthenticationResponseJSON from body
+  // Support both new format (response object) and legacy format (flat fields)
+  let authResponse: AuthenticationResponseJSON
+  let credentialId: string
+
+  if (body.response) {
+    // New format: { challenge_key, response: AuthenticationResponseJSON }
+    authResponse = body.response
+    credentialId = authResponse.id
+  } else {
+    // Legacy format: { challenge_key, credential_id, authenticator_data, client_data_json, signature }
+    const { credential_id, authenticator_data, client_data_json, signature, user_handle } = body
+
+    if (!credential_id || !authenticator_data || !client_data_json || !signature) {
+      return errorResponse('Missing required fields', 400, origin)
+    }
+
+    credentialId = credential_id
+
+    // Convert legacy base64 fields to base64url for AuthenticationResponseJSON
+    authResponse = {
+      id: credential_id,
+      rawId: credential_id,
+      type: 'public-key',
+      response: {
+        authenticatorData: authenticator_data
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=/g, ''),
+        clientDataJSON: client_data_json
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=/g, ''),
+        signature: signature
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=/g, ''),
+        userHandle: user_handle || undefined,
+      },
+      clientExtensionResults: {},
+      authenticatorAttachment: 'platform',
+    }
+  }
+
   // Look up credential
-  console.log('[PASSKEY-AUTH] Looking up credential_id:', credential_id)
+  console.log('[PASSKEY-AUTH] Looking up credential_id:', credentialId)
   const { data: credential, error: credError } = await supabase
     .from('user_passkeys')
-    .select('id, user_id, public_key, counter')
-    .eq('credential_id', credential_id)
+    .select('id, user_id, public_key, counter, transports')
+    .eq('credential_id', credentialId)
     .eq('is_active', true)
     .single()
 
   if (credError || !credential) {
-    console.error('[PASSKEY-AUTH] Credential not found:', credential_id, credError)
+    console.error('[PASSKEY-AUTH] Credential not found:', credentialId, credError)
     return errorResponse('Authentication failed - credential not found', 401, origin)
   }
   console.log('[PASSKEY-AUTH] Credential found, user_id:', credential.user_id)
@@ -255,60 +328,61 @@ async function handleVerifyAssertion(
     return errorResponse('Authentication failed - user mismatch', 401, origin)
   }
 
-  // Verify the signature
-  // Note: Full WebAuthn verification is complex - this is simplified
-  // In production, use a proper WebAuthn library
+  // Verify the assertion using @simplewebauthn/server
+  let verification
   try {
-    const isValid = await verifyWebAuthnSignature(
-      credential.public_key,
-      authenticator_data,
-      client_data_json,
-      signature,
-      storedChallenge.challenge
+    // Decode public key from base64 to Uint8Array
+    const publicKeyBytes = base64urlToBytes(
+      credential.public_key
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=/g, '')
     )
 
-    if (!isValid) {
-      console.error('[PASSKEY-AUTH] Signature verification failed')
+    verification = await verifyAuthenticationResponse({
+      response: authResponse,
+      expectedChallenge: storedChallenge.challenge,
+      expectedOrigin: EXPECTED_ORIGINS,
+      expectedRPID: RP_ID,
+      credential: {
+        id: credentialId,
+        publicKey: publicKeyBytes,
+        counter: credential.counter || 0,
+        transports: (credential.transports || ['internal']) as AuthenticatorTransportFuture[],
+      },
+    })
+
+    if (!verification.verified) {
+      console.error('[PASSKEY-AUTH] Verification failed')
       // Log failed attempt
       await supabase.from('audit_logs').insert({
         user_id: credential.user_id,
         action: 'passkey_auth_failed',
         action_category: 'auth',
-        metadata: { reason: 'invalid_signature' },
+        metadata: { reason: 'verification_failed' },
         success: false,
       })
 
-      return errorResponse('Authentication failed - invalid signature', 401, origin)
+      return errorResponse('Authentication failed - verification failed', 401, origin)
     }
-    console.log('[PASSKEY-AUTH] Signature verified successfully')
+    console.log('[PASSKEY-AUTH] Signature verified successfully using @simplewebauthn/server')
   } catch (verifyError) {
-    console.error('[PASSKEY-AUTH] Signature verification exception:', verifyError)
-    return errorResponse('Authentication failed - verification error', 401, origin)
-  }
-
-  // Update counter (replay protection)
-  const newCounter = parseAuthenticatorData(authenticator_data).counter
-  console.log('[PASSKEY-AUTH] Counter check: new=', newCounter, 'old=', credential.counter)
-
-  // Counter check: newCounter must be > oldCounter
-  // Exception: if both are 0, allow it (first auth after registration)
-  // Some authenticators don't increment counter, so we also allow equal non-zero if it's close
-  const isReplay = newCounter < credential.counter ||
-    (newCounter === credential.counter && credential.counter > 0)
-
-  if (isReplay) {
-    // Possible replay attack
-    console.error('[PASSKEY-AUTH] Replay detected! newCounter <= oldCounter')
+    console.error('[PASSKEY-AUTH] Verification exception:', verifyError)
+    // Log failed attempt
     await supabase.from('audit_logs').insert({
       user_id: credential.user_id,
-      action: 'passkey_replay_detected',
-      action_category: 'security',
-      metadata: { old_counter: credential.counter, new_counter: newCounter },
+      action: 'passkey_auth_failed',
+      action_category: 'auth',
+      metadata: { reason: 'verification_exception', error: String(verifyError) },
       success: false,
     })
 
-    return errorResponse('Authentication failed - replay detected', 401, origin)
+    return errorResponse('Authentication failed - verification error', 401, origin)
   }
+
+  // Update counter (replay protection handled by simplewebauthn)
+  const newCounter = verification.authenticationInfo.newCounter
+  console.log('[PASSKEY-AUTH] Counter update: old=', credential.counter, 'new=', newCounter)
 
   // Update counter and last used
   await supabase
@@ -386,7 +460,7 @@ async function handleVerifyAssertion(
     action: 'passkey_authenticated',
     action_category: 'auth',
     ip_address: clientIp,
-    metadata: { tier, credential_id: credential_id.substring(0, 16) },
+    metadata: { tier, credential_id: credentialId.substring(0, 16) },
     success: true,
   })
 
@@ -408,136 +482,3 @@ async function handleVerifyAssertion(
   }, 200, origin)
 }
 
-/**
- * Parse authenticator data to extract counter
- */
-function parseAuthenticatorData(authDataB64: string): { counter: number } {
-  const authData = base64urlToBytes(authDataB64)
-  // Counter is bytes 33-36 (after rpIdHash[32] and flags[1])
-  const counterBytes = authData.slice(33, 37)
-  const counter = new DataView(counterBytes.buffer).getUint32(0, false) // big-endian
-  return { counter }
-}
-
-/**
- * Convert DER-encoded ECDSA signature to raw format (r || s)
- * WebAuthn uses DER encoding but WebCrypto expects raw format
- */
-function derToRaw(derSignature: Uint8Array): Uint8Array {
-  // DER format: 0x30 [total-length] 0x02 [r-length] [r] 0x02 [s-length] [s]
-  if (derSignature[0] !== 0x30) {
-    // Not DER encoded, assume already raw
-    return derSignature
-  }
-
-  let offset = 2 // Skip 0x30 and total length
-
-  // Parse r
-  if (derSignature[offset] !== 0x02) throw new Error('Invalid DER signature')
-  offset++
-  const rLength = derSignature[offset]
-  offset++
-  let r = derSignature.slice(offset, offset + rLength)
-  offset += rLength
-
-  // Parse s
-  if (derSignature[offset] !== 0x02) throw new Error('Invalid DER signature')
-  offset++
-  const sLength = derSignature[offset]
-  offset++
-  let s = derSignature.slice(offset, offset + sLength)
-
-  // Remove leading zeros if present (DER pads with 0x00 for positive numbers)
-  if (r.length === 33 && r[0] === 0) r = r.slice(1)
-  if (s.length === 33 && s[0] === 0) s = s.slice(1)
-
-  // Pad to 32 bytes if needed
-  if (r.length < 32) {
-    const padded = new Uint8Array(32)
-    padded.set(r, 32 - r.length)
-    r = padded
-  }
-  if (s.length < 32) {
-    const padded = new Uint8Array(32)
-    padded.set(s, 32 - s.length)
-    s = padded
-  }
-
-  // Concatenate r and s (64 bytes total for P-256)
-  const raw = new Uint8Array(64)
-  raw.set(r, 0)
-  raw.set(s, 32)
-  return raw
-}
-
-/**
- * Verify WebAuthn signature
- * Note: This is a simplified version. Production should use a proper library.
- */
-async function verifyWebAuthnSignature(
-  publicKeyB64: string,
-  authenticatorDataB64: string,
-  clientDataJsonB64: string,
-  signatureB64: string,
-  expectedChallenge: string
-): Promise<boolean> {
-  // Decode inputs (handle base64url from WebAuthn)
-  console.log('[PASSKEY-AUTH] Verifying signature...')
-  console.log('[PASSKEY-AUTH] Public key (first 50 chars):', publicKeyB64.substring(0, 50))
-
-  const publicKeyBytes = base64urlToBytes(publicKeyB64)
-  const authenticatorData = base64urlToBytes(authenticatorDataB64)
-  const clientDataJsonBytes = base64urlToBytes(clientDataJsonB64)
-  const clientDataJson = new TextDecoder().decode(clientDataJsonBytes)
-  const signatureDer = base64urlToBytes(signatureB64)
-
-  // Convert DER signature to raw format for WebCrypto
-  const signature = derToRaw(signatureDer)
-  console.log('[PASSKEY-AUTH] Signature converted from DER, length:', signature.length)
-
-  // Parse and verify client data
-  const clientData = JSON.parse(clientDataJson)
-  console.log('[PASSKEY-AUTH] Client data type:', clientData.type)
-  console.log('[PASSKEY-AUTH] Client data challenge:', clientData.challenge)
-  console.log('[PASSKEY-AUTH] Expected challenge:', expectedChallenge)
-
-  if (clientData.type !== 'webauthn.get') {
-    console.error('[PASSKEY-AUTH] Wrong client data type')
-    return false
-  }
-  if (clientData.challenge !== expectedChallenge) {
-    console.error('[PASSKEY-AUTH] Challenge mismatch')
-    return false
-  }
-
-  // Hash client data JSON
-  const clientDataHash = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(clientDataJson)
-  )
-
-  // Concatenate authenticator data and client data hash
-  const signedData = new Uint8Array(authenticatorData.length + 32)
-  signedData.set(authenticatorData, 0)
-  signedData.set(new Uint8Array(clientDataHash), authenticatorData.length)
-
-  // Import public key and verify
-  try {
-    const key = await crypto.subtle.importKey(
-      'spki',
-      publicKeyBytes,
-      { name: 'ECDSA', namedCurve: 'P-256' },
-      false,
-      ['verify']
-    )
-
-    return await crypto.subtle.verify(
-      { name: 'ECDSA', hash: 'SHA-256' },
-      key,
-      signature,
-      signedData
-    )
-  } catch {
-    return false
-  }
-}
