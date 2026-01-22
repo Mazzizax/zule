@@ -81,7 +81,8 @@ function extractPublicKeyFromAttestation(attestationObjectB64: string): string {
   const publicKeyBytes = authData.slice(publicKeyOffset)
 
   // The public key is COSE encoded - we need to convert it to SPKI format for WebCrypto
-  const coseKey = decodeCbor(publicKeyBytes) as Map<number, unknown>
+  // Note: cbor-x returns a plain object, not a Map. Negative keys become string properties.
+  const coseKey = decodeCbor(publicKeyBytes) as Record<string, unknown>
 
   // COSE key for EC2 (P-256):
   // 1 (kty) = 2 (EC2)
@@ -90,8 +91,8 @@ function extractPublicKeyFromAttestation(attestationObjectB64: string): string {
   // -2 (x) = x coordinate (32 bytes)
   // -3 (y) = y coordinate (32 bytes)
 
-  const x = coseKey.get(-2) as Uint8Array
-  const y = coseKey.get(-3) as Uint8Array
+  const x = coseKey['-2'] as Uint8Array
+  const y = coseKey['-3'] as Uint8Array
 
   if (!x || !y) {
     throw new Error('Missing x or y coordinate in COSE key')
