@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { supabase } from '../../src/lib/supabase';
-import { registerPasskey, authenticateWithPasskey } from '../../src/lib/passkey';
+import { registerPasskey, authenticateWithPasskey, clearStoredPasskey, hasStoredPasskey } from '../../src/lib/passkey';
 
 interface PasskeyInfo {
   id: string;
@@ -29,10 +29,18 @@ export default function SecurityScreen() {
   const [loadingKeys, setLoadingKeys] = useState(true);
   const [linkingDevice, setLinkingDevice] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [clearingPasskey, setClearingPasskey] = useState(false);
+  const [hasLocalPasskey, setHasLocalPasskey] = useState(false);
 
   useEffect(() => {
     loadPasskeys();
+    checkLocalPasskey();
   }, []);
+
+  const checkLocalPasskey = async () => {
+    const stored = await hasStoredPasskey();
+    setHasLocalPasskey(stored);
+  };
 
   const loadPasskeys = async () => {
     try {
@@ -110,6 +118,76 @@ export default function SecurityScreen() {
     }
   };
 
+  const handleClearPasskey = async () => {
+    Alert.alert(
+      'Clear Passkey',
+      'This will remove the passkey from this device. You will need to re-register to use biometric login.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            setClearingPasskey(true);
+            try {
+              await clearStoredPasskey();
+              setHasLocalPasskey(false);
+              Alert.alert('Success', 'Passkey cleared from device.');
+            } catch (err: any) {
+              Alert.alert('Error', err.message);
+            } finally {
+              setClearingPasskey(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeletePasskey = async (passkeyId: string, deviceName: string) => {
+    Alert.alert(
+      'Delete Passkey',
+      `Remove "${deviceName}" from your account?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { data: { session } } = await supabase.auth.getSession();
+              if (!session?.access_token) {
+                Alert.alert('Error', 'No active session');
+                return;
+              }
+
+              const functionUrl = `${process.env.EXPO_PUBLIC_GATEKEEPER_URL}/functions/v1/passkey-register`;
+              const response = await fetch(functionUrl, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${session.access_token}`,
+                  'apikey': process.env.EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY || '',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ passkey_id: passkeyId }),
+              });
+
+              if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText);
+              }
+
+              Alert.alert('Success', 'Passkey deleted.');
+              loadPasskeys();
+            } catch (err: any) {
+              Alert.alert('Error', err.message);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
       Alert.alert('Error', 'Passwords mismatch');
@@ -141,8 +219,13 @@ export default function SecurityScreen() {
           <View style={styles.keyList}>
             {passkeys.map(key => (
               <View key={key.id} style={styles.keyItem}>
-                <Text style={styles.keyName}>{key.device_name}</Text>
-                <Text style={styles.keyMeta}>{new Date(key.created_at).toLocaleDateString()}</Text>
+                <View style={styles.keyInfo}>
+                  <Text style={styles.keyName}>{key.device_name}</Text>
+                  <Text style={styles.keyMeta}>{new Date(key.created_at).toLocaleDateString()}</Text>
+                </View>
+                <TouchableOpacity onPress={() => handleDeletePasskey(key.id, key.device_name)}>
+                  <Text style={styles.deleteText}>Delete</Text>
+                </TouchableOpacity>
               </View>
             ))}
             {passkeys.length === 0 && <Text style={styles.emptyText}>No devices linked yet.</Text>}
@@ -166,6 +249,16 @@ export default function SecurityScreen() {
             {verifying ? <ActivityIndicator color="#4CAF50" /> : <Text style={styles.verifyButtonText}>Verify Passkey</Text>}
           </TouchableOpacity>
         )}
+
+        {hasLocalPasskey && (
+          <TouchableOpacity
+            style={[styles.clearButton, clearingPasskey && styles.buttonDisabled]}
+            onPress={handleClearPasskey}
+            disabled={clearingPasskey}
+          >
+            {clearingPasskey ? <ActivityIndicator color="#ff6b6b" /> : <Text style={styles.clearButtonText}>Clear Stored Passkey</Text>}
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.card}>
@@ -186,7 +279,9 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff', marginBottom: 16 },
   description: { fontSize: 14, color: '#888', marginBottom: 20 },
   keyList: { marginBottom: 20 },
-  keyItem: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#333' },
+  keyItem: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#333', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  keyInfo: { flex: 1 },
+  deleteText: { color: '#ff6b6b', fontSize: 14 },
   keyName: { color: '#fff', fontSize: 15 },
   keyMeta: { color: '#666', fontSize: 12 },
   emptyText: { color: '#666', fontStyle: 'italic', textAlign: 'center' },
@@ -198,4 +293,6 @@ const styles = StyleSheet.create({
   saveButton: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#4CAF50', borderRadius: 8, padding: 16, alignItems: 'center' },
   saveButtonText: { color: '#4CAF50', fontSize: 16 },
   buttonDisabled: { opacity: 0.6 },
+  clearButton: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#ff6b6b', borderRadius: 8, padding: 16, alignItems: 'center', marginTop: 12 },
+  clearButtonText: { color: '#ff6b6b', fontSize: 16, fontWeight: '600' },
 });
