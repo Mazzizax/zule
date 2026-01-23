@@ -12,7 +12,6 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/contexts/AuthContext';
 import { authenticateWithPasskey, hasStoredPasskey } from '../src/lib/passkey';
-import { supabase } from '../src/lib/supabase';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -21,31 +20,20 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingPasskey, setCheckingPasskey] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasPasskey, setHasPasskey] = useState(false);
 
   useEffect(() => {
     async function checkForPasskey() {
       try {
-        // Check if already logged in
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          router.replace('/(tabs)');
-          return;
-        }
-
         // Check if device has stored passkey
         const storedPasskey = await hasStoredPasskey();
         setHasPasskey(storedPasskey);
-
-        // Disabled auto-prompt for now - use manual button
-        // if (storedPasskey) {
-        //   setTimeout(() => {
-        //     handlePasskeyLogin();
-        //   }, 500);
-        // }
       } catch {
         setHasPasskey(false);
+      } finally {
+        setCheckingPasskey(false);
       }
     }
     checkForPasskey();
@@ -84,6 +72,15 @@ export default function LoginScreen() {
       setLoading(false);
     }
   };
+
+  // Show loading while checking for passkey
+  if (checkingPasskey) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
