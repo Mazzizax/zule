@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 
@@ -8,13 +9,29 @@ import { useRouter } from 'expo-router';
  * Account overview, subscription status, last active
  */
 export default function DashboardScreen() {
-  const { user, signOut } = useAuth();
+  const { user, session, loading, signOut } = useAuth();
   const router = useRouter();
+
+  // Redirect to login when signed out
+  useEffect(() => {
+    if (!loading && !session) {
+      router.replace('/login');
+    }
+  }, [loading, session]);
 
   const handleSignOut = async () => {
     await signOut();
-    router.replace('/login');
+    // Navigation handled by useEffect above
   };
+
+  // Show loading during sign out
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+      </View>
+    );
+  }
 
   const memberSince = user?.created_at
     ? new Date(user.created_at).toLocaleDateString('en-US', {
@@ -71,6 +88,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1a1a2e',
     padding: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1a1a2e',
   },
   card: {
     backgroundColor: '#252542',

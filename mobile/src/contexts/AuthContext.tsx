@@ -62,17 +62,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      // Clear state immediately to avoid race conditions
-      setSession(null);
-      setUser(null);
-      
-      // Only call server sign out if we actually have a session
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      if (currentSession) {
-        await supabase.auth.signOut();
-      }
+      // Set loading to prevent flickering during sign out
+      setLoading(true);
+
+      // Sign out - the onAuthStateChange listener will clear session/user
+      await supabase.auth.signOut();
     } catch (error) {
       console.log('Sign out handled gracefully:', error);
+      // If sign out fails, still clear local state
+      setSession(null);
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
   };
 
