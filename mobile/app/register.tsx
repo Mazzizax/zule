@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/contexts/AuthContext';
@@ -131,6 +132,19 @@ export default function RegisterScreen() {
             Already have an account? <Text style={styles.linkTextBold}>Sign in</Text>
           </Text>
         </TouchableOpacity>
+
+        <Text style={styles.termsText}>
+          By creating an account, you agree to our
+        </Text>
+        <View style={styles.legalLinks}>
+          <TouchableOpacity onPress={() => Linking.openURL('https://gatekeeper-nine.vercel.app/terms')}>
+            <Text style={styles.legalLinkText}>Terms of Service</Text>
+          </TouchableOpacity>
+          <Text style={styles.legalSeparator}>&</Text>
+          <TouchableOpacity onPress={() => Linking.openURL('https://gatekeeper-nine.vercel.app/privacy')}>
+            <Text style={styles.legalLinkText}>Privacy Policy</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -217,5 +231,25 @@ const styles = StyleSheet.create({
   linkTextBold: {
     color: '#4CAF50',
     fontWeight: '600',
+  },
+  termsText: {
+    color: '#666',
+    fontSize: 12,
+    marginTop: 24,
+    textAlign: 'center',
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    marginTop: 4,
+    alignItems: 'center',
+  },
+  legalLinkText: {
+    color: '#4CAF50',
+    fontSize: 12,
+  },
+  legalSeparator: {
+    color: '#666',
+    fontSize: 12,
+    marginHorizontal: 4,
   },
 });

@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/contexts/AuthContext';
@@ -125,6 +126,16 @@ export default function LoginScreen() {
         <TouchableOpacity style={styles.linkButton} onPress={() => router.push('/register')} disabled={loading}>
           <Text style={styles.linkText}>Don't have an account? <Text style={styles.linkTextBold}>Sign up</Text></Text>
         </TouchableOpacity>
+
+        <View style={styles.legalLinks}>
+          <TouchableOpacity onPress={() => Linking.openURL('https://gatekeeper-nine.vercel.app/terms')}>
+            <Text style={styles.legalText}>Terms of Service</Text>
+          </TouchableOpacity>
+          <Text style={styles.legalSeparator}>|</Text>
+          <TouchableOpacity onPress={() => Linking.openURL('https://gatekeeper-nine.vercel.app/privacy')}>
+            <Text style={styles.legalText}>Privacy Policy</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -147,4 +158,7 @@ const styles = StyleSheet.create({
   linkButton: { marginTop: 24 },
   linkText: { color: '#888', fontSize: 14 },
   linkTextBold: { color: '#4CAF50', fontWeight: '600' },
+  legalLinks: { flexDirection: 'row', marginTop: 24, alignItems: 'center' },
+  legalText: { color: '#666', fontSize: 12 },
+  legalSeparator: { color: '#666', fontSize: 12, marginHorizontal: 8 },
 });

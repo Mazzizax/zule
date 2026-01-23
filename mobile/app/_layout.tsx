@@ -1,6 +1,8 @@
 import { Stack } from 'expo-router';
 import { AuthProvider } from '../src/contexts/AuthContext';
 import { StatusBar } from 'expo-status-bar';
+import { ErrorBoundary } from '../src/components/ErrorBoundary';
+import { NetworkStatusBanner } from '../src/components/NetworkStatus';
 
 /**
  * Root Layout for Gatekeeper Mobile App
@@ -9,22 +11,24 @@ import { StatusBar } from 'expo-status-bar';
  */
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <StatusBar style="light" />
-      <Stack
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: '#1a1a2e',
-          },
-          headerTintColor: '#fff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-          contentStyle: {
-            backgroundColor: '#1a1a2e',
-          },
-        }}
-      >
+    <ErrorBoundary>
+      <AuthProvider>
+        <StatusBar style="light" />
+        <NetworkStatusBanner />
+        <Stack
+          screenOptions={{
+            headerStyle: {
+              backgroundColor: '#1a1a2e',
+            },
+            headerTintColor: '#fff',
+            headerTitleStyle: {
+              fontWeight: 'bold',
+            },
+            contentStyle: {
+              backgroundColor: '#1a1a2e',
+            },
+          }}
+        >
         <Stack.Screen
           name="index"
           options={{
@@ -58,7 +62,8 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
-      </Stack>
-    </AuthProvider>
+        </Stack>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
