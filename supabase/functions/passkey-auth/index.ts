@@ -21,11 +21,19 @@
  * - Gatekeeper never knows which app the user is accessing
  * - Gatekeeper never knows the resulting ghost_id
  * - Full WebAuthn verification using battle-tested @simplewebauthn/server library
+ * - Rate limiting on failed attempts with lockout protection
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { SignJWT, importJWK } from 'https://deno.land/x/jose@v5.2.0/index.ts'
 import { handleCors, jsonResponse, errorResponse } from '../_shared/cors.ts'
+import {
+  RP_ID,
+  EXPECTED_ORIGINS,
+  CHALLENGE_EXPIRY_MS,
+  RATE_LIMIT,
+  base64urlToBytes,
+} from '../_shared/webauthn-config.ts'
 import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
@@ -36,62 +44,7 @@ import type {
 } from 'jsr:@simplewebauthn/types'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
-const SUPABASE_SERVICE_KEY = Deno.env.get('GATEKEEPER_SECRET_KEY')!
-
-// Challenge expiry time (5 minutes)
-const CHALLENGE_EXPIRY_MS = 5 * 60 * 1000
-
-// Relying Party configuration
-// IMPORTANT: This must match what the client uses during registration
-// Mobile app uses 'gatekeeper-nine.vercel.app', web app uses window.location.hostname
-const RP_ID = 'gatekeeper-nine.vercel.app'
-const RP_NAME = 'Gatekeeper'
-
-// Expected origins for WebAuthn
-// - Web/iOS: https://gatekeeper-nine.vercel.app
-// - Android: android:apk-key-hash:<base64url of SHA256 cert fingerprint>
-// SHA256 fingerprint from assetlinks.json: 52:88:BF:97:26:03:DA:44:20:87:C4:3E:84:F1:B7:8F:28:A3:D0:09:F9:9F:D7:BC:C8:A9:F1:6D:D7:3C:CD:F9
-const EXPECTED_ORIGINS = [
-  'https://gatekeeper-nine.vercel.app',
-  'android:apk-key-hash:Uoi_lyYD2kQgh8Q-hPG3jyij0An5n9e8yKnxbdc8zfk',
-]
-
-/**
- * Decode base64url to Uint8Array
- * Handles both base64url (from WebAuthn) and standard base64
- */
-function base64urlToBytes(base64url: string): Uint8Array {
-  // Convert base64url to standard base64
-  let base64 = base64url
-    .replace(/-/g, '+')
-    .replace(/_/g, '/')
-
-  // Add padding if needed
-  while (base64.length % 4 !== 0) {
-    base64 += '='
-  }
-
-  const binary = atob(base64)
-  const bytes = new Uint8Array(binary.length)
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i)
-  }
-  return bytes
-}
-
-/**
- * Encode Uint8Array to base64url string
- */
-function bytesToBase64url(bytes: Uint8Array): string {
-  let binary = ''
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i])
-  }
-  return btoa(binary)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '')
-}
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 /**
  * Clean up expired challenges from database
@@ -101,6 +54,52 @@ async function cleanupExpiredChallenges(supabase: ReturnType<typeof createClient
     await supabase.from('passkey_challenges').delete().lt('expires_at', new Date().toISOString())
   } catch {
     // Ignore cleanup errors
+  }
+}
+
+/**
+ * Check rate limit for failed authentication attempts
+ * Returns { allowed: boolean, retryAfter?: number }
+ */
+async function checkRateLimit(
+  supabase: ReturnType<typeof createClient>,
+  identifier: string
+): Promise<{ allowed: boolean; retryAfter?: number }> {
+  try {
+    const windowStart = new Date(Date.now() - RATE_LIMIT.ATTEMPT_WINDOW_MS).toISOString()
+
+    // Count failed attempts in the window
+    const { count } = await supabase
+      .from('audit_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('action', 'passkey_auth_failed')
+      .gte('created_at', windowStart)
+      .or(`ip_address.eq.${identifier},metadata->>credential_id.eq.${identifier}`)
+
+    if ((count || 0) >= RATE_LIMIT.MAX_FAILED_ATTEMPTS) {
+      // Get the most recent failed attempt to calculate retry time
+      const { data: recentAttempt } = await supabase
+        .from('audit_logs')
+        .select('created_at')
+        .eq('action', 'passkey_auth_failed')
+        .or(`ip_address.eq.${identifier},metadata->>credential_id.eq.${identifier}`)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (recentAttempt) {
+        const lockoutEnd = new Date(recentAttempt.created_at).getTime() + RATE_LIMIT.LOCKOUT_DURATION_MS
+        const now = Date.now()
+        if (now < lockoutEnd) {
+          return { allowed: false, retryAfter: Math.ceil((lockoutEnd - now) / 1000) }
+        }
+      }
+    }
+
+    return { allowed: true }
+  } catch {
+    // On rate limit check failure, allow the request (fail open for availability)
+    return { allowed: true }
   }
 }
 
@@ -115,25 +114,28 @@ Deno.serve(async (req) => {
 
   // Debug: Check if secrets are loaded
   console.log('[PASSKEY-AUTH] SUPABASE_URL:', SUPABASE_URL ? 'set' : 'MISSING')
-  console.log('[PASSKEY-AUTH] GATEKEEPER_SECRET_KEY:', SUPABASE_SERVICE_KEY ? 'set' : 'MISSING')
+  console.log('[PASSKEY-AUTH] SUPABASE_SERVICE_ROLE_KEY:', SUPABASE_SERVICE_ROLE_KEY ? 'set' : 'MISSING')
 
-  if (!SUPABASE_SERVICE_KEY) {
-    console.error('[PASSKEY-AUTH] GATEKEEPER_SECRET_KEY is not set!')
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('[PASSKEY-AUTH] SUPABASE_SERVICE_ROLE_KEY is not set!')
     return errorResponse('Server configuration error', 500, origin)
   }
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
   // Clean up expired challenges periodically
   await cleanupExpiredChallenges(supabase)
 
+  // Get client IP for rate limiting
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+
   try {
     if (req.method === 'GET') {
       // Request challenge for authentication
-      return await handleGetChallenge(supabase, req, origin)
+      return await handleGetChallenge(supabase, req, origin, clientIp)
     } else if (req.method === 'POST') {
       // Verify signed assertion
-      return await handleVerifyAssertion(supabase, req, origin)
+      return await handleVerifyAssertion(supabase, req, origin, clientIp)
     } else {
       return errorResponse('Method not allowed', 405, origin)
     }
@@ -150,13 +152,24 @@ Deno.serve(async (req) => {
 async function handleGetChallenge(
   supabase: ReturnType<typeof createClient>,
   req: Request,
-  origin: string | null
+  origin: string | null,
+  clientIp: string
 ) {
   const url = new URL(req.url)
   const credentialId = url.searchParams.get('credential_id')
 
   if (!credentialId) {
-    return errorResponse('credential_id is required', 400, origin)
+    return errorResponse('Credential ID is required', 400, origin)
+  }
+
+  // Check rate limit before processing
+  const rateCheck = await checkRateLimit(supabase, clientIp)
+  if (!rateCheck.allowed) {
+    return errorResponse(
+      `Too many failed attempts. Try again in ${rateCheck.retryAfter} seconds.`,
+      429,
+      origin
+    )
   }
 
   // Look up the credential to get the user
@@ -169,7 +182,7 @@ async function handleGetChallenge(
 
   if (credError || !credential) {
     // Don't reveal if credential exists or not
-    return errorResponse('Authentication failed', 401, origin)
+    return errorResponse('Invalid credential', 401, origin)
   }
 
   // Generate authentication options using @simplewebauthn/server
@@ -201,17 +214,6 @@ async function handleGetChallenge(
     return errorResponse('Failed to generate challenge', 500, origin)
   }
 
-  // Get client IP for rate limiting (optional, don't fail if rate limit fails)
-  try {
-    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    await supabase.rpc('increment_rate_limit', {
-      p_identifier: `passkey:${clientIp}`,
-      p_action: 'passkey_challenge',
-    })
-  } catch {
-    // Ignore rate limit errors
-  }
-
   return jsonResponse({
     challenge: options.challenge,
     challenge_key: challengeKey,
@@ -224,25 +226,41 @@ async function handleGetChallenge(
 
 /**
  * POST: Verify signed assertion
- * Body: { challenge_key, credential_id, authenticator_data, client_data_json, signature, user_handle? }
- * OR: { challenge_key, response } where response is AuthenticationResponseJSON
+ * Body: { challenge_key, response: AuthenticationResponseJSON }
  */
 async function handleVerifyAssertion(
   supabase: ReturnType<typeof createClient>,
   req: Request,
-  origin: string | null
+  origin: string | null,
+  clientIp: string
 ) {
   let body
   try {
     body = await req.json()
   } catch {
-    return errorResponse('Invalid JSON body', 400, origin)
+    return errorResponse('Invalid request body', 400, origin)
   }
 
-  const { challenge_key } = body
+  const { challenge_key, response: authResponse } = body
 
   if (!challenge_key) {
-    return errorResponse('Missing challenge_key', 400, origin)
+    return errorResponse('Challenge key is required', 400, origin)
+  }
+
+  if (!authResponse || !authResponse.id) {
+    return errorResponse('Authentication response is required', 400, origin)
+  }
+
+  const credentialId = authResponse.id
+
+  // Check rate limit before processing
+  const rateCheck = await checkRateLimit(supabase, clientIp)
+  if (!rateCheck.allowed) {
+    return errorResponse(
+      `Too many failed attempts. Try again in ${rateCheck.retryAfter} seconds.`,
+      429,
+      origin
+    )
   }
 
   // Retrieve challenge from database
@@ -255,7 +273,7 @@ async function handleVerifyAssertion(
 
   if (fetchError || !storedChallenge) {
     console.error('[PASSKEY-AUTH] Challenge not found:', challenge_key, fetchError)
-    return errorResponse('Challenge expired or invalid', 401, origin)
+    return errorResponse('Challenge expired or not found', 401, origin)
   }
   console.log('[PASSKEY-AUTH] Challenge found for user:', storedChallenge.user_id)
 
@@ -264,51 +282,7 @@ async function handleVerifyAssertion(
 
   // Check expiry
   if (new Date(storedChallenge.expires_at) < new Date()) {
-    return errorResponse('Challenge expired', 401, origin)
-  }
-
-  // Build AuthenticationResponseJSON from body
-  // Support both new format (response object) and legacy format (flat fields)
-  let authResponse: AuthenticationResponseJSON
-  let credentialId: string
-
-  if (body.response) {
-    // New format: { challenge_key, response: AuthenticationResponseJSON }
-    authResponse = body.response
-    credentialId = authResponse.id
-  } else {
-    // Legacy format: { challenge_key, credential_id, authenticator_data, client_data_json, signature }
-    const { credential_id, authenticator_data, client_data_json, signature, user_handle } = body
-
-    if (!credential_id || !authenticator_data || !client_data_json || !signature) {
-      return errorResponse('Missing required fields', 400, origin)
-    }
-
-    credentialId = credential_id
-
-    // Convert legacy base64 fields to base64url for AuthenticationResponseJSON
-    authResponse = {
-      id: credential_id,
-      rawId: credential_id,
-      type: 'public-key',
-      response: {
-        authenticatorData: authenticator_data
-          .replace(/\+/g, '-')
-          .replace(/\//g, '_')
-          .replace(/=/g, ''),
-        clientDataJSON: client_data_json
-          .replace(/\+/g, '-')
-          .replace(/\//g, '_')
-          .replace(/=/g, ''),
-        signature: signature
-          .replace(/\+/g, '-')
-          .replace(/\//g, '_')
-          .replace(/=/g, ''),
-        userHandle: user_handle || undefined,
-      },
-      clientExtensionResults: {},
-      authenticatorAttachment: 'platform',
-    }
+    return errorResponse('Challenge has expired', 401, origin)
   }
 
   // Look up credential
@@ -322,14 +296,35 @@ async function handleVerifyAssertion(
 
   if (credError || !credential) {
     console.error('[PASSKEY-AUTH] Credential not found:', credentialId, credError)
-    return errorResponse('Authentication failed - credential not found', 401, origin)
+
+    // Log failed attempt for rate limiting
+    await supabase.from('audit_logs').insert({
+      user_id: storedChallenge.user_id,
+      action: 'passkey_auth_failed',
+      action_category: 'auth',
+      ip_address: clientIp,
+      metadata: { reason: 'credential_not_found', credential_id: credentialId.substring(0, 16) },
+      success: false,
+    })
+
+    return errorResponse('Passkey not found or has been revoked', 401, origin)
   }
   console.log('[PASSKEY-AUTH] Credential found, user_id:', credential.user_id)
 
   // Verify user matches
   if (credential.user_id !== storedChallenge.user_id) {
     console.error('[PASSKEY-AUTH] User mismatch:', credential.user_id, 'vs', storedChallenge.user_id)
-    return errorResponse('Authentication failed - user mismatch', 401, origin)
+
+    await supabase.from('audit_logs').insert({
+      user_id: credential.user_id,
+      action: 'passkey_auth_failed',
+      action_category: 'auth',
+      ip_address: clientIp,
+      metadata: { reason: 'user_mismatch' },
+      success: false,
+    })
+
+    return errorResponse('Authentication failed', 401, origin)
   }
 
   // Verify the assertion using @simplewebauthn/server
@@ -344,7 +339,7 @@ async function handleVerifyAssertion(
     )
 
     verification = await verifyAuthenticationResponse({
-      response: authResponse,
+      response: authResponse as AuthenticationResponseJSON,
       expectedChallenge: storedChallenge.challenge,
       expectedOrigin: EXPECTED_ORIGINS,
       expectedRPID: RP_ID,
@@ -358,30 +353,32 @@ async function handleVerifyAssertion(
 
     if (!verification.verified) {
       console.error('[PASSKEY-AUTH] Verification failed')
-      // Log failed attempt
+
       await supabase.from('audit_logs').insert({
         user_id: credential.user_id,
         action: 'passkey_auth_failed',
         action_category: 'auth',
-        metadata: { reason: 'verification_failed' },
+        ip_address: clientIp,
+        metadata: { reason: 'signature_invalid', credential_id: credentialId.substring(0, 16) },
         success: false,
       })
 
-      return errorResponse('Authentication failed - verification failed', 401, origin)
+      return errorResponse('Biometric verification failed', 401, origin)
     }
-    console.log('[PASSKEY-AUTH] Signature verified successfully using @simplewebauthn/server')
+    console.log('[PASSKEY-AUTH] Signature verified successfully')
   } catch (verifyError) {
     console.error('[PASSKEY-AUTH] Verification exception:', verifyError)
-    // Log failed attempt
+
     await supabase.from('audit_logs').insert({
       user_id: credential.user_id,
       action: 'passkey_auth_failed',
       action_category: 'auth',
-      metadata: { reason: 'verification_exception', error: String(verifyError) },
+      ip_address: clientIp,
+      metadata: { reason: 'verification_exception', error: String(verifyError), credential_id: credentialId.substring(0, 16) },
       success: false,
     })
 
-    return errorResponse('Authentication failed - verification error', 401, origin)
+    return errorResponse('Biometric verification failed', 401, origin)
   }
 
   // Update counter (replay protection handled by simplewebauthn)
@@ -443,7 +440,7 @@ async function handleVerifyAssertion(
     console.log('[PASSKEY-AUTH] Generated verification token and attestation')
   } catch (err) {
     console.error('[PASSKEY-AUTH] Failed to generate tokens:', err)
-    return errorResponse('Failed to generate tokens', 500, origin)
+    return errorResponse('Failed to generate session', 500, origin)
   }
 
   // Get user's subscription tier
@@ -458,7 +455,6 @@ async function handleVerifyAssertion(
     : 'free'
 
   // Log successful auth
-  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null
   await supabase.from('audit_logs').insert({
     user_id: credential.user_id,
     action: 'passkey_authenticated',
@@ -475,9 +471,6 @@ async function handleVerifyAssertion(
     .eq('id', credential.user_id)
 
   // Return tokens and user info
-  // - verification_token: for mint-session to create Supabase session
-  // - attestation: for Dawg Tag flow (no user_id)
-  // - user_id: for Gatekeeper mobile app to call mint-session
   return jsonResponse({
     user_id: credential.user_id,
     tier: tier,
@@ -485,4 +478,3 @@ async function handleVerifyAssertion(
     attestation: attestation,
   }, 200, origin)
 }
-

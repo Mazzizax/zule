@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { supabase } from '../../src/lib/supabase';
-import { registerPasskey, authenticateWithPasskey, clearStoredPasskey, hasStoredPasskey } from '../../src/lib/passkey';
+import { registerPasskey, clearStoredPasskey, hasStoredPasskey } from '../../src/lib/passkey';
 
 interface PasskeyInfo {
   id: string;
@@ -20,7 +20,7 @@ interface PasskeyInfo {
 }
 
 export default function SecurityScreen() {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
@@ -28,7 +28,6 @@ export default function SecurityScreen() {
   const [passkeys, setPasskeys] = useState<PasskeyInfo[]>([]);
   const [loadingKeys, setLoadingKeys] = useState(true);
   const [linkingDevice, setLinkingDevice] = useState(false);
-  const [verifying, setVerifying] = useState(false);
   const [clearingPasskey, setClearingPasskey] = useState(false);
   const [hasLocalPasskey, setHasLocalPasskey] = useState(false);
 
@@ -99,22 +98,6 @@ export default function SecurityScreen() {
       Alert.alert('Error', 'Hardware communication failed.');
     } finally {
       setLinkingDevice(false);
-    }
-  };
-
-  const handleVerifyPasskey = async () => {
-    setVerifying(true);
-    try {
-      const result = await authenticateWithPasskey();
-      if (result.success) {
-        Alert.alert('Success', 'Biometric verification passed!');
-      } else {
-        Alert.alert('Verification Failed', result.error);
-      }
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    } finally {
-      setVerifying(false);
     }
   };
 
@@ -240,16 +223,6 @@ export default function SecurityScreen() {
           {linkingDevice ? <ActivityIndicator color="#fff" /> : <Text style={styles.linkButtonText}>Link This Device</Text>}
         </TouchableOpacity>
 
-        {passkeys.length > 0 && (
-          <TouchableOpacity
-            style={[styles.verifyButton, verifying && styles.buttonDisabled]}
-            onPress={handleVerifyPasskey}
-            disabled={verifying}
-          >
-            {verifying ? <ActivityIndicator color="#4CAF50" /> : <Text style={styles.verifyButtonText}>Verify Passkey</Text>}
-          </TouchableOpacity>
-        )}
-
         {hasLocalPasskey && (
           <TouchableOpacity
             style={[styles.clearButton, clearingPasskey && styles.buttonDisabled]}
@@ -287,8 +260,6 @@ const styles = StyleSheet.create({
   emptyText: { color: '#666', fontStyle: 'italic', textAlign: 'center' },
   linkButton: { backgroundColor: '#4CAF50', borderRadius: 8, padding: 16, alignItems: 'center' },
   linkButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  verifyButton: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#4CAF50', borderRadius: 8, padding: 16, alignItems: 'center', marginTop: 12 },
-  verifyButtonText: { color: '#4CAF50', fontSize: 16, fontWeight: '600' },
   input: { backgroundColor: '#1a1a2e', borderRadius: 8, padding: 12, color: '#fff', marginBottom: 12, borderWidth: 1, borderColor: '#333' },
   saveButton: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#4CAF50', borderRadius: 8, padding: 16, alignItems: 'center' },
   saveButtonText: { color: '#4CAF50', fontSize: 16 },

@@ -21,6 +21,10 @@ api_url = "http://127.0.0.1"
 enabled = true
 site_url = "http://127.0.0.1:3000"
 
+[functions.passkey-register]
+# New sb_publishable_ keys not compatible with Edge JWT verification - verify inside function
+verify_jwt = false
+
 [functions.passkey-auth]
 # Allow unauthenticated access - this endpoint validates via credential_id, not JWT
 verify_jwt = false

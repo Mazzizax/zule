@@ -1,96 +1,105 @@
 import { Passkey } from 'react-native-passkey';
-import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
 
 const CREDENTIAL_ID_KEY = 'gatekeeper_passkey_credential_id';
+const GATEKEEPER_URL = process.env.EXPO_PUBLIC_GATEKEEPER_URL;
+const GATEKEEPER_KEY = process.env.EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY || '';
 
 /**
- * Gatekeeper Production-Grade Passkey Manager
+ * Convert standard base64 to base64url
+ * react-native-passkey returns standard base64, WebAuthn expects base64url
  */
-
-// Robust Base64URL implementation for React Native (No btoa/TextEncoder needed)
-const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-function toBase64URL(bytes: Uint8Array): string {
-  let base64 = '';
-  const len = bytes.length;
-  for (let i = 0; i < len; i += 3) {
-    base64 += chars[bytes[i] >> 2];
-    base64 += chars[((bytes[i] & 3) << 4) | (bytes[i + 1] >> 4)];
-    base64 += chars[((bytes[i + 1] & 15) << 2) | (bytes[i + 2] >> 6)];
-    base64 += chars[bytes[i + 2] & 63];
-  }
-  
-  // Clean up padding and convert to URL-safe
+function base64ToBase64url(base64: string): string {
   return base64
-    .substring(0, Math.ceil((len * 8) / 6))
     .replace(/\+/g, '-')
-    .replace(/\//g, '_');
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
 }
 
-function stringToUint8Array(str: string): Uint8Array {
-  const arr = new Uint8Array(str.length);
-  for (let i = 0; i < str.length; i++) arr[i] = str.charCodeAt(i);
-  return arr;
-}
-
+/**
+ * Register a new passkey for the authenticated user
+ * Uses @simplewebauthn-compatible flow:
+ * 1. GET registration options from server (includes server-generated challenge)
+ * 2. Call device passkey API with those options
+ * 3. POST the response in RegistrationResponseJSON format
+ */
 export async function registerPasskey(email: string): Promise<{ success: boolean; error?: string }> {
   try {
     const isSupported = await Passkey.isSupported();
-    if (!isSupported) return { success: false, error: 'Passkeys not supported' };
+    if (!isSupported) return { success: false, error: 'Passkeys not supported on this device' };
 
-    const challenge = toBase64URL(Crypto.getRandomBytes(32));
+    // Get authenticated user and session
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    // Log full auth token
     const { data: { session } } = await supabase.auth.getSession();
-    console.log('[Passkey] Full auth token:', session?.access_token);
+    if (!session) return { success: false, error: 'No active session' };
 
-    const rpId = 'gatekeeper-nine.vercel.app';
-
-    const request = {
-      challenge,
-      rp: { name: 'Gatekeeper', id: rpId },
-      user: {
-        id: toBase64URL(stringToUint8Array(user.id)),
-        name: email,
-        displayName: email,
+    // 1. GET registration options from server
+    console.log('[Passkey] Getting registration options from server...');
+    const optionsUrl = `${GATEKEEPER_URL}/functions/v1/passkey-register?action=options`;
+    const optionsResponse = await fetch(optionsUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': GATEKEEPER_KEY,
       },
-      pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
-      authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'discouraged' },
-    };
+    });
 
-    console.log('[Passkey] Full request:', JSON.stringify(request, null, 2));
-    console.log('[Passkey] User ID (raw):', user.id);
-    console.log('[Passkey] User ID (encoded):', toBase64URL(stringToUint8Array(user.id)));
+    if (!optionsResponse.ok) {
+      const errorText = await optionsResponse.text();
+      console.error('[Passkey] Failed to get options:', optionsResponse.status, errorText);
+      throw new Error(`Failed to get registration options: ${errorText}`);
+    }
 
-    const credential = await Passkey.create(request);
-    if (!credential) return { success: false, error: 'Cancelled' };
+    const { options, challenge_key } = await optionsResponse.json();
+    console.log('[Passkey] Got registration options, challenge_key:', challenge_key);
+
+    // 2. Call device passkey API with server-provided options
+    console.log('[Passkey] Creating passkey with device...');
+    const credential = await Passkey.create({
+      challenge: options.challenge,
+      rp: options.rp,
+      user: options.user,
+      pubKeyCredParams: options.pubKeyCredParams,
+      authenticatorSelection: options.authenticatorSelection,
+      timeout: options.timeout,
+      excludeCredentials: options.excludeCredentials || [],
+      attestation: options.attestation || 'none',
+    });
+
+    if (!credential) return { success: false, error: 'Passkey creation cancelled' };
 
     // Save credential_id locally for future authentication
     await SecureStore.setItemAsync(CREDENTIAL_ID_KEY, credential.id);
     console.log('[Passkey] Saved credential_id locally:', credential.id);
 
-    // Use fetch directly to have full control over headers
-    const functionUrl = `${process.env.EXPO_PUBLIC_GATEKEEPER_URL}/functions/v1/passkey-register`;
-    console.log('[Passkey] Calling passkey-register at:', functionUrl);
-
-    // Send attestation_object to server - the server extracts the public key from it
-    // (react-native-passkey does not provide the public key directly)
-    const registerResponse = await fetch(functionUrl, {
+    // 3. POST the response in RegistrationResponseJSON format
+    console.log('[Passkey] Sending registration response to server...');
+    const registerUrl = `${GATEKEEPER_URL}/functions/v1/passkey-register`;
+    const registerResponse = await fetch(registerUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${session?.access_token}`,
-        'apikey': process.env.EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY || '',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': GATEKEEPER_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        credential_id: credential.id,
-        attestation_object: credential.response.attestationObject,
+        challenge_key: challenge_key,
+        response: {
+          id: credential.id,
+          rawId: credential.id,
+          type: 'public-key',
+          response: {
+            clientDataJSON: base64ToBase64url(credential.response.clientDataJSON),
+            attestationObject: base64ToBase64url(credential.response.attestationObject),
+            transports: ['internal'],
+          },
+          clientExtensionResults: {},
+        },
         device_name: `${Platform.OS} - Device Key`,
-        authenticator_type: 'platform',
       }),
     });
 
@@ -100,9 +109,7 @@ export async function registerPasskey(email: string): Promise<{ success: boolean
       throw new Error(`Registration failed: ${errorText}`);
     }
 
-    const serverError = null;
-
-    if (serverError) throw serverError;
+    console.log('[Passkey] Registration successful');
     return { success: true };
   } catch (error: any) {
     console.error('[Passkey] Registration error:', error);
@@ -110,6 +117,13 @@ export async function registerPasskey(email: string): Promise<{ success: boolean
   }
 }
 
+/**
+ * Authenticate with a registered passkey
+ * Uses @simplewebauthn-compatible flow:
+ * 1. GET authentication challenge from server
+ * 2. Call device passkey API to sign the challenge
+ * 3. POST the response in AuthenticationResponseJSON format
+ */
 export async function authenticateWithPasskey(): Promise<{ success: boolean; error?: string }> {
   try {
     // Get stored credential_id
@@ -120,13 +134,12 @@ export async function authenticateWithPasskey(): Promise<{ success: boolean; err
 
     console.log('[Passkey] Using stored credential_id:', credentialId);
 
-    // Request challenge from server
-    const functionUrl = `${process.env.EXPO_PUBLIC_GATEKEEPER_URL}/functions/v1/passkey-auth?credential_id=${encodeURIComponent(credentialId)}`;
-    const challengeResponse = await fetch(functionUrl, {
+    // 1. GET authentication challenge from server
+    const challengeUrl = `${GATEKEEPER_URL}/functions/v1/passkey-auth?credential_id=${encodeURIComponent(credentialId)}`;
+    const challengeResponse = await fetch(challengeUrl, {
       method: 'GET',
       headers: {
-        'apikey': process.env.EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY || '',
-        'Content-Type': 'application/json',
+        'apikey': GATEKEEPER_KEY,
       },
     });
 
@@ -136,33 +149,45 @@ export async function authenticateWithPasskey(): Promise<{ success: boolean; err
     }
 
     const challengeData = await challengeResponse.json();
+    console.log('[Passkey] Got challenge, challenge_key:', challengeData.challenge_key);
 
-    // Prompt for fingerprint and get signed assertion
-    console.log('[Passkey] Requesting assertion with challenge:', challengeData.challenge);
+    // 2. Call device passkey API to sign the challenge
+    console.log('[Passkey] Requesting assertion from device...');
     const assertion = await Passkey.get({
       challenge: challengeData.challenge,
-      rpId: 'gatekeeper-nine.vercel.app',
+      rpId: challengeData.rp_id || 'gatekeeper-nine.vercel.app',
       userVerification: 'preferred',
       allowCredentials: [{ id: credentialId, type: 'public-key' }],
     });
-    console.log('[Passkey] Got assertion:', assertion ? 'yes' : 'no');
 
-    if (!assertion) return { success: false, error: 'Cancelled' };
+    if (!assertion) return { success: false, error: 'Authentication cancelled' };
+    console.log('[Passkey] Got assertion from device');
 
-    // Verify with server
-    const verifyUrl = `${process.env.EXPO_PUBLIC_GATEKEEPER_URL}/functions/v1/passkey-auth`;
+    // 3. POST the response in AuthenticationResponseJSON format
+    const verifyUrl = `${GATEKEEPER_URL}/functions/v1/passkey-auth`;
     const verifyResponse = await fetch(verifyUrl, {
       method: 'POST',
       headers: {
-        'apikey': process.env.EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY || '',
+        'apikey': GATEKEEPER_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         challenge_key: challengeData.challenge_key,
-        credential_id: assertion.id,
-        authenticator_data: assertion.response.authenticatorData,
-        client_data_json: assertion.response.clientDataJSON,
-        signature: assertion.response.signature,
+        response: {
+          id: assertion.id,
+          rawId: assertion.id,
+          type: 'public-key',
+          response: {
+            clientDataJSON: base64ToBase64url(assertion.response.clientDataJSON),
+            authenticatorData: base64ToBase64url(assertion.response.authenticatorData),
+            signature: base64ToBase64url(assertion.response.signature),
+            userHandle: assertion.response.userHandle
+              ? base64ToBase64url(assertion.response.userHandle)
+              : undefined,
+          },
+          clientExtensionResults: {},
+          authenticatorAttachment: 'platform',
+        },
       }),
     });
 
@@ -174,16 +199,14 @@ export async function authenticateWithPasskey(): Promise<{ success: boolean; err
     const authData = await verifyResponse.json();
     console.log('[Passkey] Auth successful, user_id:', authData?.user_id);
 
-    // ------------------------------------------------------------------
     // Call mint-session to get Supabase tokens
-    // ------------------------------------------------------------------
-    const mintUrl = `${process.env.EXPO_PUBLIC_GATEKEEPER_URL}/functions/v1/mint-session`;
+    const mintUrl = `${GATEKEEPER_URL}/functions/v1/mint-session`;
     console.log('[Passkey] Calling mint-session...');
 
     const mintResponse = await fetch(mintUrl, {
       method: 'POST',
       headers: {
-        'apikey': process.env.EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY || '',
+        'apikey': GATEKEEPER_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -218,13 +241,17 @@ export async function authenticateWithPasskey(): Promise<{ success: boolean; err
   }
 }
 
-// Check if device has a registered passkey
+/**
+ * Check if device has a registered passkey
+ */
 export async function hasStoredPasskey(): Promise<boolean> {
   const credentialId = await SecureStore.getItemAsync(CREDENTIAL_ID_KEY);
   return !!credentialId;
 }
 
-// Clear stored passkey (for logout or reset)
+/**
+ * Clear stored passkey (for logout or reset)
+ */
 export async function clearStoredPasskey(): Promise<void> {
   await SecureStore.deleteItemAsync(CREDENTIAL_ID_KEY);
 }
