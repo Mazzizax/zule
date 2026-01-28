@@ -329,17 +329,45 @@ async function handleVerifyAssertion(
 
   // Get user's trusted client origins (for Dawg Tag, etc.)
   let allowedOrigins = [...EXPECTED_ORIGINS]
+  let originsDebug = 'not fetched'
   try {
-    const { data: userOrigins } = await supabase.rpc('get_user_trusted_origins', {
+    // First check if table has ANY data
+    const { data: allOrigins, count } = await supabase
+      .from('trusted_client_origins')
+      .select('user_id, origin, is_active', { count: 'exact' })
+      .limit(5)
+
+    originsDebug = `table_count=${count}, user=${credential.user_id.substring(0,8)}`
+    console.log('[PASSKEY-AUTH] All origins in table:', allOrigins)
+
+    // Then get this user's origins
+    const { data: userOrigins, error: originsError } = await supabase.rpc('get_user_trusted_origins', {
       p_user_id: credential.user_id,
     })
-    if (userOrigins && Array.isArray(userOrigins)) {
+    originsDebug += `, rpc_result=${JSON.stringify(userOrigins)}`
+    if (originsError) {
+      console.log('[PASSKEY-AUTH] RPC error:', originsError)
+    } else if (userOrigins && Array.isArray(userOrigins)) {
       allowedOrigins = [...allowedOrigins, ...userOrigins]
-      console.log('[PASSKEY-AUTH] Including user trusted origins:', userOrigins.length)
+      console.log('[PASSKEY-AUTH] Including user trusted origins:', userOrigins.length, userOrigins)
     }
   } catch (originsError) {
-    console.log('[PASSKEY-AUTH] Could not fetch user origins (table may not exist yet):', originsError)
-    // Continue with default origins only
+    originsDebug = `exception: ${originsError}`
+    console.log('[PASSKEY-AUTH] Could not fetch user origins:', originsError)
+  }
+
+  // Decode clientDataJSON to see the actual origin being sent
+  let receivedOrigin = 'unknown'
+  try {
+    const clientDataJSON = authResponse.response?.clientDataJSON
+    if (clientDataJSON) {
+      const decoded = JSON.parse(new TextDecoder().decode(base64urlToBytes(clientDataJSON)))
+      receivedOrigin = decoded.origin || 'not found'
+      console.log('[PASSKEY-AUTH] Received origin from client:', receivedOrigin)
+      console.log('[PASSKEY-AUTH] Allowed origins:', JSON.stringify(allowedOrigins))
+    }
+  } catch (decodeErr) {
+    console.log('[PASSKEY-AUTH] Could not decode clientDataJSON:', decodeErr)
   }
 
   // Verify the assertion using @simplewebauthn/server
@@ -383,17 +411,21 @@ async function handleVerifyAssertion(
     console.log('[PASSKEY-AUTH] Signature verified successfully')
   } catch (verifyError) {
     console.error('[PASSKEY-AUTH] Verification exception:', verifyError)
+    console.error('[PASSKEY-AUTH] Received origin:', receivedOrigin)
+    console.error('[PASSKEY-AUTH] Allowed origins:', JSON.stringify(allowedOrigins))
 
     await supabase.from('audit_logs').insert({
       user_id: credential.user_id,
       action: 'passkey_auth_failed',
       action_category: 'auth',
       ip_address: clientIp,
-      metadata: { reason: 'verification_exception', error: String(verifyError), credential_id: credentialId.substring(0, 16) },
+      metadata: { reason: 'verification_exception', error: String(verifyError), credential_id: credentialId.substring(0, 16), received_origin: receivedOrigin },
       success: false,
     })
 
-    return errorResponse('Biometric verification failed', 401, origin)
+    // Include origin info in error for debugging
+    const isInList = allowedOrigins.includes(receivedOrigin)
+    return errorResponse(`InList: ${isInList}, Count: ${allowedOrigins.length}, RPC: ${originsDebug.substring(0, 100)}`, 401, origin)
   }
 
   // Update counter (replay protection handled by simplewebauthn)
