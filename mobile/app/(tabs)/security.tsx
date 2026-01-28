@@ -233,16 +233,10 @@ export default function SecurityScreen() {
       const { challenge } = await response.json();
 
       // Open Dawg Tag with pairing challenge
+      // Note: canOpenURL is unreliable on Android 11+ without manifest queries declaration
+      // Just try to open directly and let it fail if Dawg Tag isn't installed
       const pairingUrl = `dawgtag://pair?challenge=${encodeURIComponent(challenge)}`;
-
-      const canOpen = await Linking.canOpenURL(pairingUrl);
-      if (!canOpen) {
-        Alert.alert(
-          'Dawg Tag Not Installed',
-          'Please install Dawg Tag first, then try pairing again.'
-        );
-        return;
-      }
+      console.log('[SECURITY] Opening Dawg Tag with URL:', pairingUrl);
 
       await Linking.openURL(pairingUrl);
       Alert.alert(
