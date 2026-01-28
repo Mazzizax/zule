@@ -21,6 +21,7 @@ interface PasskeyInfo {
 }
 
 export default function SecurityScreen() {
+  console.log('[SECURITY] ====== SECURITY SCREEN LOADED - PAIRING CODE PRESENT ======');
   const { user } = useAuth();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -193,9 +194,12 @@ export default function SecurityScreen() {
   };
 
   const handlePairDawgTag = async () => {
+    console.log('[SECURITY] ====== PAIR DAWG TAG PRESSED ======');
     setPairingDawgTag(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('[SECURITY] Session exists:', !!session?.access_token);
+
       if (!session?.access_token) {
         Alert.alert('Error', 'Please sign in first');
         return;
@@ -203,6 +207,8 @@ export default function SecurityScreen() {
 
       // Create pairing challenge
       const functionUrl = `${process.env.EXPO_PUBLIC_GATEKEEPER_URL}/functions/v1/pair-client`;
+      console.log('[SECURITY] Calling:', functionUrl);
+      console.log('[SECURITY] Has apikey:', !!process.env.EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY);
       const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
@@ -217,8 +223,10 @@ export default function SecurityScreen() {
         }),
       });
 
+      console.log('[SECURITY] Response status:', response.status);
       if (!response.ok) {
         const errorText = await response.text();
+        console.error('[SECURITY] Error response:', errorText);
         throw new Error(errorText);
       }
 
