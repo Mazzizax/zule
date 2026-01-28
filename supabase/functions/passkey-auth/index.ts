@@ -327,6 +327,21 @@ async function handleVerifyAssertion(
     return errorResponse('Authentication failed', 401, origin)
   }
 
+  // Get user's trusted client origins (for Dawg Tag, etc.)
+  let allowedOrigins = [...EXPECTED_ORIGINS]
+  try {
+    const { data: userOrigins } = await supabase.rpc('get_user_trusted_origins', {
+      p_user_id: credential.user_id,
+    })
+    if (userOrigins && Array.isArray(userOrigins)) {
+      allowedOrigins = [...allowedOrigins, ...userOrigins]
+      console.log('[PASSKEY-AUTH] Including user trusted origins:', userOrigins.length)
+    }
+  } catch (originsError) {
+    console.log('[PASSKEY-AUTH] Could not fetch user origins (table may not exist yet):', originsError)
+    // Continue with default origins only
+  }
+
   // Verify the assertion using @simplewebauthn/server
   let verification
   try {
@@ -341,7 +356,7 @@ async function handleVerifyAssertion(
     verification = await verifyAuthenticationResponse({
       response: authResponse as AuthenticationResponseJSON,
       expectedChallenge: storedChallenge.challenge,
-      expectedOrigin: EXPECTED_ORIGINS,
+      expectedOrigin: allowedOrigins,
       expectedRPID: RP_ID,
       credential: {
         id: credentialId,

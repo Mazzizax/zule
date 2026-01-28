@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  Linking,
 } from 'react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { supabase } from '../../src/lib/supabase';
@@ -30,6 +31,7 @@ export default function SecurityScreen() {
   const [linkingDevice, setLinkingDevice] = useState(false);
   const [clearingPasskey, setClearingPasskey] = useState(false);
   const [hasLocalPasskey, setHasLocalPasskey] = useState(false);
+  const [pairingDawgTag, setPairingDawgTag] = useState(false);
 
   useEffect(() => {
     loadPasskeys();
@@ -190,6 +192,62 @@ export default function SecurityScreen() {
     }
   };
 
+  const handlePairDawgTag = async () => {
+    setPairingDawgTag(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        Alert.alert('Error', 'Please sign in first');
+        return;
+      }
+
+      // Create pairing challenge
+      const functionUrl = `${process.env.EXPO_PUBLIC_GATEKEEPER_URL}/functions/v1/pair-client`;
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': process.env.EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY || '',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'create_challenge',
+          client_app_id: 'dawg-tag',
+          client_app_name: 'Dawg Tag',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+
+      const { challenge } = await response.json();
+
+      // Open Dawg Tag with pairing challenge
+      const pairingUrl = `dawgtag://pair?challenge=${encodeURIComponent(challenge)}`;
+
+      const canOpen = await Linking.canOpenURL(pairingUrl);
+      if (!canOpen) {
+        Alert.alert(
+          'Dawg Tag Not Installed',
+          'Please install Dawg Tag first, then try pairing again.'
+        );
+        return;
+      }
+
+      await Linking.openURL(pairingUrl);
+      Alert.alert(
+        'Pairing Started',
+        'Complete the pairing in Dawg Tag. Once done, you can use fingerprint login from Dawg Tag.'
+      );
+    } catch (err: any) {
+      Alert.alert('Pairing Error', err.message);
+    } finally {
+      setPairingDawgTag(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.card}>
@@ -232,6 +290,25 @@ export default function SecurityScreen() {
             {clearingPasskey ? <ActivityIndicator color="#ff6b6b" /> : <Text style={styles.clearButtonText}>Clear Stored Passkey</Text>}
           </TouchableOpacity>
         )}
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Paired Apps</Text>
+        <Text style={styles.description}>
+          Pair Dawg Tag to enable fingerprint login from your privacy wallet.
+        </Text>
+
+        <TouchableOpacity
+          style={[styles.linkButton, pairingDawgTag && styles.buttonDisabled]}
+          onPress={handlePairDawgTag}
+          disabled={pairingDawgTag}
+        >
+          {pairingDawgTag ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.linkButtonText}>Pair Dawg Tag</Text>
+          )}
+        </TouchableOpacity>
       </View>
 
       <View style={styles.card}>
