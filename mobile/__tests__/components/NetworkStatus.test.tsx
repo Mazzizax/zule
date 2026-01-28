@@ -40,7 +40,7 @@ describe('NetworkStatusBanner', () => {
       // Simulate connected state
       if (listenerCallback) {
         act(() => {
-          listenerCallback({ isConnected: true });
+          listenerCallback!({ isConnected: true });
         });
       }
 
@@ -57,7 +57,7 @@ describe('NetworkStatusBanner', () => {
       // Simulate disconnected state
       if (listenerCallback) {
         act(() => {
-          listenerCallback({ isConnected: false });
+          listenerCallback!({ isConnected: false });
         });
       }
 
@@ -74,7 +74,7 @@ describe('NetworkStatusBanner', () => {
       // Go offline
       if (listenerCallback) {
         act(() => {
-          listenerCallback({ isConnected: false });
+          listenerCallback!({ isConnected: false });
         });
       }
 
@@ -85,7 +85,7 @@ describe('NetworkStatusBanner', () => {
       // Go online
       if (listenerCallback) {
         act(() => {
-          listenerCallback({ isConnected: true });
+          listenerCallback!({ isConnected: true });
         });
       }
 
@@ -143,7 +143,7 @@ describe('useNetworkStatus', () => {
 
     if (listenerCallback) {
       act(() => {
-        listenerCallback({ isConnected: false, isInternetReachable: false });
+        listenerCallback!({ isConnected: false, isInternetReachable: false });
       });
     }
 
@@ -157,7 +157,7 @@ describe('useNetworkStatus', () => {
 
     if (listenerCallback) {
       act(() => {
-        listenerCallback({ isConnected: true, isInternetReachable: false });
+        listenerCallback!({ isConnected: true, isInternetReachable: false });
       });
     }
 
@@ -172,7 +172,7 @@ describe('useNetworkStatus', () => {
 
     if (listenerCallback) {
       act(() => {
-        listenerCallback({ isConnected: null, isInternetReachable: null });
+        listenerCallback!({ isConnected: null, isInternetReachable: null });
       });
     }
 

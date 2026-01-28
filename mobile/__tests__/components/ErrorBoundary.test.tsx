@@ -121,7 +121,7 @@ describe('ErrorBoundary', () => {
   describe('Error message display', () => {
     // Test with __DEV__ = true (default in tests)
     it('shows error message in development mode', () => {
-      const originalDev = global.__DEV__;
+      const originalDev = (global as any).__DEV__;
       (global as any).__DEV__ = true;
 
       const { getByText } = render(

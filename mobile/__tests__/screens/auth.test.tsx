@@ -32,7 +32,7 @@ jest.mock('../../src/lib/linking', () => ({
 
 jest.mock('../../src/lib/security', () => ({
   authenticateWithBiometrics: jest.fn(),
-  getBiometricStatus: jest.fn(),
+  checkBiometricStatus: jest.fn(),
 }));
 
 import AuthScreen from '../../app/auth';
@@ -41,7 +41,7 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { supabase } from '../../src/lib/supabase';
 import { issueAttestation, buildCallbackUrl, buildCancelledCallbackUrl } from '../../src/lib/attestation';
 import { isValidCallbackUrl, openUrl } from '../../src/lib/linking';
-import { authenticateWithBiometrics, getBiometricStatus } from '../../src/lib/security';
+import { authenticateWithBiometrics, checkBiometricStatus } from '../../src/lib/security';
 
 describe('Auth Screen', () => {
   const mockSession = {
@@ -62,7 +62,7 @@ describe('Auth Screen', () => {
     });
 
     (isValidCallbackUrl as jest.Mock).mockReturnValue(true);
-    (getBiometricStatus as jest.Mock).mockResolvedValue({
+    (checkBiometricStatus as jest.Mock).mockResolvedValue({
       hasHardware: false,
       isEnrolled: false,
     });
@@ -216,7 +216,7 @@ describe('Auth Screen', () => {
         session: mockSession,
         loading: false,
       });
-      (getBiometricStatus as jest.Mock).mockResolvedValue({
+      (checkBiometricStatus as jest.Mock).mockResolvedValue({
         hasHardware: true,
         isEnrolled: true,
       });

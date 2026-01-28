@@ -15,7 +15,7 @@ import { supabase } from '../src/lib/supabase';
 import { useAuth } from '../src/contexts/AuthContext';
 import { issueAttestation, buildCallbackUrl, buildCancelledCallbackUrl } from '../src/lib/attestation';
 import { isValidCallbackUrl, openUrl } from '../src/lib/linking';
-import { authenticateWithBiometrics, getBiometricStatus } from '../src/lib/security';
+import { authenticateWithBiometrics, checkBiometricStatus } from '../src/lib/security';
 
 /**
  * Auth Screen for Dawg Tag Integration
@@ -38,7 +38,7 @@ export default function AuthScreen() {
 
   useEffect(() => {
     async function checkBiometrics() {
-      const status = await getBiometricStatus();
+      const status = await checkBiometricStatus();
       setBiometricsAvailable(status.hasHardware && status.isEnrolled);
     }
     checkBiometrics();
