@@ -75,9 +75,9 @@ BEGIN
     RETURN QUERY
     SELECT
         up.id as user_id,
-        au.email,
+        au.email::TEXT,
         up.admin_level,
-        up.display_name
+        up.display_name::TEXT
     FROM user_profiles up
     JOIN auth.users au ON au.id = up.id
     WHERE up.id = p_user_id
