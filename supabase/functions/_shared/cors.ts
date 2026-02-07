@@ -1,5 +1,5 @@
 /**
- * CORS Configuration for Zule (formerly Gatekeeper)
+ * CORS Configuration for Zule (formerly Zule)
  *
  * Centralized CORS handling for all Zule Edge Functions.
  * Only allows requests from approved origins.
@@ -16,8 +16,8 @@ const ALLOWED_ORIGINS = [
   'https://auth.mazzizax.dev',             // Ghozerauth production
 
   // Production - Legacy (keep during transition)
-  'https://gatekeeper-nine.vercel.app',    // Gatekeeper web production (legacy)
-  'https://xenon-engine-web.vercel.app',   // Goals web production (legacy)
+  'https://zule.mazzizax.net',    // Zule web production (legacy)
+  'https://goals.mazzizax.com',   // Goals web production (legacy)
 
   // Vinzrik Mobile (Expo)
   'exp://localhost:8081',                  // Expo Go development

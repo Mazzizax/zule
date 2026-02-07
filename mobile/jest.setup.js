@@ -1,6 +1,6 @@
 // Set environment variables for tests
-process.env.EXPO_PUBLIC_GATEKEEPER_URL = 'https://test.supabase.co';
-process.env.EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY = 'test-key';
+process.env.EXPO_PUBLIC_ZULE_URL = 'https://test.supabase.co';
+process.env.EXPO_PUBLIC_ZULE_PUBLISHABLE_KEY = 'test-key';
 
 // Mock expo module to avoid winter runtime issues
 jest.mock('expo', () => ({}));

@@ -3,11 +3,11 @@ import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 
 /**
- * AuthContext for Gatekeeper Web App
+ * AuthContext for Zule Web App
  *
- * NOTE: Ghost ID functionality has been moved to Dawg Tag.
+ * NOTE: Ghost ID functionality has been moved to Vinzrik.
  * This context handles pure authentication only.
- * Gatekeeper knows WHO you are (identity), Dawg Tag handles
+ * Zule knows WHO you are (identity), Vinzrik handles
  * the ghost_id that apps see.
  */
 

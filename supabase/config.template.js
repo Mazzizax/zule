@@ -18,7 +18,7 @@ const CONFIG = {
   // - User profiles and billing
   // - Passkey/WebAuthn credentials
 
-  GATEKEEPER_URL: 'https://YOUR_GATEKEEPER_PROJECT_REF.supabase.co',
+  ZULE_URL: 'https://YOUR_GATEKEEPER_PROJECT_REF.supabase.co',
   GATEKEEPER_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.YOUR_GATEKEEPER_ANON_KEY...',
 
   // ============================================================================

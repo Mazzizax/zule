@@ -78,7 +78,7 @@ describe('Dashboard Screen', () => {
 
     it('shows privacy description', () => {
       render(<DashboardScreen />);
-      expect(screen.getByText(/Gatekeeper knows your identity/)).toBeTruthy();
+      expect(screen.getByText(/Zule knows your identity/)).toBeTruthy();
       expect(screen.getByText(/ghost_id/)).toBeTruthy();
     });
 

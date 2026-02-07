@@ -245,7 +245,7 @@ describe('security.ts', () => {
       await authenticateWithBiometrics();
 
       expect(LocalAuthentication.authenticateAsync).toHaveBeenCalledWith({
-        promptMessage: 'Log in to Gatekeeper',
+        promptMessage: 'Log in to Zule',
         fallbackLabel: 'Use Password',
         disableDeviceFallback: false,
       });

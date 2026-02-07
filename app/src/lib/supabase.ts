@@ -1,28 +1,28 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 /**
- * Supabase Client Configuration for Gatekeeper Test App
+ * Supabase Client Configuration for Zule Test App
  *
- * This test app connects to the Gatekeeper Supabase project
+ * This test app connects to the Zule Supabase project
  * for authentication testing purposes.
  */
 
-// Gatekeeper project credentials (from environment)
-const gatekeeperUrl = import.meta.env.GATEKEEPER_URL;
-const gatekeeperPublishableKey = import.meta.env.GATEKEEPER_PUBLISHABLE_KEY;
+// Zule project credentials (from environment)
+const zuleUrl = import.meta.env.ZULE_URL;
+const gatekeeperPublishableKey = import.meta.env.ZULE_PUBLISHABLE_KEY;
 
-if (!gatekeeperUrl || !gatekeeperPublishableKey) {
+if (!zuleUrl || !gatekeeperPublishableKey) {
   console.warn(
-    'Gatekeeper configuration missing. Create .env file with GATEKEEPER_URL and GATEKEEPER_PUBLISHABLE_KEY'
+    'Zule configuration missing. Create .env file with ZULE_URL and ZULE_PUBLISHABLE_KEY'
   );
 }
 
 /**
- * Gatekeeper Supabase client
+ * Zule Supabase client
  * Used for: Authentication, user management
  */
 export const supabase: SupabaseClient = createClient(
-  gatekeeperUrl || '',
+  zuleUrl || '',
   gatekeeperPublishableKey || '',
   {
     auth: {

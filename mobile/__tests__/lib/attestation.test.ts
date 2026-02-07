@@ -107,13 +107,13 @@ describe('attestation.ts', () => {
 
   describe('buildCallbackUrl()', () => {
     it('appends attestation and status to callback URL', () => {
-      const result = buildCallbackUrl('dawgtag://callback', 'jwt-token-123');
+      const result = buildCallbackUrl('vinzrik://callback', 'jwt-token-123');
 
-      expect(result).toBe('dawgtag://callback?attestation=jwt-token-123&status=success');
+      expect(result).toBe('vinzrik://callback?attestation=jwt-token-123&status=success');
     });
 
     it('preserves existing query parameters', () => {
-      const result = buildCallbackUrl('dawgtag://callback?existing=param', 'jwt-token');
+      const result = buildCallbackUrl('vinzrik://callback?existing=param', 'jwt-token');
 
       expect(result).toContain('existing=param');
       expect(result).toContain('attestation=jwt-token');
@@ -128,35 +128,35 @@ describe('attestation.ts', () => {
 
     it('URL-encodes special characters in attestation', () => {
       const attestationWithSpecialChars = 'token+with/special=chars';
-      const result = buildCallbackUrl('dawgtag://callback', attestationWithSpecialChars);
+      const result = buildCallbackUrl('vinzrik://callback', attestationWithSpecialChars);
 
       // URL encoding converts + to %2B, / to %2F, = to %3D
       expect(result).toContain('attestation=token%2Bwith%2Fspecial%3Dchars');
     });
 
     it('handles callback URL with path', () => {
-      const result = buildCallbackUrl('dawgtag://auth/success/complete', 'jwt-token');
+      const result = buildCallbackUrl('vinzrik://auth/success/complete', 'jwt-token');
 
-      expect(result).toBe('dawgtag://auth/success/complete?attestation=jwt-token&status=success');
+      expect(result).toBe('vinzrik://auth/success/complete?attestation=jwt-token&status=success');
     });
   });
 
   describe('buildCancelledCallbackUrl()', () => {
     it('appends cancelled status to callback URL', () => {
-      const result = buildCancelledCallbackUrl('dawgtag://callback');
+      const result = buildCancelledCallbackUrl('vinzrik://callback');
 
-      expect(result).toBe('dawgtag://callback?status=cancelled');
+      expect(result).toBe('vinzrik://callback?status=cancelled');
     });
 
     it('preserves existing query parameters', () => {
-      const result = buildCancelledCallbackUrl('dawgtag://callback?existing=param');
+      const result = buildCancelledCallbackUrl('vinzrik://callback?existing=param');
 
       expect(result).toContain('existing=param');
       expect(result).toContain('status=cancelled');
     });
 
     it('does not include attestation parameter', () => {
-      const result = buildCancelledCallbackUrl('dawgtag://callback');
+      const result = buildCancelledCallbackUrl('vinzrik://callback');
 
       expect(result).not.toContain('attestation');
     });

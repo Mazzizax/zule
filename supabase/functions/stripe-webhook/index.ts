@@ -2,7 +2,7 @@
  * GATEKEEPER: Stripe Webhook Handler
  *
  * Handles Stripe subscription events to update user tiers.
- * This endpoint knows user_id (Gatekeeper privilege).
+ * This endpoint knows user_id (Zule privilege).
  *
  * Supported events:
  * - customer.subscription.created

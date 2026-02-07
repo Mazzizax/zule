@@ -6,8 +6,8 @@
 
 import { supabase } from './supabase';
 
-// Gatekeeper edge function URL
-const GATEKEEPER_URL = import.meta.env.GATEKEEPER_URL;
+// Zule edge function URL
+const ZULE_URL = import.meta.env.ZULE_URL;
 
 /**
  * Check if WebAuthn is supported in this browser
@@ -103,7 +103,7 @@ export async function registerPasskey(
     const challenge = generateChallenge();
 
     const rpId = window.location.hostname;
-    const rpName = 'Gatekeeper';
+    const rpName = 'Zule';
 
     const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
       challenge: challenge,
@@ -158,8 +158,8 @@ export async function registerPasskey(
       ? 'platform'
       : 'cross-platform';
 
-    // Register with Gatekeeper
-    const registerResponse = await fetch(`${GATEKEEPER_URL}/functions/v1/passkey-register`, {
+    // Register with Zule
+    const registerResponse = await fetch(`${ZULE_URL}/functions/v1/passkey-register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -218,7 +218,7 @@ export async function authenticateWithPasskey(
 
     if (credentialId) {
       const challengeResponse = await fetch(
-        `${GATEKEEPER_URL}/functions/v1/passkey-auth?credential_id=${encodeURIComponent(credentialId)}`
+        `${ZULE_URL}/functions/v1/passkey-auth?credential_id=${encodeURIComponent(credentialId)}`
       );
 
       if (!challengeResponse.ok) {
@@ -262,7 +262,7 @@ export async function authenticateWithPasskey(
     if (!serverChallenge) {
       const credId = bufferToBase64url(credential.rawId);
       const challengeResponse = await fetch(
-        `${GATEKEEPER_URL}/functions/v1/passkey-auth?credential_id=${encodeURIComponent(credId)}`
+        `${ZULE_URL}/functions/v1/passkey-auth?credential_id=${encodeURIComponent(credId)}`
       );
 
       if (!challengeResponse.ok) {
@@ -278,7 +278,7 @@ export async function authenticateWithPasskey(
     }
 
     // Verify with server
-    const verifyResponse = await fetch(`${GATEKEEPER_URL}/functions/v1/passkey-auth`, {
+    const verifyResponse = await fetch(`${ZULE_URL}/functions/v1/passkey-auth`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -339,7 +339,7 @@ export async function listPasskeys(): Promise<{
       return { success: false, error: 'Not authenticated' };
     }
 
-    const response = await fetch(`${GATEKEEPER_URL}/functions/v1/passkey-register`, {
+    const response = await fetch(`${ZULE_URL}/functions/v1/passkey-register`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
@@ -367,7 +367,7 @@ export async function deletePasskey(passkeyId: string): Promise<{ success: boole
       return { success: false, error: 'Not authenticated' };
     }
 
-    const response = await fetch(`${GATEKEEPER_URL}/functions/v1/passkey-register`, {
+    const response = await fetch(`${ZULE_URL}/functions/v1/passkey-register`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

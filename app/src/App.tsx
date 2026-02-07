@@ -12,17 +12,17 @@ import Auth from './pages/Auth';
 import './styles.css';
 
 /**
- * Gatekeeper Web App
+ * Zule Web App
  *
  * Routes:
  * - / (Dashboard): Account overview, subscription status
  * - /profile: Edit display name, timezone, preferences
  * - /security: Password, sessions, passkey management
  * - /developer: Register and manage apps (for developers)
- * - /auth: Dawg Tag authentication endpoint (passkey auth with callback)
+ * - /auth: Vinzrik authentication endpoint (passkey auth with callback)
  *
  * NOTE: App connections page has been removed.
- * User app connections are now managed by Dawg Tag on-device.
+ * User app connections are now managed by Vinzrik on-device.
  */
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -84,7 +84,7 @@ function AppRoutes() {
         }
       />
 
-      {/* Auth route for Dawg Tag (no session required, uses passkey) */}
+      {/* Auth route for Vinzrik (no session required, uses passkey) */}
       <Route path="/auth" element={<Auth />} />
 
       {/* Protected routes with layout */}

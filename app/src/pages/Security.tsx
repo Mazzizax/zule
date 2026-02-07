@@ -288,8 +288,8 @@ export default function Security() {
         <h2>Ghost Identity</h2>
         <div className="info-note">
           <p>
-            Your ghost identity is managed by <strong>Dawg Tag</strong> on your device.
-            To reset your ghost identity or manage app connections, use the Dawg Tag app.
+            Your ghost identity is managed by <strong>Vinzrik</strong> on your device.
+            To reset your ghost identity or manage app connections, use the Vinzrik app.
           </p>
         </div>
       </div>

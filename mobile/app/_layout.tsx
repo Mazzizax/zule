@@ -5,7 +5,7 @@ import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { NetworkStatusBanner } from '../src/components/NetworkStatus';
 
 /**
- * Root Layout for Gatekeeper Mobile App
+ * Root Layout for Zule Mobile App
  *
  * Provides authentication context to all screens
  */
@@ -32,7 +32,7 @@ export default function RootLayout() {
         <Stack.Screen
           name="index"
           options={{
-            title: 'Gatekeeper',
+            title: 'Zule',
           }}
         />
         <Stack.Screen

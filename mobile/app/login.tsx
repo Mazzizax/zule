@@ -128,11 +128,11 @@ export default function LoginScreen() {
         </TouchableOpacity>
 
         <View style={styles.legalLinks}>
-          <TouchableOpacity onPress={() => Linking.openURL('https://gatekeeper-nine.vercel.app/terms')}>
+          <TouchableOpacity onPress={() => Linking.openURL('https://zule.mazzizax.net/terms')}>
             <Text style={styles.legalText}>Terms of Service</Text>
           </TouchableOpacity>
           <Text style={styles.legalSeparator}>|</Text>
-          <TouchableOpacity onPress={() => Linking.openURL('https://gatekeeper-nine.vercel.app/privacy')}>
+          <TouchableOpacity onPress={() => Linking.openURL('https://zule.mazzizax.net/privacy')}>
             <Text style={styles.legalText}>Privacy Policy</Text>
           </TouchableOpacity>
         </View>

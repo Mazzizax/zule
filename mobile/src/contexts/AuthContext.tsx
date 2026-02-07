@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 
 /**
- * AuthContext for Gatekeeper Mobile App
+ * AuthContext for Zule Mobile App
  */
 
 interface AuthContextType {

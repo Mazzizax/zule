@@ -5,14 +5,14 @@ import { SignJWT, importJWK, jwtVerify, createRemoteJWKSet } from "https://deno.
  * Issue Attestation Endpoint
  *
  * Purpose:
- * - Verify the user has a valid Gatekeeper session (biometric/password verified)
+ * - Verify the user has a valid Zule session (biometric/password verified)
  * - Issue a signed attestation proving "a valid user just authenticated"
  * - Returns NO user_id, NO email, NO identifying information
  *
  * The attestation only proves: "A legitimate, authenticated human is present right now."
  *
  * Environment variables required:
- * - SUPABASE_URL: Gatekeeper Supabase URL (auto-injected)
+ * - SUPABASE_URL: Zule Supabase URL (auto-injected)
  * - ATTESTATION_SIGNING_KEY: Key to sign attestations (ES256/P-256 JWK)
  *
  * JWT Verification:

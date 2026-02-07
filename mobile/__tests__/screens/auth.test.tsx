@@ -53,7 +53,7 @@ describe('Auth Screen', () => {
     jest.clearAllMocks();
 
     (useLocalSearchParams as jest.Mock).mockReturnValue({
-      callback: 'dawgtag://callback',
+      callback: 'vinzrik://callback',
     });
 
     (useAuth as jest.Mock).mockReturnValue({
@@ -118,7 +118,7 @@ describe('Auth Screen', () => {
       (issueAttestation as jest.Mock).mockResolvedValue({
         attestation: 'test-attestation',
       });
-      (buildCallbackUrl as jest.Mock).mockReturnValue('dawgtag://callback?attestation=test');
+      (buildCallbackUrl as jest.Mock).mockReturnValue('vinzrik://callback?attestation=test');
 
       render(<AuthScreen />);
 
@@ -146,7 +146,7 @@ describe('Auth Screen', () => {
       (issueAttestation as jest.Mock).mockResolvedValue({
         attestation: 'test-attestation',
       });
-      (buildCallbackUrl as jest.Mock).mockReturnValue('dawgtag://callback?attestation=test');
+      (buildCallbackUrl as jest.Mock).mockReturnValue('vinzrik://callback?attestation=test');
 
       render(<AuthScreen />);
 
@@ -171,7 +171,7 @@ describe('Auth Screen', () => {
       (issueAttestation as jest.Mock).mockResolvedValue({
         attestation: 'test-attestation',
       });
-      (buildCallbackUrl as jest.Mock).mockReturnValue('dawgtag://callback?attestation=test&status=success');
+      (buildCallbackUrl as jest.Mock).mockReturnValue('vinzrik://callback?attestation=test&status=success');
 
       render(<AuthScreen />);
 
@@ -184,7 +184,7 @@ describe('Auth Screen', () => {
       fireEvent.press(screen.getByText('Sign In'));
 
       await waitFor(() => {
-        expect(openUrl).toHaveBeenCalledWith('dawgtag://callback?attestation=test&status=success');
+        expect(openUrl).toHaveBeenCalledWith('vinzrik://callback?attestation=test&status=success');
       });
     });
 
@@ -243,7 +243,7 @@ describe('Auth Screen', () => {
       (issueAttestation as jest.Mock).mockResolvedValue({
         attestation: 'test-attestation',
       });
-      (buildCallbackUrl as jest.Mock).mockReturnValue('dawgtag://callback?attestation=test');
+      (buildCallbackUrl as jest.Mock).mockReturnValue('vinzrik://callback?attestation=test');
 
       render(<AuthScreen />);
 
@@ -254,7 +254,7 @@ describe('Auth Screen', () => {
       fireEvent.press(screen.getByText('Log in with Biometrics'));
 
       await waitFor(() => {
-        expect(authenticateWithBiometrics).toHaveBeenCalledWith('Log in to Dawg Tag');
+        expect(authenticateWithBiometrics).toHaveBeenCalledWith('Log in to Vinzrik');
       });
     });
 
@@ -307,7 +307,7 @@ describe('Auth Screen', () => {
     });
 
     it('opens cancelled callback URL when Cancel pressed', async () => {
-      (buildCancelledCallbackUrl as jest.Mock).mockReturnValue('dawgtag://callback?status=cancelled');
+      (buildCancelledCallbackUrl as jest.Mock).mockReturnValue('vinzrik://callback?status=cancelled');
 
       render(<AuthScreen />);
 
@@ -318,8 +318,8 @@ describe('Auth Screen', () => {
       fireEvent.press(screen.getByText('Cancel'));
 
       await waitFor(() => {
-        expect(buildCancelledCallbackUrl).toHaveBeenCalledWith('dawgtag://callback');
-        expect(openUrl).toHaveBeenCalledWith('dawgtag://callback?status=cancelled');
+        expect(buildCancelledCallbackUrl).toHaveBeenCalledWith('vinzrik://callback');
+        expect(openUrl).toHaveBeenCalledWith('vinzrik://callback?status=cancelled');
       });
     });
   });
@@ -333,7 +333,7 @@ describe('Auth Screen', () => {
       (issueAttestation as jest.Mock).mockResolvedValue({
         attestation: 'test-attestation',
       });
-      (buildCallbackUrl as jest.Mock).mockReturnValue('dawgtag://callback?attestation=test');
+      (buildCallbackUrl as jest.Mock).mockReturnValue('vinzrik://callback?attestation=test');
 
       render(<AuthScreen />);
 
@@ -346,7 +346,7 @@ describe('Auth Screen', () => {
       fireEvent.press(screen.getByText('Sign In'));
 
       await waitFor(() => {
-        expect(screen.getByText('Redirecting to Dawg Tag...')).toBeTruthy();
+        expect(screen.getByText('Redirecting to Vinzrik...')).toBeTruthy();
       });
     });
   });
@@ -356,8 +356,8 @@ describe('Auth Screen', () => {
       render(<AuthScreen />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Your credentials are verified by Gatekeeper/)).toBeTruthy();
-        expect(screen.getByText(/Your identity stays private with Dawg Tag/)).toBeTruthy();
+        expect(screen.getByText(/Your credentials are verified by Zule/)).toBeTruthy();
+        expect(screen.getByText(/Your identity stays private with Vinzrik/)).toBeTruthy();
       });
     });
   });

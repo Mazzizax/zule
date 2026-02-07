@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
 
-const GATEKEEPER_URL = process.env.EXPO_PUBLIC_GATEKEEPER_URL || 'https://test.supabase.co';
+const ZULE_URL = process.env.EXPO_PUBLIC_ZULE_URL || 'https://test.supabase.co';
 
 // Mock data
 const mockUser = {
@@ -22,7 +22,7 @@ const mockChallengeKey = 'challenge-key-123';
 
 export const handlers = [
   // Passkey Registration - GET options
-  http.get(`${GATEKEEPER_URL}/functions/v1/passkey-register`, ({ request }) => {
+  http.get(`${ZULE_URL}/functions/v1/passkey-register`, ({ request }) => {
     const url = new URL(request.url);
     const action = url.searchParams.get('action');
 
@@ -31,8 +31,8 @@ export const handlers = [
         options: {
           challenge: mockChallenge,
           rp: {
-            name: 'Gatekeeper',
-            id: 'gatekeeper-nine.vercel.app',
+            name: 'Zule',
+            id: 'zule.mazzizax.net',
           },
           user: {
             id: 'dXNlci1pZC1iYXNlNjQ',
@@ -59,7 +59,7 @@ export const handlers = [
   }),
 
   // Passkey Registration - POST
-  http.post(`${GATEKEEPER_URL}/functions/v1/passkey-register`, async ({ request }) => {
+  http.post(`${ZULE_URL}/functions/v1/passkey-register`, async ({ request }) => {
     const body = await request.json() as any;
 
     if (!body.challenge_key || !body.response) {
@@ -76,12 +76,12 @@ export const handlers = [
   }),
 
   // Passkey Registration - DELETE
-  http.delete(`${GATEKEEPER_URL}/functions/v1/passkey-register`, () => {
+  http.delete(`${ZULE_URL}/functions/v1/passkey-register`, () => {
     return HttpResponse.json({ success: true });
   }),
 
   // Passkey Authentication - GET challenge
-  http.get(`${GATEKEEPER_URL}/functions/v1/passkey-auth`, ({ request }) => {
+  http.get(`${ZULE_URL}/functions/v1/passkey-auth`, ({ request }) => {
     const url = new URL(request.url);
     const credentialId = url.searchParams.get('credential_id');
 
@@ -95,12 +95,12 @@ export const handlers = [
     return HttpResponse.json({
       challenge: mockChallenge,
       challenge_key: mockChallengeKey,
-      rp_id: 'gatekeeper-nine.vercel.app',
+      rp_id: 'zule.mazzizax.net',
     });
   }),
 
   // Passkey Authentication - POST verify
-  http.post(`${GATEKEEPER_URL}/functions/v1/passkey-auth`, async ({ request }) => {
+  http.post(`${ZULE_URL}/functions/v1/passkey-auth`, async ({ request }) => {
     const body = await request.json() as any;
 
     if (!body.challenge_key || !body.response) {
@@ -117,7 +117,7 @@ export const handlers = [
   }),
 
   // Mint Session
-  http.post(`${GATEKEEPER_URL}/functions/v1/mint-session`, async ({ request }) => {
+  http.post(`${ZULE_URL}/functions/v1/mint-session`, async ({ request }) => {
     const body = await request.json() as any;
 
     if (!body.verification_token || !body.user_id) {
@@ -134,7 +134,7 @@ export const handlers = [
   }),
 
   // Issue Attestation
-  http.post(`${GATEKEEPER_URL}/functions/v1/issue-attestation`, ({ request }) => {
+  http.post(`${ZULE_URL}/functions/v1/issue-attestation`, ({ request }) => {
     const authHeader = request.headers.get('Authorization');
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -151,7 +151,7 @@ export const handlers = [
   }),
 
   // Supabase Auth - Sign In
-  http.post(`${GATEKEEPER_URL}/auth/v1/token`, async ({ request }) => {
+  http.post(`${ZULE_URL}/auth/v1/token`, async ({ request }) => {
     const url = new URL(request.url);
     const grantType = url.searchParams.get('grant_type');
 
@@ -176,7 +176,7 @@ export const handlers = [
   }),
 
   // Supabase Auth - Sign Up
-  http.post(`${GATEKEEPER_URL}/auth/v1/signup`, async ({ request }) => {
+  http.post(`${ZULE_URL}/auth/v1/signup`, async ({ request }) => {
     const body = await request.json() as any;
 
     if (!body.email || !body.password) {
@@ -200,7 +200,7 @@ export const handlers = [
   }),
 
   // Supabase Auth - Get User
-  http.get(`${GATEKEEPER_URL}/auth/v1/user`, ({ request }) => {
+  http.get(`${ZULE_URL}/auth/v1/user`, ({ request }) => {
     const authHeader = request.headers.get('Authorization');
 
     if (!authHeader) {
@@ -214,12 +214,12 @@ export const handlers = [
   }),
 
   // Supabase Auth - Sign Out
-  http.post(`${GATEKEEPER_URL}/auth/v1/logout`, () => {
+  http.post(`${ZULE_URL}/auth/v1/logout`, () => {
     return HttpResponse.json({});
   }),
 
   // Supabase Database - User Profiles
-  http.get(`${GATEKEEPER_URL}/rest/v1/user_profiles`, ({ request }) => {
+  http.get(`${ZULE_URL}/rest/v1/user_profiles`, ({ request }) => {
     const url = new URL(request.url);
     const userId = url.searchParams.get('id');
 
@@ -234,12 +234,12 @@ export const handlers = [
     ]);
   }),
 
-  http.post(`${GATEKEEPER_URL}/rest/v1/user_profiles`, async ({ request }) => {
+  http.post(`${ZULE_URL}/rest/v1/user_profiles`, async ({ request }) => {
     const body = await request.json();
     return HttpResponse.json(body, { status: 201 });
   }),
 
-  http.patch(`${GATEKEEPER_URL}/rest/v1/user_profiles`, async ({ request }) => {
+  http.patch(`${ZULE_URL}/rest/v1/user_profiles`, async ({ request }) => {
     const body = await request.json();
     return HttpResponse.json(body);
   }),
@@ -251,21 +251,21 @@ export const errorHandlers = {
     return HttpResponse.error();
   }),
 
-  serverError: http.post(`${GATEKEEPER_URL}/functions/v1/passkey-register`, () => {
+  serverError: http.post(`${ZULE_URL}/functions/v1/passkey-register`, () => {
     return HttpResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }),
 
-  unauthorized: http.get(`${GATEKEEPER_URL}/functions/v1/passkey-register`, () => {
+  unauthorized: http.get(`${ZULE_URL}/functions/v1/passkey-register`, () => {
     return HttpResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }
     );
   }),
 
-  rateLimited: http.post(`${GATEKEEPER_URL}/functions/v1/passkey-auth`, () => {
+  rateLimited: http.post(`${ZULE_URL}/functions/v1/passkey-auth`, () => {
     return HttpResponse.json(
       { error: 'Too many requests' },
       { status: 429 }

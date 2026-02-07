@@ -1,13 +1,13 @@
 /**
  * App Register Endpoint
  *
- * PURPOSE: Allow developers to register their apps with Gatekeeper.
+ * PURPOSE: Allow developers to register their apps with Zule.
  * This is the DEVELOPER PORTAL functionality - not user authorization.
  *
  * When a developer registers an app:
  * 1. They get an app_id, shared_secret, and api_key
  * 2. Their app is stored in registered_apps table
- * 3. Users can later authorize this app via Dawg Tag
+ * 3. Users can later authorize this app via Vinzrik
  *
  * ENDPOINTS:
  * - GET: List apps owned by the authenticated developer

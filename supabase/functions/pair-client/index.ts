@@ -1,15 +1,15 @@
 /**
  * Pair Client Endpoint
  *
- * PURPOSE: Enable Dawg Tag (or other client apps) to register their APK
+ * PURPOSE: Enable Vinzrik (or other client apps) to register their APK
  * fingerprint so they can use passkey authentication.
  *
  * FLOW:
- * 1. User initiates pairing from Gatekeeper mobile (authenticated)
- * 2. Gatekeeper mobile calls POST /pair-client { action: 'create_challenge', client_app_id: 'dawg-tag' }
+ * 1. User initiates pairing from Zule mobile (authenticated)
+ * 2. Zule mobile calls POST /pair-client { action: 'create_challenge', client_app_id: 'vinzrik' }
  * 3. Returns a pairing challenge
- * 4. Gatekeeper mobile opens Dawg Tag via deep link with the challenge
- * 5. Dawg Tag collects its APK fingerprint and calls POST /pair-client
+ * 4. Zule mobile opens Vinzrik via deep link with the challenge
+ * 5. Vinzrik collects its APK fingerprint and calls POST /pair-client
  *    { action: 'complete_pairing', challenge: '...', origin: 'android:apk-key-hash:...' }
  * 6. Server validates challenge and stores the trusted origin
  *
@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
 })
 
 /**
- * Create a pairing challenge (called from Gatekeeper mobile, authenticated)
+ * Create a pairing challenge (called from Zule mobile, authenticated)
  */
 async function handleCreateChallenge(
   supabase: ReturnType<typeof createClient>,
@@ -116,7 +116,7 @@ async function handleCreateChallenge(
 }
 
 /**
- * Complete pairing (called from Dawg Tag, unauthenticated but with valid challenge)
+ * Complete pairing (called from Vinzrik, unauthenticated but with valid challenge)
  */
 async function handleCompletePairing(
   supabase: ReturnType<typeof createClient>,

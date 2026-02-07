@@ -21,7 +21,7 @@ import {
 } from '../../src/lib/passkey';
 import { supabase } from '../../src/lib/supabase';
 
-const GATEKEEPER_URL = process.env.EXPO_PUBLIC_GATEKEEPER_URL || 'https://test.supabase.co';
+const ZULE_URL = process.env.EXPO_PUBLIC_ZULE_URL || 'https://test.supabase.co';
 
 // Helper to create fetch mock responses
 const mockFetchResponse = (data: unknown, status = 200) => {
@@ -50,7 +50,7 @@ describe('passkey.ts', () => {
         return mockFetchResponse({
           options: {
             challenge: 'dGVzdC1jaGFsbGVuZ2U',
-            rp: { name: 'Gatekeeper', id: 'gatekeeper.app' },
+            rp: { name: 'Zule', id: 'gatekeeper.app' },
             user: { id: 'dXNlci0xMjM', name: 'test@example.com', displayName: 'Test User' },
             pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
             authenticatorSelection: { userVerification: 'required' },
@@ -180,7 +180,7 @@ describe('passkey.ts', () => {
 
       expect(result.success).toBe(true);
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
-        'gatekeeper_passkey_credential_id',
+        'zule_passkey_credential_id',
         'new-credential-id-456'
       );
     });
@@ -209,7 +209,7 @@ describe('passkey.ts', () => {
         return mockFetchResponse({
           options: {
             challenge: 'dGVzdC1jaGFsbGVuZ2U',
-            rp: { name: 'Gatekeeper', id: 'gatekeeper.app' },
+            rp: { name: 'Zule', id: 'gatekeeper.app' },
             user: { id: 'dXNlci0xMjM', name: 'test@example.com', displayName: 'Test User' },
             pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
             authenticatorSelection: { userVerification: 'required' },
@@ -267,7 +267,7 @@ describe('passkey.ts', () => {
           return mockFetchResponse({
             options: {
               challenge: 'dGVzdC1jaGFsbGVuZ2U',
-              rp: { name: 'Gatekeeper', id: 'gatekeeper.app' },
+              rp: { name: 'Zule', id: 'gatekeeper.app' },
               user: { id: 'dXNlci0xMjM', name: 'test@example.com', displayName: 'Test User' },
               pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
               authenticatorSelection: { userVerification: 'required' },
@@ -559,7 +559,7 @@ describe('passkey.ts', () => {
       const result = await hasStoredPasskey();
 
       expect(result).toBe(true);
-      expect(SecureStore.getItemAsync).toHaveBeenCalledWith('gatekeeper_passkey_credential_id');
+      expect(SecureStore.getItemAsync).toHaveBeenCalledWith('zule_passkey_credential_id');
     });
 
     it('returns false when no credential in SecureStore', async () => {
@@ -583,7 +583,7 @@ describe('passkey.ts', () => {
     it('removes credential from SecureStore', async () => {
       await clearStoredPasskey();
 
-      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('gatekeeper_passkey_credential_id');
+      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('zule_passkey_credential_id');
     });
   });
 });

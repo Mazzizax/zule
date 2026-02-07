@@ -3,22 +3,22 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 /**
- * Supabase Client Configuration for Gatekeeper Mobile App
+ * Supabase Client Configuration for Zule Mobile App
  *
  * Uses AsyncStorage for session persistence on mobile.
  * Note: ghost_secret is stored separately in SecureStore for maximum security.
  */
 
-// Gatekeeper project credentials
-const gatekeeperUrl = process.env.EXPO_PUBLIC_GATEKEEPER_URL || '';
-const gatekeeperPublishableKey = process.env.EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY || '';
+// Zule project credentials
+const zuleUrl = process.env.EXPO_PUBLIC_ZULE_URL || '';
+const gatekeeperPublishableKey = process.env.EXPO_PUBLIC_ZULE_PUBLISHABLE_KEY || '';
 
 /**
- * Gatekeeper Supabase client
+ * Zule Supabase client
  * Uses AsyncStorage for token persistence on mobile.
  */
 export const supabase: SupabaseClient = createClient(
-  gatekeeperUrl,
+  zuleUrl,
   gatekeeperPublishableKey,
   {
     auth: {
