@@ -1,7 +1,7 @@
 /**
- * CORS Configuration for Gatekeeper
+ * CORS Configuration for Zule (formerly Gatekeeper)
  *
- * Centralized CORS handling for all Gatekeeper Edge Functions.
+ * Centralized CORS handling for all Zule Edge Functions.
  * Only allows requests from approved origins.
  *
  * SECURITY: This prevents malicious sites from making API requests
@@ -10,19 +10,24 @@
 
 // Approved origins - requests from other origins will be rejected
 const ALLOWED_ORIGINS = [
-  // Production
-  'https://gatekeeper-nine.vercel.app',    // Gatekeeper web production
-  'https://xenon-engine-web.vercel.app',   // Goals web production
+  // Production - New domains
+  'https://goals.mazzizax.com',            // Goals web production
+  'https://www.mazzizax.com',              // Goals web production (www)
+  'https://auth.mazzizax.dev',             // Ghozerauth production
 
-  // Dawg Tag Mobile (Expo)
+  // Production - Legacy (keep during transition)
+  'https://gatekeeper-nine.vercel.app',    // Gatekeeper web production (legacy)
+  'https://xenon-engine-web.vercel.app',   // Goals web production (legacy)
+
+  // Vinzrik Mobile (Expo)
   'exp://localhost:8081',                  // Expo Go development
   'exp://192.168.1.1:8081',                // Expo Go on local network (adjust IP as needed)
 
   // Local development
   'http://localhost:3000',                 // Local web development
   'http://127.0.0.1:3000',                 // Local web development (alt)
-  'http://localhost:3001',                 // Gatekeeper test app
-  'http://127.0.0.1:3001',                 // Gatekeeper test app (alt)
+  'http://localhost:3001',                 // Zule test app
+  'http://127.0.0.1:3001',                 // Zule test app (alt)
   'http://localhost:5173',                 // Vite dev server
   'http://127.0.0.1:5173',                 // Vite dev server (alt)
   'http://localhost:8080',                 // Alternative local
