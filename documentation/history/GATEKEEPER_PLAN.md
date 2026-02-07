@@ -29,7 +29,7 @@ This is not MVP development. This is **final form** development in isolation, so
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   GATEKEEPER    │     │    DAWG TAG     │     │      GOALS      │
+│   GATEKEEPER    │     │    VINZRIK     │     │      GOALS      │
 │    (Server)     │     │ (User's Device) │     │    (Server)     │
 │                 │     │                 │     │                 │
 │  Identity Vault │     │  Sovereign Key  │     │   Engagement    │
@@ -53,7 +53,7 @@ This is not MVP development. This is **final form** development in isolation, so
          │  user_id              │  ghost_id + data
          │  (transient)          │  (tagged for Goals)
          ▼                       ▼
-    Dawg Tag receives       Goals receives
+    Vinzrik receives       Goals receives
     user_id in RAM,         only ghost_id,
     discards immediately    never knows source
 ```
@@ -68,13 +68,13 @@ This is not policy. It is architecture. The system makes betrayal impossible.
 
 ## Service Definitions
 
-### 1. Gatekeeper (Server)
+### 1. Zule (Server)
 
 **Purpose:** Identity vault. Authentication only.
 
 **What it does:**
 - Authenticates users (email/password, passkey)
-- Returns user_id to Dawg Tag upon successful auth
+- Returns user_id to Vinzrik upon successful auth
 - Manages subscriptions and billing
 - Nothing else
 
@@ -92,9 +92,9 @@ This is not policy. It is architecture. The system makes betrayal impossible.
 - What user does in any app
 - Which external services user links
 
-**Key constraint:** Gatekeeper receives NO information about which app triggered authentication. It only knows "user authenticated."
+**Key constraint:** Zule receives NO information about which app triggered authentication. It only knows "user authenticated."
 
-### 2. Dawg Tag (Mobile App → Future Physical Device)
+### 2. Vinzrik (Mobile App → Future Physical Device)
 
 **Purpose:** User's sovereign key, data hub, and identity display. The ONLY place where identity and behavior can be linked.
 
@@ -103,12 +103,12 @@ This is not policy. It is architecture. The system makes betrayal impossible.
 #### 2.1 Identity Vault
 - Stores `ghost_secret` in secure hardware (Keystore/Secure Enclave)
 - Generates unique `ghost_id` per app: `hash(user_id + ghost_secret + app_id)`
-- Receives `user_id` transiently from Gatekeeper (RAM only, immediately discarded)
+- Receives `user_id` transiently from Zule (RAM only, immediately discarded)
 - Never persists `user_id` or computed `ghost_ids`
 
 #### 2.2 Authentication Bridge
 - Receives auth requests from Xenon ecosystem apps
-- Calls Gatekeeper to authenticate (Gatekeeper doesn't know which app)
+- Calls Zule to authenticate (Zule doesn't know which app)
 - Computes app-specific ghost_id
 - Returns ghost_id directly to requesting app
 - Manages consent for third-party apps (popup approval)
@@ -182,7 +182,7 @@ Everything built in the mobile app transfers to the physical device:
 - Sensors → Built-in or paired
 - Glyph display → Small e-ink or OLED screen
 
-**What Dawg Tag stores:**
+**What Vinzrik stores:**
 
 | Data | Stored | Notes |
 |------|--------|-------|
@@ -203,7 +203,7 @@ Everything built in the mobile app transfers to the physical device:
 - Generates TSO7s via Cosmic Orchestrator
 - Stores behavioral data tied to ghost_id only
 - Manages challenges, quests, achievements
-- Processes data synced from Dawg Tag (external services, sensors)
+- Processes data synced from Vinzrik (external services, sensors)
 - Renders fingerprint visualization (client-side)
 - Calculates activity aggregates for glyph generation
 
@@ -213,7 +213,7 @@ Everything built in the mobile app transfers to the physical device:
 - Globs (interpreted TSO7 structures)
 - Activity completions and experience per category
 - Quests, achievements, rewards
-- Subscription tier (synced from Gatekeeper via token)
+- Subscription tier (synced from Zule via token)
 
 **What it NEVER knows:**
 - user_id
@@ -228,25 +228,25 @@ Everything built in the mobile app transfers to the physical device:
 ```
 1. User opens Goals app
               ↓
-2. Goals → Dawg Tag: "I need auth, app_id = 'goals'"
+2. Goals → Vinzrik: "I need auth, app_id = 'goals'"
               ↓
-3. Dawg Tag → Gatekeeper: "Authenticate user"
-   (NO app_id sent - Gatekeeper doesn't know Goals exists)
+3. Vinzrik → Zule: "Authenticate user"
+   (NO app_id sent - Zule doesn't know Goals exists)
               ↓
-4. Gatekeeper presents login UI (email/password or passkey)
+4. Zule presents login UI (email/password or passkey)
               ↓
 5. User authenticates successfully
               ↓
-6. Gatekeeper returns user_id to Dawg Tag
-   (Gatekeeper's job is DONE - it knows nothing else)
+6. Zule returns user_id to Vinzrik
+   (Zule's job is DONE - it knows nothing else)
               ↓
-7. Dawg Tag receives user_id in RAM (never persisted)
+7. Vinzrik receives user_id in RAM (never persisted)
               ↓
-8. Dawg Tag computes: ghost_id = hash(user_id + ghost_secret + "goals")
+8. Vinzrik computes: ghost_id = hash(user_id + ghost_secret + "goals")
               ↓
-9. Dawg Tag DISCARDS user_id from memory
+9. Vinzrik DISCARDS user_id from memory
               ↓
-10. Dawg Tag → Goals: returns ghost_id directly
+10. Vinzrik → Goals: returns ghost_id directly
               ↓
 11. Goals creates session using ghost_id
               ↓
@@ -260,19 +260,19 @@ Everything built in the mobile app transfers to the physical device:
 ```
 1. User in Goals taps "Link PlayStation"
               ↓
-2. Goals → Dawg Tag: "User wants to link PSN"
+2. Goals → Vinzrik: "User wants to link PSN"
               ↓
-3. Dawg Tag opens PSN OAuth (Sony's login page)
+3. Vinzrik opens PSN OAuth (Sony's login page)
               ↓
 4. User authenticates with Sony directly
               ↓
-5. Sony returns OAuth token to Dawg Tag
+5. Sony returns OAuth token to Vinzrik
               ↓
-6. Dawg Tag stores locally:
+6. Vinzrik stores locally:
    - PSN OAuth token
    - "psn" in list of linked services
               ↓
-7. Dawg Tag → Goals: "PSN linked successfully"
+7. Vinzrik → Goals: "PSN linked successfully"
               ↓
 8. Goals shows "PlayStation Connected ✓"
    (Goals does NOT store any PSN identifier)
@@ -283,9 +283,9 @@ Everything built in the mobile app transfers to the physical device:
 ## External Service Sync Flow
 
 ```
-1. Dawg Tag background task wakes up (daily schedule)
+1. Vinzrik background task wakes up (daily schedule)
               ↓
-2. Dawg Tag checks linked services → [PSN, Spotify, Fitbit]
+2. Vinzrik checks linked services → [PSN, Spotify, Fitbit]
               ↓
 3. For each service:
    - Fetch data using stored OAuth token
@@ -293,7 +293,7 @@ Everything built in the mobile app transfers to the physical device:
    - Tag with ghost_id_goals
    - Categorize (gaming, music, fitness)
               ↓
-4. Dawg Tag → Goals API:
+4. Vinzrik → Goals API:
    {
      ghost_id: "abc123",
      source_category: "gaming",  // NOT "psn"
@@ -308,7 +308,7 @@ Everything built in the mobile app transfers to the physical device:
               ↓
 6. Goals updates activity aggregates
               ↓
-7. Next time user opens Dawg Tag, glyph reflects new data
+7. Next time user opens Vinzrik, glyph reflects new data
 ```
 
 ---
@@ -350,7 +350,7 @@ await storeTso7(originalGhostId, response.interpretation);
 |-------|------|
 | AI provider | request_id + TSO7 (orphaned, uncorrelatable) |
 | Goals | ghost_id + TSO7 (anonymous) |
-| Gatekeeper | user_id + email (no behavior) |
+| Zule | user_id + email (no behavior) |
 | Subpoena (all parties) | **No chain connecting identity → behavior** |
 
 ---
@@ -373,9 +373,9 @@ Future state: TSO7s encrypted at rest, decrypted only inside AWS Nitro Enclave o
 | Threat | What's Exposed | What's Protected |
 |--------|----------------|------------------|
 | Goals breach | ghost_ids + behavioral data | Real identity, external service links |
-| Gatekeeper breach | user_ids + emails | Behavior, ghost_ids, which apps used |
+| Zule breach | user_ids + emails | Behavior, ghost_ids, which apps used |
 | AI provider breach | Orphaned symbolic data | ghost_id, identity |
-| Dawg Tag device theft | One user's ghost_secret | All other users, server data |
+| Vinzrik device theft | One user's ghost_secret | All other users, server data |
 | Subpoena all three servers | No chain exists to produce | Identity ↔ behavior correlation |
 | Future SST corruption | Architecturally blind (with enclave) | All plaintext behavioral data |
 
@@ -385,9 +385,9 @@ The only way to link identity to behavior: **Seize the user's physical device an
 
 ## Development Phases
 
-### Phase 1: Gatekeeper Simplification
+### Phase 1: Zule Simplification
 
-**Objective:** Strip Gatekeeper to auth-only service.
+**Objective:** Strip Zule to auth-only service.
 
 **Remove:**
 - ghost_id generation code (ghostKeys.ts)
@@ -405,16 +405,16 @@ The only way to link identity to behavior: **Seize the user's physical device an
 - Account deletion
 
 **Create:**
-- Simple auth endpoint that returns user_id to Dawg Tag only
-- Device attestation to verify legitimate Dawg Tag requests
+- Simple auth endpoint that returns user_id to Vinzrik only
+- Device attestation to verify legitimate Vinzrik requests
 
-**Success Criteria:** Gatekeeper authenticates users and returns user_id. Nothing else.
+**Success Criteria:** Zule authenticates users and returns user_id. Nothing else.
 
-### Phase 2: Dawg Tag (Full Product)
+### Phase 2: Vinzrik (Full Product)
 
-**Objective:** Build complete Dawg Tag mobile app - not MVP, full product.
+**Objective:** Build complete Vinzrik mobile app - not MVP, full product.
 
-**Repository:** `dawg-tag` (new)
+**Repository:** `vinzrik` (new)
 
 #### 2.1 Core Identity
 - React Native / Expo
@@ -424,7 +424,7 @@ The only way to link identity to behavior: **Seize the user's physical device an
 
 #### 2.2 Authentication Bridge
 - Deep link handler for app auth requests
-- Gatekeeper communication (receive user_id, discard immediately)
+- Zule communication (receive user_id, discard immediately)
 - Return ghost_id to requesting app
 - Third-party consent popup UI
 
@@ -470,7 +470,7 @@ The only way to link identity to behavior: **Seize the user's physical device an
 
 ### Phase 3: Goals Integration
 
-**Objective:** Goals authenticates via Dawg Tag, receives synced data.
+**Objective:** Goals authenticates via Vinzrik, receives synced data.
 
 **Remove from Goals:**
 - Direct Supabase Auth
@@ -479,30 +479,30 @@ The only way to link identity to behavior: **Seize the user's physical device an
 - All user_id references in Edge Functions
 
 **Add to Goals:**
-- Dawg Tag auth flow (deep link out, receive ghost_id back)
-- API endpoints for Dawg Tag data sync
+- Vinzrik auth flow (deep link out, receive ghost_id back)
+- API endpoints for Vinzrik data sync
 - Activity categorization for incoming data
 - Activity aggregate calculations (for glyph generation)
-- Endpoint for Dawg Tag to fetch activity aggregates
+- Endpoint for Vinzrik to fetch activity aggregates
 
 **Implement:**
 - Ephemeral request_id for all AI API calls
 - ENCLAVE BOUNDARY comments on TSO7/glob handling
 
 **Success Criteria:**
-- New user downloads Dawg Tag and Goals
-- Creates account via Gatekeeper (through Dawg Tag)
+- New user downloads Vinzrik and Goals
+- Creates account via Zule (through Vinzrik)
 - Uses Goals with ghost_id only
 - Links PSN, sees gaming data in Goals
-- Dawg Tag displays contextual glyph based on Goals activity data
+- Vinzrik displays contextual glyph based on Goals activity data
 
 ### Phase 4: Production Hardening
 
 **Objective:** Security, reliability, polish.
 
-- Device attestation (Gatekeeper verifies Dawg Tag requests)
+- Device attestation (Zule verifies Vinzrik requests)
 - Rate limiting across all services
-- Audit logging (identity-free in Goals, behavior-free in Gatekeeper)
+- Audit logging (identity-free in Goals, behavior-free in Zule)
 - Recovery flow testing
 - Performance optimization
 - Error handling and edge cases
@@ -518,10 +518,10 @@ xenon-platform/
 │   ├── app/                 # React web UI (login, account mgmt)
 │   └── supabase/            # Edge Functions, migrations
 │
-├── dawg-tag/                # User's sovereign key (mobile) - NEW
+├── vinzrik/                # User's sovereign key (mobile) - NEW
 │   ├── src/
 │   │   ├── identity/        # ghost_secret, ghost_id computation
-│   │   ├── auth/            # Gatekeeper bridge, app auth
+│   │   ├── auth/            # Zule bridge, app auth
 │   │   ├── services/        # External OAuth, token storage
 │   │   ├── sync/            # Background data sync engine
 │   │   ├── sensors/         # GPS, accelerometer, gyroscope
@@ -622,7 +622,7 @@ Priority order:
 
 ## Immediate Action Items
 
-### This Week: Gatekeeper
+### This Week: Zule
 
 1. Create branch `simplify-auth-only`
 2. Remove ghost_id, blind token, app consent code
@@ -630,23 +630,23 @@ Priority order:
 4. Test basic auth still works
 5. Document minimal API
 
-### This Week: Dawg Tag Foundation
+### This Week: Vinzrik Foundation
 
-1. Create `dawg-tag` repository
+1. Create `vinzrik` repository
 2. Initialize Expo React Native project
 3. Implement secure storage for ghost_secret
 4. Implement ghost_id computation
-5. Implement basic Gatekeeper auth bridge
-6. Test: App requests auth → Dawg Tag → Gatekeeper → ghost_id returned
+5. Implement basic Zule auth bridge
+6. Test: App requests auth → Vinzrik → Zule → ghost_id returned
 
-### Next: Dawg Tag External Services
+### Next: Vinzrik External Services
 
 1. PSN OAuth integration
 2. Token storage
 3. Basic sync (manual trigger first)
 4. Data transformation and Goals API push
 
-### Next: Dawg Tag Glyph
+### Next: Vinzrik Glyph
 
 1. Define activity taxonomy
 2. Build experience calculation
@@ -657,11 +657,11 @@ Priority order:
 
 ### Parallel: Goals Updates
 
-1. Add API for Dawg Tag data sync
+1. Add API for Vinzrik data sync
 2. Add activity categorization
 3. Implement ephemeral request_id
 4. Mark ENCLAVE BOUNDARY comments
-5. Remove direct auth (after Dawg Tag ready)
+5. Remove direct auth (after Vinzrik ready)
 
 ---
 
@@ -669,12 +669,12 @@ Priority order:
 
 | Question | Answer |
 |----------|--------|
-| Web-only users? | No. Phone with Dawg Tag required. |
+| Web-only users? | No. Phone with Vinzrik required. |
 | First-party data sharing? | Fingerprint embedded in Goals. No cross-service query needed. |
 | External service ghost_ids? | Not needed. External services are data sources, not Xenon apps. OAuth only. |
-| Where is correlation stored? | Nowhere on servers. Dawg Tag syncs data pre-tagged with ghost_id_goals. |
-| Third-party consent? | Popup in Dawg Tag. |
-| Sensor data destination? | Goals, for challenge verification. Tagged with ghost_id_goals by Dawg Tag. |
+| Where is correlation stored? | Nowhere on servers. Vinzrik syncs data pre-tagged with ghost_id_goals. |
+| Third-party consent? | Popup in Vinzrik. |
+| Sensor data destination? | Goals, for challenge verification. Tagged with ghost_id_goals by Vinzrik. |
 | Glyph on physical device? | Yes. Build glyph system now on phone, transfers to device screen later. |
 
 ---
@@ -683,17 +683,17 @@ Priority order:
 
 A user can:
 
-1. Download Dawg Tag and Goals
-2. Create account (Gatekeeper auth via Dawg Tag)
+1. Download Vinzrik and Goals
+2. Create account (Zule auth via Vinzrik)
 3. Use Goals with ghost_id (Goals never sees identity)
-4. Link PSN, Spotify, Fitbit (OAuth via Dawg Tag)
+4. Link PSN, Spotify, Fitbit (OAuth via Vinzrik)
 5. See external data appear in Goals (categorized, no source identification)
 6. Complete activities, earn experience
 7. Show contextual glyph at events (skill level visible, identity hidden)
 8. Lose phone, restore via QR backup, continue with same identity
 9. Revoke any app or service access at will
 
-And neither Gatekeeper, Goals, nor any external service can:
+And neither Zule, Goals, nor any external service can:
 - Link identity to behavior
 - Know which other services the user uses
 - Produce correlation data under subpoena

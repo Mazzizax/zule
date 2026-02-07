@@ -1,4 +1,4 @@
-# Gatekeeper Session Notes
+# Zule Session Notes
 
 **Last Updated:** 2025-12-31
 
@@ -38,11 +38,11 @@
 
 ### Priority 1: Verify Production Setup
 - [ ] Confirm actual production domains and update `ALLOWED_ORIGINS` if needed
-  - Currently set to: `xenon-engine-web.vercel.app`, `*.vercel.app`, `xenonengine.com`, `www.xenonengine.com`, plus Supabase URLs
+  - Currently set to: `goals.mazzizax.com`, `*.vercel.app`, `xenonengine.com`, `www.xenonengine.com`, plus Supabase URLs
   - Command: `npx supabase secrets set ALLOWED_ORIGINS="..."`
 
 ### Priority 2: End-to-End Testing
-- [ ] Test full auth flow: Mobile app → Gatekeeper → Engine
+- [ ] Test full auth flow: Mobile app → Zule → Engine
 - [ ] Verify blind token issuance and validation
 - [ ] Test app consent flow
 

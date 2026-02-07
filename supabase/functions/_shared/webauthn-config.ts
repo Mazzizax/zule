@@ -1,5 +1,5 @@
 /**
- * Shared WebAuthn Configuration for Zule (formerly Gatekeeper)
+ * Shared WebAuthn Configuration for Zule (formerly Zule)
  *
  * Centralized configuration for passkey registration and authentication.
  * Both passkey-register and passkey-auth should import from here.
@@ -9,17 +9,17 @@
 // IMPORTANT: Must match what the mobile app uses in passkey.ts
 // Supporting both old and new RP_ID during transition period
 export const RP_ID = 'zule.mazzizax.net'
-export const RP_ID_LEGACY = 'gatekeeper-nine.vercel.app'
+export const RP_ID_LEGACY = 'zule.mazzizax.net'
 export const RP_NAME = 'Zule'
 
 // List of valid RP_IDs (for verification - accept both during transition)
 export const VALID_RP_IDS = [
   'zule.mazzizax.net',           // New primary
-  'gatekeeper-nine.vercel.app',  // Legacy (remove after migration)
+  'zule.mazzizax.net',  // Legacy (remove after migration)
 ] as const
 
 // Expected origins for WebAuthn verification
-// - Web/iOS: https://zule.mazzizax.net (new) or https://gatekeeper-nine.vercel.app (legacy)
+// - Web/iOS: https://zule.mazzizax.net (new) or https://zule.mazzizax.net (legacy)
 // - Android: android:apk-key-hash:<base64url of SHA256 cert fingerprint>
 // SHA256 fingerprint from assetlinks.json: 52:88:BF:97:26:03:DA:44:20:87:C4:3E:84:F1:B7:8F:28:A3:D0:09:F9:9F:D7:BC:C8:A9:F1:6D:D7:3C:CD:F9
 export const EXPECTED_ORIGINS = [
@@ -27,7 +27,7 @@ export const EXPECTED_ORIGINS = [
   'https://zule.mazzizax.net',
   'https://goals.mazzizax.com',
   // Legacy domains (keep during transition)
-  'https://gatekeeper-nine.vercel.app',
+  'https://zule.mazzizax.net',
   // Android
   'android:apk-key-hash:Uoi_lyYD2kQgh8Q-hPG3jyij0Bn5n9e8yKnxbdc8zfk',
 ]

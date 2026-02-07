@@ -63,7 +63,7 @@ These exist in completely separate systems with no technical ability to correlat
 
 ### Service Definitions
 
-#### Gatekeeper (Identity Vault)
+#### Zule (Identity Vault)
 - **Purpose:** Secure authentication without leaking identity to apps
 - **Knows:** Email, password/passkey, payment info, subscription status
 - **Never knows:** What users do, their behavioral patterns, their fingerprint
@@ -94,7 +94,7 @@ These exist in completely separate systems with no technical ability to correlat
 
 | If combined... | Risk |
 |----------------|------|
-| Gatekeeper + Fingerprint | Could correlate identity with behavioral profile |
+| Zule + Fingerprint | Could correlate identity with behavioral profile |
 | Fingerprint + Goals | Less critical, but breaks clean separation |
 | All three | Single breach exposes everything |
 
@@ -150,16 +150,16 @@ Goals currently uses direct Supabase Auth with JWT tokens. This creates identity
 - user_bridges table links user_id to ghost_id
 - Identity and behavior can be correlated through logs
 
-### Target State (Gatekeeper-Only)
+### Target State (Zule-Only)
 
 ```
 1. User clicks "Login" in Goals
          ↓
-2. Redirect to Gatekeeper (gatekeeper.app/authorize)
+2. Redirect to Zule (gatekeeper.app/authorize)
          ↓
-3. User authenticates at Gatekeeper (email/passkey)
+3. User authenticates at Zule (email/passkey)
          ↓
-4. Gatekeeper issues blind token containing:
+4. Zule issues blind token containing:
    - ghost_id (app-specific)
    - tier (subscription level)
    - expiration
@@ -203,7 +203,7 @@ Goals currently uses direct Supabase Auth with JWT tokens. This creates identity
 - CSP-compliant frontend with security hardening
 - Edge Functions for queue processing
 
-**Gatekeeper:**
+**Zule:**
 - Separate repository created
 - Basic blind token issuance infrastructure
 - User profiles and subscription management schema
@@ -213,18 +213,18 @@ Goals currently uses direct Supabase Auth with JWT tokens. This creates identity
 
 | Issue | Severity | Resolution |
 |-------|----------|------------|
-| Hardcoded user secrets in profile.js | CRITICAL | Move to Gatekeeper server-side for migration |
-| user_id in passkey-auth-verify response | HIGH | Resolved when Gatekeeper-only auth implemented |
+| Hardcoded user secrets in profile.js | CRITICAL | Move to Zule server-side for migration |
+| user_id in passkey-auth-verify response | HIGH | Resolved when Zule-only auth implemented |
 | user_id logging in Edge Functions | HIGH | Resolved when JWT auth paths removed |
-| user_bridges table in Goals | STRUCTURAL | Remove after Gatekeeper migration |
-| Gatekeeper CORS allows wildcard | HIGH | Restrict to specific origins |
-| Session security tables have user_id | MEDIUM | Move to Gatekeeper or remove |
+| user_bridges table in Goals | STRUCTURAL | Remove after Zule migration |
+| Zule CORS allows wildcard | HIGH | Restrict to specific origins |
+| Session security tables have user_id | MEDIUM | Move to Zule or remove |
 
 ### What Doesn't Exist Yet
 
 - Fingerprint as standalone service (currently embedded in Goals)
-- Gatekeeper ↔ Goals integration
-- Gatekeeper ↔ Fingerprint integration
+- Zule ↔ Goals integration
+- Zule ↔ Fingerprint integration
 - Company/developer access APIs
 - User consent management UI
 - Bundle installer for consumer deployment
@@ -273,19 +273,19 @@ User: Can reveal identity IF they choose to (earns trust)
 
 ## Development Priorities
 
-### Phase 1: Gatekeeper Integration (Current)
+### Phase 1: Zule Integration (Current)
 
-**Objective:** Goals authenticates exclusively through Gatekeeper
+**Objective:** Goals authenticates exclusively through Zule
 
 **Tasks:**
-1. Define Gatekeeper ↔ Goals API contract
+1. Define Zule ↔ Goals API contract
 2. Build auth module for Goals (redirect flow, token handling)
-3. Build token issuance endpoint in Gatekeeper
+3. Build token issuance endpoint in Zule
 4. Remove direct Supabase Auth from Goals
 5. Remove user_bridges table
 6. Remove all user_id references from Goals Edge Functions
 
-**Success Criteria:** New user can sign up, authenticate via Gatekeeper, use Goals - and Goals never sees their email or user_id.
+**Success Criteria:** New user can sign up, authenticate via Zule, use Goals - and Goals never sees their email or user_id.
 
 ### Phase 2: Fingerprint Separation
 
@@ -307,7 +307,7 @@ User: Can reveal identity IF they choose to (earns trust)
 **Objective:** Enable companies to engage users through the platform
 
 **Tasks:**
-1. Company registration in Gatekeeper
+1. Company registration in Zule
 2. Scoped Fingerprint access (with user consent)
 3. Engagement API in Goals
 4. User consent management UI
@@ -353,7 +353,7 @@ User: Can reveal identity IF they choose to (earns trust)
 ### API Design Principles
 
 - Endpoints return answers, not raw data (where possible)
-- ghost_id is the only user identifier outside Gatekeeper
+- ghost_id is the only user identifier outside Zule
 - App-specific ghost_ids (user has different ghost in each app)
 - Token refresh handled transparently
 - Revocation propagates immediately
@@ -378,16 +378,16 @@ User: Can reveal identity IF they choose to (earns trust)
 - `supabase/functions/_shared/blind-token.ts` - Token validation
 - `js/fingerprint.js` - Visualization (will move to Fingerprint service)
 
-**Gatekeeper:**
+**Zule:**
 - `supabase/functions/blind-token-issue/` - Token generation
 - `migrations/` - Identity schema
 
 ### Questions to Ask Before Making Changes
 
-1. Does this change expose user_id outside Gatekeeper?
+1. Does this change expose user_id outside Zule?
 2. Does this create correlation between identity and behavior?
 3. Does this log anything that could identify a user?
-4. Is this going in the right service (Gatekeeper vs Fingerprint vs Goals)?
+4. Is this going in the right service (Zule vs Fingerprint vs Goals)?
 
 ---
 
@@ -397,10 +397,10 @@ User: Can reveal identity IF they choose to (earns trust)
 |------|------------|
 | **Blind Token** | JWT that proves authentication without containing identity |
 | **ghost_id** | Anonymous identifier used in Goals/Fingerprint. App-specific. |
-| **user_id** | Supabase Auth identifier. ONLY exists in Gatekeeper. |
+| **user_id** | Supabase Auth identifier. ONLY exists in Zule. |
 | **TSO7** | True Set of 7. Seven I-Ching hexagrams encoding behavioral data. |
 | **Fingerprint** | Derived behavioral profile from TSO7 interpretation |
-| **Gatekeeper** | Identity service. Knows WHO, issues blind tokens. |
+| **Zule** | Identity service. Knows WHO, issues blind tokens. |
 | **Goals** | Engagement layer. Where users act and companies engage. |
 
 ---
@@ -410,7 +410,7 @@ User: Can reveal identity IF they choose to (earns trust)
 **Primary Developer:** @mazzuckelli
 **Repositories:**
 - Goals: https://github.com/mazzuckelli/xenon-engine-web
-- Gatekeeper: https://github.com/mazzuckelli/gatekeeper
+- Zule: https://github.com/mazzuckelli/gatekeeper
 - Fingerprint: (To be created)
 
 **When starting work on any machine:**

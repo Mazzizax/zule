@@ -179,7 +179,7 @@ const challenge = toBase64URL(Crypto.getRandomBytes(32));
 // 2. Create request with local values
 const request = {
   challenge,
-  rp: { name: 'Gatekeeper', id: rpId },
+  rp: { name: 'Zule', id: rpId },
   user: { id, name, displayName },
   // ...
 };
@@ -201,7 +201,7 @@ await fetch(url, {
 ```javascript
 // 1. GET registration options FROM SERVER
 const optionsResponse = await fetch(
-  `${GATEKEEPER_URL}/functions/v1/passkey-register?action=options`,
+  `${ZULE_URL}/functions/v1/passkey-register?action=options`,
   { headers: { Authorization: `Bearer ${token}`, apikey: '...' } }
 );
 const { options, challenge_key } = await optionsResponse.json();
@@ -247,7 +247,7 @@ const challengeData = await fetch(`${url}?credential_id=${id}`).then(r => r.json
 // 2. Call Passkey.get() (correct)
 const assertion = await Passkey.get({
   challenge: challengeData.challenge,
-  rpId: 'gatekeeper-nine.vercel.app',
+  rpId: 'zule.mazzizax.net',
   // ...
 });
 
@@ -271,7 +271,7 @@ const challengeData = await fetch(`${url}?credential_id=${id}`).then(r => r.json
 // 2. Call Passkey.get() (same)
 const assertion = await Passkey.get({
   challenge: challengeData.challenge,
-  rpId: 'gatekeeper-nine.vercel.app',
+  rpId: 'zule.mazzizax.net',
   // ...
 });
 

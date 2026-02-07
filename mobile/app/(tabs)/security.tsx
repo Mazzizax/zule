@@ -57,12 +57,12 @@ export default function SecurityScreen() {
       console.log('[Security] Calling passkey-register with token:', session.access_token.substring(0, 20) + '...');
 
       // Use direct fetch since supabase.functions.invoke doesn't pass Authorization header correctly
-      const functionUrl = `${process.env.EXPO_PUBLIC_GATEKEEPER_URL}/functions/v1/passkey-register`;
+      const functionUrl = `${process.env.EXPO_PUBLIC_ZULE_URL}/functions/v1/passkey-register`;
       const fetchResponse = await fetch(functionUrl, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-          'apikey': process.env.EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY || '',
+          'apikey': process.env.EXPO_PUBLIC_ZULE_PUBLISHABLE_KEY || '',
           'Content-Type': 'application/json',
         },
       });
@@ -147,12 +147,12 @@ export default function SecurityScreen() {
                 return;
               }
 
-              const functionUrl = `${process.env.EXPO_PUBLIC_GATEKEEPER_URL}/functions/v1/passkey-register`;
+              const functionUrl = `${process.env.EXPO_PUBLIC_ZULE_URL}/functions/v1/passkey-register`;
               const response = await fetch(functionUrl, {
                 method: 'DELETE',
                 headers: {
                   'Authorization': `Bearer ${session.access_token}`,
-                  'apikey': process.env.EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY || '',
+                  'apikey': process.env.EXPO_PUBLIC_ZULE_PUBLISHABLE_KEY || '',
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ passkey_id: passkeyId }),
@@ -194,7 +194,7 @@ export default function SecurityScreen() {
   };
 
   const handlePairDawgTag = async () => {
-    console.log('[SECURITY] ====== PAIR DAWG TAG PRESSED ======');
+    console.log('[SECURITY] ====== PAIR VINZRIK PRESSED ======');
     setPairingDawgTag(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -206,20 +206,20 @@ export default function SecurityScreen() {
       }
 
       // Create pairing challenge
-      const functionUrl = `${process.env.EXPO_PUBLIC_GATEKEEPER_URL}/functions/v1/pair-client`;
+      const functionUrl = `${process.env.EXPO_PUBLIC_ZULE_URL}/functions/v1/pair-client`;
       console.log('[SECURITY] Calling:', functionUrl);
-      console.log('[SECURITY] Has apikey:', !!process.env.EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY);
+      console.log('[SECURITY] Has apikey:', !!process.env.EXPO_PUBLIC_ZULE_PUBLISHABLE_KEY);
       const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-          'apikey': process.env.EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY || '',
+          'apikey': process.env.EXPO_PUBLIC_ZULE_PUBLISHABLE_KEY || '',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           action: 'create_challenge',
-          client_app_id: 'dawg-tag',
-          client_app_name: 'Dawg Tag',
+          client_app_id: 'vinzrik',
+          client_app_name: 'Vinzrik',
         }),
       });
 
@@ -232,16 +232,16 @@ export default function SecurityScreen() {
 
       const { challenge } = await response.json();
 
-      // Open Dawg Tag with pairing challenge
+      // Open Vinzrik with pairing challenge
       // Note: canOpenURL is unreliable on Android 11+ without manifest queries declaration
-      // Just try to open directly and let it fail if Dawg Tag isn't installed
-      const pairingUrl = `dawgtag://pair?challenge=${encodeURIComponent(challenge)}`;
-      console.log('[SECURITY] Opening Dawg Tag with URL:', pairingUrl);
+      // Just try to open directly and let it fail if Vinzrik isn't installed
+      const pairingUrl = `vinzrik://pair?challenge=${encodeURIComponent(challenge)}`;
+      console.log('[SECURITY] Opening Vinzrik with URL:', pairingUrl);
 
       await Linking.openURL(pairingUrl);
       Alert.alert(
         'Pairing Started',
-        'Complete the pairing in Dawg Tag. Once done, you can use fingerprint login from Dawg Tag.'
+        'Complete the pairing in Vinzrik. Once done, you can use fingerprint login from Vinzrik.'
       );
     } catch (err: any) {
       Alert.alert('Pairing Error', err.message);
@@ -297,7 +297,7 @@ export default function SecurityScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Paired Apps</Text>
         <Text style={styles.description}>
-          Pair Dawg Tag to enable fingerprint login from your privacy wallet.
+          Pair Vinzrik to enable fingerprint login from your privacy wallet.
         </Text>
 
         <TouchableOpacity
@@ -308,7 +308,7 @@ export default function SecurityScreen() {
           {pairingDawgTag ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.linkButtonText}>Pair Dawg Tag</Text>
+            <Text style={styles.linkButtonText}>Pair Vinzrik</Text>
           )}
         </TouchableOpacity>
       </View>

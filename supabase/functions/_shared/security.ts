@@ -1,5 +1,5 @@
 /**
- * Security utilities for Gatekeeper Edge Functions
+ * Security utilities for Zule Edge Functions
  *
  * Provides:
  * - Timing-safe string comparison

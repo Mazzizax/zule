@@ -1,7 +1,7 @@
 /**
  * Passkey Authentication Endpoint
  *
- * PURPOSE: Authenticate users via WebAuthn passkeys and return user_id to Dawg Tag.
+ * PURPOSE: Authenticate users via WebAuthn passkeys and return user_id to Vinzrik.
  *
  * This is an alternative to email/password auth via auth-validate.
  * Both endpoints serve the same purpose: authenticate user, return user_id + tier.
@@ -17,9 +17,9 @@
  * - POST: Verify signed assertion
  *
  * SECURITY:
- * - Dawg Tag receives user_id, computes ghost_id locally, discards user_id
- * - Gatekeeper never knows which app the user is accessing
- * - Gatekeeper never knows the resulting ghost_id
+ * - Vinzrik receives user_id, computes ghost_id locally, discards user_id
+ * - Zule never knows which app the user is accessing
+ * - Zule never knows the resulting ghost_id
  * - Full WebAuthn verification using battle-tested @simplewebauthn/server library
  * - Rate limiting on failed attempts with lockout protection
  */
@@ -327,7 +327,7 @@ async function handleVerifyAssertion(
     return errorResponse('Authentication failed', 401, origin)
   }
 
-  // Get user's trusted client origins (for Dawg Tag, etc.)
+  // Get user's trusted client origins (for Vinzrik, etc.)
   let allowedOrigins = [...EXPECTED_ORIGINS]
   let originsDebug = 'not fetched'
   try {
@@ -470,7 +470,7 @@ async function handleVerifyAssertion(
       .setJti(crypto.randomUUID())
       .sign(privateKey)
 
-    // Attestation for Dawg Tag flow (5 minutes)
+    // Attestation for Vinzrik flow (5 minutes)
     attestation = await new SignJWT({
       type: 'attestation',
       valid: true,

@@ -228,7 +228,7 @@ describe('Register Screen', () => {
 
       fireEvent.press(screen.getByText('Terms of Service'));
 
-      expect(Linking.openURL).toHaveBeenCalledWith('https://gatekeeper-nine.vercel.app/terms');
+      expect(Linking.openURL).toHaveBeenCalledWith('https://zule.mazzizax.net/terms');
     });
 
     it('opens Privacy Policy URL when pressed', () => {
@@ -236,7 +236,7 @@ describe('Register Screen', () => {
 
       fireEvent.press(screen.getByText('Privacy Policy'));
 
-      expect(Linking.openURL).toHaveBeenCalledWith('https://gatekeeper-nine.vercel.app/privacy');
+      expect(Linking.openURL).toHaveBeenCalledWith('https://zule.mazzizax.net/privacy');
     });
   });
 });

@@ -67,8 +67,8 @@ export default function DashboardScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Privacy Status</Text>
         <Text style={styles.description}>
-          Gatekeeper knows your identity to manage your account.
-          Apps you connect to through Dawg Tag only see your ghost_id - never your email or user ID.
+          Zule knows your identity to manage your account.
+          Apps you connect to through Vinzrik only see your ghost_id - never your email or user ID.
         </Text>
         <View style={styles.statusRow}>
           <View style={styles.statusDot} />

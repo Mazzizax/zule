@@ -122,7 +122,7 @@ const ghost_secret = randomBytes.map(byte =>
 | Component | Knows | Does NOT Know |
 |-----------|-------|---------------|
 | **Client** | user_id, ghost_secret, ghost_id | - |
-| **Gatekeeper** | user_id, subscription tier | ghost_secret, ghost_id |
+| **Zule** | user_id, subscription tier | ghost_secret, ghost_id |
 | **Engine** | ghost_id, tier (from token) | user_id, ghost_secret |
 | **Third-Party App** | blind_token, tier | user_id, ghost_id, ghost_secret |
 
@@ -131,7 +131,7 @@ const ghost_secret = randomBytes.map(byte =>
 | Attack Vector | Protection |
 |---------------|------------|
 | **Server compromise (Engine)** | Engine only has ghost_id; cannot reverse to user_id |
-| **Server compromise (Gatekeeper)** | Has user_id but not ghost_secret; cannot compute ghost_id |
+| **Server compromise (Zule)** | Has user_id but not ghost_secret; cannot compute ghost_id |
 | **Network interception** | Blind tokens are signed and expire; ghost_id never transmitted with user_id |
 | **Brute force derivation** | 32 bytes = 256 bits of entropy; computationally infeasible |
 | **Rainbow table** | Per-user random secret makes precomputation useless |
@@ -144,7 +144,7 @@ SHA-256 provides 128-bit collision resistance. The probability of two users havi
 
 ## Blind Token System
 
-Blind tokens are issued by Gatekeeper and validated by Engine. They carry authorization without identity.
+Blind tokens are issued by Zule and validated by Engine. They carry authorization without identity.
 
 ### Token Structure
 
@@ -187,7 +187,7 @@ interface BlindTokenPayload {
 3. Client derives ghost_id = SHA256(user_id + ghost_secret)
    └─▶ Formatted as UUID v4
 
-4. Client requests blind token from Gatekeeper
+4. Client requests blind token from Zule
    └─▶ Sends: Authorization: Bearer <supabase_jwt>
    └─▶ Receives: blind_token (contains tier, NOT user_id)
 
@@ -256,7 +256,7 @@ CREATE TABLE user_quests (
 );
 ```
 
-### Gatekeeper Tables (user_id only)
+### Zule Tables (user_id only)
 
 ```sql
 -- Auth-related tables use user_id
@@ -286,7 +286,7 @@ CREATE TABLE blind_token_log (
 - [ ] QR code generation and scanning
 - [ ] Proper UUID formatting
 
-### Gatekeeper Requirements
+### Zule Requirements
 
 - [ ] Never log or store ghost_id
 - [ ] Issue blind tokens without identity info

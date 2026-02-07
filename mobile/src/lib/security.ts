@@ -44,7 +44,7 @@ export async function getCredentials(): Promise<{ email: string; password: strin
   }
 }
 
-export async function authenticateWithBiometrics(reason: string = 'Log in to Gatekeeper'): Promise<boolean> {
+export async function authenticateWithBiometrics(reason: string = 'Log in to Zule'): Promise<boolean> {
   const status = await checkBiometricStatus();
   if (!status.hasHardware || !status.isEnrolled) return false;
 

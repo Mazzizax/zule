@@ -3,9 +3,9 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
 
-const CREDENTIAL_ID_KEY = 'gatekeeper_passkey_credential_id';
-const GATEKEEPER_URL = process.env.EXPO_PUBLIC_GATEKEEPER_URL;
-const GATEKEEPER_KEY = process.env.EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY || '';
+const CREDENTIAL_ID_KEY = 'zule_passkey_credential_id';
+const ZULE_URL = process.env.EXPO_PUBLIC_ZULE_URL;
+const GATEKEEPER_KEY = process.env.EXPO_PUBLIC_ZULE_PUBLISHABLE_KEY || '';
 
 /**
  * Convert standard base64 to base64url
@@ -39,7 +39,7 @@ export async function registerPasskey(email: string): Promise<{ success: boolean
 
     // 1. GET registration options from server
     console.log('[Passkey] Getting registration options from server...');
-    const optionsUrl = `${GATEKEEPER_URL}/functions/v1/passkey-register?action=options`;
+    const optionsUrl = `${ZULE_URL}/functions/v1/passkey-register?action=options`;
     const optionsResponse = await fetch(optionsUrl, {
       method: 'GET',
       headers: {
@@ -78,7 +78,7 @@ export async function registerPasskey(email: string): Promise<{ success: boolean
 
     // 3. POST the response in RegistrationResponseJSON format
     console.log('[Passkey] Sending registration response to server...');
-    const registerUrl = `${GATEKEEPER_URL}/functions/v1/passkey-register`;
+    const registerUrl = `${ZULE_URL}/functions/v1/passkey-register`;
     const registerResponse = await fetch(registerUrl, {
       method: 'POST',
       headers: {
@@ -135,7 +135,7 @@ export async function authenticateWithPasskey(): Promise<{ success: boolean; err
     console.log('[Passkey] Using stored credential_id:', credentialId);
 
     // 1. GET authentication challenge from server
-    const challengeUrl = `${GATEKEEPER_URL}/functions/v1/passkey-auth?credential_id=${encodeURIComponent(credentialId)}`;
+    const challengeUrl = `${ZULE_URL}/functions/v1/passkey-auth?credential_id=${encodeURIComponent(credentialId)}`;
     const challengeResponse = await fetch(challengeUrl, {
       method: 'GET',
       headers: {
@@ -155,7 +155,7 @@ export async function authenticateWithPasskey(): Promise<{ success: boolean; err
     console.log('[Passkey] Requesting assertion from device...');
     const assertion = await Passkey.get({
       challenge: challengeData.challenge,
-      rpId: challengeData.rp_id || 'gatekeeper-nine.vercel.app',
+      rpId: challengeData.rp_id || 'zule.mazzizax.net',
       userVerification: 'preferred',
       allowCredentials: [{ id: credentialId, type: 'public-key' }],
     });
@@ -164,7 +164,7 @@ export async function authenticateWithPasskey(): Promise<{ success: boolean; err
     console.log('[Passkey] Got assertion from device');
 
     // 3. POST the response in AuthenticationResponseJSON format
-    const verifyUrl = `${GATEKEEPER_URL}/functions/v1/passkey-auth`;
+    const verifyUrl = `${ZULE_URL}/functions/v1/passkey-auth`;
     const verifyResponse = await fetch(verifyUrl, {
       method: 'POST',
       headers: {
@@ -200,7 +200,7 @@ export async function authenticateWithPasskey(): Promise<{ success: boolean; err
     console.log('[Passkey] Auth successful, user_id:', authData?.user_id);
 
     // Call mint-session to get Supabase tokens
-    const mintUrl = `${GATEKEEPER_URL}/functions/v1/mint-session`;
+    const mintUrl = `${ZULE_URL}/functions/v1/mint-session`;
     console.log('[Passkey] Calling mint-session...');
 
     const mintResponse = await fetch(mintUrl, {

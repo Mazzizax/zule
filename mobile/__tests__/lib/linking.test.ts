@@ -13,10 +13,10 @@ describe('linking.ts', () => {
 
   describe('isValidCallbackUrl()', () => {
     describe('valid URLs', () => {
-      it('returns true for dawgtag:// URLs', () => {
-        expect(isValidCallbackUrl('dawgtag://callback')).toBe(true);
-        expect(isValidCallbackUrl('dawgtag://auth/success')).toBe(true);
-        expect(isValidCallbackUrl('dawgtag://')).toBe(true);
+      it('returns true for vinzrik:// URLs', () => {
+        expect(isValidCallbackUrl('vinzrik://callback')).toBe(true);
+        expect(isValidCallbackUrl('vinzrik://auth/success')).toBe(true);
+        expect(isValidCallbackUrl('vinzrik://')).toBe(true);
       });
 
       it('returns true for exp:// URLs (Expo development)', () => {
@@ -26,8 +26,8 @@ describe('linking.ts', () => {
 
       it('returns true for https:// URLs', () => {
         expect(isValidCallbackUrl('https://example.com/callback')).toBe(true);
-        expect(isValidCallbackUrl('https://dawgtag.app/auth')).toBe(true);
-        expect(isValidCallbackUrl('https://gatekeeper-nine.vercel.app/auth')).toBe(true);
+        expect(isValidCallbackUrl('https://vinzrik.app/auth')).toBe(true);
+        expect(isValidCallbackUrl('https://zule.mazzizax.net/auth')).toBe(true);
       });
     });
 
@@ -68,7 +68,7 @@ describe('linking.ts', () => {
       });
 
       it('returns false for partial matches (not starting with prefix)', () => {
-        expect(isValidCallbackUrl('notdawgtag://callback')).toBe(false);
+        expect(isValidCallbackUrl('notvinzrik://callback')).toBe(false);
         expect(isValidCallbackUrl('xhttps://example.com')).toBe(false);
       });
     });
@@ -81,12 +81,12 @@ describe('linking.ts', () => {
       });
 
       it('handles URLs with special characters', () => {
-        expect(isValidCallbackUrl('dawgtag://callback?token=abc&state=xyz')).toBe(true);
+        expect(isValidCallbackUrl('vinzrik://callback?token=abc&state=xyz')).toBe(true);
         expect(isValidCallbackUrl('https://example.com/path?redirect=https%3A%2F%2Fother.com')).toBe(true);
       });
 
       it('handles URLs with fragments', () => {
-        expect(isValidCallbackUrl('dawgtag://callback#section')).toBe(true);
+        expect(isValidCallbackUrl('vinzrik://callback#section')).toBe(true);
         expect(isValidCallbackUrl('https://example.com/#/auth')).toBe(true);
       });
     });
@@ -94,15 +94,15 @@ describe('linking.ts', () => {
 
   describe('parseAuthDeepLink()', () => {
     it('extracts callback parameter from URL', () => {
-      const url = 'https://gatekeeper-nine.vercel.app/auth?callback=dawgtag://success';
+      const url = 'https://zule.mazzizax.net/auth?callback=vinzrik://success';
 
       const result = parseAuthDeepLink(url);
 
-      expect(result).toBe('dawgtag://success');
+      expect(result).toBe('vinzrik://success');
     });
 
     it('returns undefined when no callback parameter', () => {
-      const url = 'https://gatekeeper-nine.vercel.app/auth';
+      const url = 'https://zule.mazzizax.net/auth';
 
       const result = parseAuthDeepLink(url);
 
@@ -116,24 +116,24 @@ describe('linking.ts', () => {
     });
 
     it('handles URL-encoded callbacks', () => {
-      const encodedCallback = encodeURIComponent('dawgtag://auth?token=abc');
-      const url = `https://gatekeeper-nine.vercel.app/auth?callback=${encodedCallback}`;
+      const encodedCallback = encodeURIComponent('vinzrik://auth?token=abc');
+      const url = `https://zule.mazzizax.net/auth?callback=${encodedCallback}`;
 
       const result = parseAuthDeepLink(url);
 
-      expect(result).toBe('dawgtag://auth?token=abc');
+      expect(result).toBe('vinzrik://auth?token=abc');
     });
 
     it('handles multiple query parameters', () => {
-      const url = 'https://gatekeeper-nine.vercel.app/auth?foo=bar&callback=dawgtag://success&baz=qux';
+      const url = 'https://zule.mazzizax.net/auth?foo=bar&callback=vinzrik://success&baz=qux';
 
       const result = parseAuthDeepLink(url);
 
-      expect(result).toBe('dawgtag://success');
+      expect(result).toBe('vinzrik://success');
     });
 
     it('returns null for empty callback parameter', () => {
-      const url = 'https://gatekeeper-nine.vercel.app/auth?callback=';
+      const url = 'https://zule.mazzizax.net/auth?callback=';
 
       const result = parseAuthDeepLink(url);
 
@@ -142,11 +142,11 @@ describe('linking.ts', () => {
     });
 
     it('handles custom scheme URLs as input', () => {
-      const url = 'gatekeeper://auth?callback=dawgtag://success';
+      const url = 'gatekeeper://auth?callback=vinzrik://success';
 
       const result = parseAuthDeepLink(url);
 
-      expect(result).toBe('dawgtag://success');
+      expect(result).toBe('vinzrik://success');
     });
 
     it('returns null when Linking.parse throws an exception', () => {
@@ -168,10 +168,10 @@ describe('linking.ts', () => {
       (Linking.canOpenURL as jest.Mock).mockResolvedValue(true);
       (Linking.openURL as jest.Mock).mockResolvedValue(undefined);
 
-      await openUrl('dawgtag://callback');
+      await openUrl('vinzrik://callback');
 
-      expect(Linking.canOpenURL).toHaveBeenCalledWith('dawgtag://callback');
-      expect(Linking.openURL).toHaveBeenCalledWith('dawgtag://callback');
+      expect(Linking.canOpenURL).toHaveBeenCalledWith('vinzrik://callback');
+      expect(Linking.openURL).toHaveBeenCalledWith('vinzrik://callback');
     });
 
     it('throws error for URLs that cannot be opened', async () => {
@@ -198,7 +198,7 @@ describe('linking.ts', () => {
     });
 
     it('includes production domain for universal links', () => {
-      expect(linkingConfig.prefixes).toContain('https://gatekeeper-nine.vercel.app');
+      expect(linkingConfig.prefixes).toContain('https://zule.mazzizax.net');
     });
 
     it('has exactly 2 prefixes configured', () => {

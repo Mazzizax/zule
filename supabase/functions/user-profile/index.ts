@@ -2,7 +2,7 @@
  * GATEKEEPER: User Profile Endpoint
  *
  * Handles user profile read/update operations.
- * This endpoint knows user_id (Gatekeeper privilege).
+ * This endpoint knows user_id (Zule privilege).
  *
  * Endpoints:
  * - GET: Retrieve user profile

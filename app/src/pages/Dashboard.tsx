@@ -4,9 +4,9 @@ import { useAuth } from '../contexts/AuthContext';
 /**
  * Dashboard - Account Overview
  *
- * NOTE: Ghost ID display has been moved to Dawg Tag.
+ * NOTE: Ghost ID display has been moved to Vinzrik.
  * This dashboard now shows account info and subscription status.
- * Gatekeeper knows WHO you are, Dawg Tag handles app connections.
+ * Zule knows WHO you are, Vinzrik handles app connections.
  */
 
 interface ProfileSummary {
@@ -35,7 +35,7 @@ export default function Dashboard() {
     try {
       setLoading(true);
       const response = await fetch(
-        `${import.meta.env.GATEKEEPER_URL}/functions/v1/user-profile`,
+        `${import.meta.env.ZULE_URL}/functions/v1/user-profile`,
         {
           method: 'GET',
           headers: {
@@ -78,7 +78,7 @@ export default function Dashboard() {
     <div className="page-container">
       <div className="page-header">
         <h1>Dashboard</h1>
-        <p>Your Gatekeeper account overview</p>
+        <p>Your Zule account overview</p>
       </div>
 
       {error && <div className="error-message">{error}</div>}
@@ -88,7 +88,7 @@ export default function Dashboard() {
         <span className="privacy-icon">🔒</span>
         <div>
           <strong>Privacy by Design</strong>
-          <p>Gatekeeper manages your identity. Your app connections and activity are handled by Dawg Tag on your device.</p>
+          <p>Zule manages your identity. Your app connections and activity are handled by Vinzrik on your device.</p>
         </div>
       </div>
 
@@ -132,16 +132,16 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Dawg Tag Notice */}
+      {/* Vinzrik Notice */}
       <div className="card">
         <h2>App Connections</h2>
         <div className="info-note">
           <p>
-            Your app connections and ghost identity are managed by <strong>Dawg Tag</strong> on your device.
-            This ensures that even Gatekeeper cannot see which apps you use or link your identity to your activity.
+            Your app connections and ghost identity are managed by <strong>Vinzrik</strong> on your device.
+            This ensures that even Zule cannot see which apps you use or link your identity to your activity.
           </p>
           <p style={{ marginTop: '0.5rem', opacity: 0.7 }}>
-            Open Dawg Tag to view and manage your connected apps.
+            Open Vinzrik to view and manage your connected apps.
           </p>
         </div>
       </div>

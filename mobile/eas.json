@@ -11,8 +11,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_GATEKEEPER_URL": "https://sgjulzvgcyotebbexfue.supabase.co",
-        "EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY": "sb_publishable_xFOHnMnSq51MLWo1WlZxRQ_79esD8cM"
+        "EXPO_PUBLIC_ZULE_URL": "https://sgjulzvgcyotebbexfue.supabase.co",
+        "EXPO_PUBLIC_ZULE_PUBLISHABLE_KEY": "sb_publishable_xFOHnMnSq51MLWo1WlZxRQ_79esD8cM"
       }
     },
     "preview": {
@@ -21,8 +21,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_GATEKEEPER_URL": "https://sgjulzvgcyotebbexfue.supabase.co",
-        "EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY": "sb_publishable_xFOHnMnSq51MLWo1WlZxRQ_79esD8cM"
+        "EXPO_PUBLIC_ZULE_URL": "https://sgjulzvgcyotebbexfue.supabase.co",
+        "EXPO_PUBLIC_ZULE_PUBLISHABLE_KEY": "sb_publishable_xFOHnMnSq51MLWo1WlZxRQ_79esD8cM"
       }
     },
     "production": {

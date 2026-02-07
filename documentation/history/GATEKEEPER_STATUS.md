@@ -1,18 +1,18 @@
-# Gatekeeper Project Status
+# Zule Project Status
 
 **Last Updated:** 2026-01-01
 
 ---
 
-## What is Gatekeeper?
+## What is Zule?
 
-Gatekeeper is the **user-facing identity provider** for the Xenon ecosystem. It's the single place where users:
+Zule is the **user-facing identity provider** for the Xenon ecosystem. It's the single place where users:
 - Create and manage their account
 - Control which apps can access their data
 - Manage subscriptions and billing
 - Export/backup their ghost identity
 
-**Key Privacy Property:** Gatekeeper knows WHO you are (email, payment info). Apps only know your `ghost_id` - an anonymous identifier derived client-side that cannot be linked back to your identity.
+**Key Privacy Property:** Zule knows WHO you are (email, payment info). Apps only know your `ghost_id` - an anonymous identifier derived client-side that cannot be linked back to your identity.
 
 ---
 
@@ -22,7 +22,7 @@ Gatekeeper is the **user-facing identity provider** for the Xenon ecosystem. It'
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         USER DEVICE                                  │
 │  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐  │
-│  │  Gatekeeper App │    │   Mobile App    │    │   Engine Web    │  │
+│  │  Zule App │    │   Mobile App    │    │   Engine Web    │  │
 │  │  (Identity)     │    │   (Data Entry)  │    │   (Dashboard)   │  │
 │  └────────┬────────┘    └────────┬────────┘    └────────┬────────┘  │
 │           │                      │                      │           │
@@ -124,13 +124,13 @@ Gatekeeper is the **user-facing identity provider** for the Xenon ecosystem. It'
 2. Web shows QR code with session request
 3. User scans QR with phone app
 4. Phone prompts for biometric (Face ID / Touch ID)
-5. Phone signs challenge with ghost_secret, sends to Gatekeeper
+5. Phone signs challenge with ghost_secret, sends to Zule
 6. Web polls for approval, receives session_token + ghost_id
 7. Web can now access Engine with ghost_id
 
-#### 2. Gatekeeper Web Portal (Full Version)
+#### 2. Zule Web Portal (Full Version)
 
-**Purpose:** The user-facing Gatekeeper app for managing identity and connected apps.
+**Purpose:** The user-facing Zule app for managing identity and connected apps.
 
 **Current:** Basic test app with login/register/ghost_id display
 
@@ -149,12 +149,12 @@ Gatekeeper is the **user-facing identity provider** for the Xenon ecosystem. It'
 
 #### 3. Project Separation
 
-**Current:** Edge Functions deployed to existing Gatekeeper Supabase project
+**Current:** Edge Functions deployed to existing Zule Supabase project
 
 **Needed:**
-- Deploy Gatekeeper web portal to Vercel (separate from Engine web)
+- Deploy Zule web portal to Vercel (separate from Engine web)
 - Configure custom domain (`auth.xenontotem.com` or similar)
-- Update CORS to include production Gatekeeper URL
+- Update CORS to include production Zule URL
 
 #### 4. Physical Token Support
 
@@ -166,9 +166,9 @@ Gatekeeper is the **user-facing identity provider** for the Xenon ecosystem. It'
 
 ## Priority Roadmap
 
-### Phase 1: Gatekeeper Portal MVP (Current Focus)
+### Phase 1: Zule Portal MVP (Current Focus)
 
-**Goal:** Deployable Gatekeeper web app that users can access
+**Goal:** Deployable Zule web app that users can access
 
 1. Rename `gatekeeper-test-app` → `gatekeeper-app`
 2. Add Profile page (call `user-profile` Edge Function)
@@ -219,7 +219,7 @@ Gatekeeper is the **user-facing identity provider** for the Xenon ecosystem. It'
 
 ## Key Files Reference
 
-### Gatekeeper Backend
+### Zule Backend
 
 ```
 gatekeeper-project/
@@ -241,7 +241,7 @@ gatekeeper-project/
     └── config.toml
 ```
 
-### Gatekeeper Web App
+### Zule Web App
 
 ```
 gatekeeper-test-app/          # Will become gatekeeper-app/
@@ -255,7 +255,7 @@ gatekeeper-test-app/          # Will become gatekeeper-app/
 │       ├── Login.tsx
 │       ├── Register.tsx
 │       └── Home.tsx          # Dashboard
-├── .env                      # Gatekeeper credentials
+├── .env                      # Zule credentials
 ├── package.json
 └── vite.config.ts
 ```
@@ -278,7 +278,7 @@ documentation/
 
 ## Environment Variables
 
-### Gatekeeper Edge Functions
+### Zule Edge Functions
 
 ```bash
 BLIND_TOKEN_SECRET=<32-byte-secret>      # Token signing (MUST match Engine)
@@ -288,10 +288,10 @@ STRIPE_WEBHOOK_SECRET=whsec_xxx          # Stripe webhook verification
 ADMIN_API_KEY=<secure-key>               # For app registration
 ```
 
-### Gatekeeper Web App
+### Zule Web App
 
 ```bash
-VITE_GATEKEEPER_URL=https://sgjulzvgcyotebbexfue.supabase.co
+VITE_ZULE_URL=https://sgjulzvgcyotebbexfue.supabase.co
 VITE_GATEKEEPER_ANON_KEY=eyJhbGci...
 ```
 
@@ -312,4 +312,4 @@ VITE_GATEKEEPER_ANON_KEY=eyJhbGci...
 
 ## Next Action
 
-**Immediate:** Expand `gatekeeper-test-app` into full Gatekeeper portal with Profile and Connected Apps pages, then deploy to Vercel.
+**Immediate:** Expand `gatekeeper-test-app` into full Zule portal with Profile and Connected Apps pages, then deploy to Vercel.

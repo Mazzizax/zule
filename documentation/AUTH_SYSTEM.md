@@ -1,8 +1,8 @@
-# Gatekeeper Authentication System
+# Zule Authentication System
 
 ## Overview
 
-Gatekeeper provides secure authentication for the platform using two methods:
+Zule provides secure authentication for the platform using two methods:
 1. **Email/Password** - Traditional authentication via Supabase Auth
 2. **Passkey/Biometric** - WebAuthn-based passwordless authentication
 
@@ -29,7 +29,7 @@ Both methods result in a verified user session that can be used across the platf
 
 Passkey authentication uses the WebAuthn standard with the following security properties:
 
-- **Phishing Resistant** - Credentials are bound to the origin (`gatekeeper-nine.vercel.app`)
+- **Phishing Resistant** - Credentials are bound to the origin (`zule.mazzizax.net`)
 - **No Shared Secrets** - Uses asymmetric cryptography (private key never leaves device)
 - **Biometric Protection** - Private key is unlocked by fingerprint/face via device secure enclave
 - **Replay Protection** - Challenge-response with incrementing counters
@@ -114,14 +114,14 @@ CREATE TABLE passkey_challenges (
 
 #### Relying Party (RP)
 ```typescript
-const RP_ID = 'gatekeeper-nine.vercel.app'
-const RP_NAME = 'Gatekeeper'
+const RP_ID = 'zule.mazzizax.net'
+const RP_NAME = 'Zule'
 ```
 
 #### Expected Origins
 ```typescript
 const EXPECTED_ORIGINS = [
-  'https://gatekeeper-nine.vercel.app',
+  'https://zule.mazzizax.net',
   'android:apk-key-hash:Uoi_lyYD2kQgh8Q-hPG3jyij0Nn5n9e8yKnxbdc8zfk',
 ]
 ```
@@ -161,7 +161,7 @@ Standard Supabase Auth flow:
 After successful authentication (either method), the user receives:
 - **Supabase Session** - JWT tokens for API access
 - **verification_token** (passkey only) - Short-lived token for mint-session
-- **attestation** (passkey only) - Token for Dawg Tag ghost-auth flow
+- **attestation** (passkey only) - Token for Vinzrik ghost-auth flow
 
 ## Security Considerations
 

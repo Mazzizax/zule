@@ -58,7 +58,7 @@ export default function Developer() {
       setError(null);
 
       const response = await fetch(
-        `${import.meta.env.GATEKEEPER_URL}/functions/v1/app-register`,
+        `${import.meta.env.ZULE_URL}/functions/v1/app-register`,
         {
           method: 'GET',
           headers: {
@@ -117,7 +117,7 @@ export default function Developer() {
       }
 
       const response = await fetch(
-        `${import.meta.env.GATEKEEPER_URL}/functions/v1/app-register`,
+        `${import.meta.env.ZULE_URL}/functions/v1/app-register`,
         {
           method: 'POST',
           headers: {
@@ -196,7 +196,7 @@ export default function Developer() {
     <div className="page-container">
       <div className="page-header">
         <h1>Developer</h1>
-        <p>Register and manage your apps that integrate with Gatekeeper</p>
+        <p>Register and manage your apps that integrate with Zule</p>
       </div>
 
       {error && <div className="error-message">{error}</div>}
@@ -248,9 +248,9 @@ export default function Developer() {
                 <h3>Next Steps:</h3>
                 <ol>
                   <li>Store these credentials securely in your app's environment variables</li>
-                  <li>Use the shared_secret to verify tokens from Gatekeeper</li>
+                  <li>Use the shared_secret to verify tokens from Zule</li>
                   <li>Use the api_key for server-to-server API calls</li>
-                  <li>Implement the Gatekeeper OAuth flow in your app</li>
+                  <li>Implement the Zule OAuth flow in your app</li>
                 </ol>
               </div>
             </div>
@@ -412,7 +412,7 @@ export default function Developer() {
         <div className="card empty-state">
           <div className="empty-icon">🛠️</div>
           <h3>No Registered Apps</h3>
-          <p>Register your first app to start integrating with Gatekeeper.</p>
+          <p>Register your first app to start integrating with Zule.</p>
         </div>
       ) : (
         <div className="apps-list">

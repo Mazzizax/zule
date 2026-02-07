@@ -21,7 +21,7 @@ export default function Login() {
   const [webAuthnSupported, setWebAuthnSupported] = useState(false);
   const [platformAuthAvailable, setPlatformAuthAvailable] = useState(false);
 
-  // Check for callback URL (from Dawg Tag)
+  // Check for callback URL (from Vinzrik)
   const callbackUrl = searchParams.get('callback');
   const appId = searchParams.get('app_id');
 

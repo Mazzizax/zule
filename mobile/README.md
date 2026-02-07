@@ -1,6 +1,6 @@
-# Gatekeeper Mobile
+# Zule Mobile
 
-React Native mobile app for the Gatekeeper authentication system, built with Expo SDK 53.
+React Native mobile app for the Zule authentication system, built with Expo SDK 53.
 
 ## Quick Start
 

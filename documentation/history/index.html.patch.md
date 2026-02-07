@@ -1,6 +1,6 @@
 # Frontend Updates for Dual Project Architecture
 
-This document describes the changes needed to `index.html` to support the Gatekeeper/Engine separation.
+This document describes the changes needed to `index.html` to support the Zule/Engine separation.
 
 ## 1. Configuration Section
 
@@ -8,13 +8,13 @@ Replace the existing config loading with:
 
 ```javascript
 // Load configuration
-const GATEKEEPER_URL = CONFIG.GATEKEEPER_URL;
+const ZULE_URL = CONFIG.ZULE_URL;
 const GATEKEEPER_KEY = CONFIG.GATEKEEPER_ANON_KEY;
 const ENGINE_URL = CONFIG.ENGINE_URL;
 const ENGINE_KEY = CONFIG.ENGINE_ANON_KEY;
 
 // Create separate clients for each project
-const gatekeeperClient = window.supabase.createClient(GATEKEEPER_URL, GATEKEEPER_KEY);
+const zuleClient = window.supabase.createClient(ZULE_URL, GATEKEEPER_KEY);
 const engineClient = window.supabase.createClient(ENGINE_URL, ENGINE_KEY, {
   auth: {
     persistSession: false, // Engine doesn't use sessions
@@ -23,7 +23,7 @@ const engineClient = window.supabase.createClient(ENGINE_URL, ENGINE_KEY, {
 });
 
 // For backward compatibility during transition
-const supabase = gatekeeperClient;
+const supabase = zuleClient;
 ```
 
 ## 2. BlindTokenManager Update
@@ -49,7 +49,7 @@ class BlindTokenManager {
 
     try {
       // Call GATEKEEPER (not Engine) to get blind token
-      const response = await fetch(`${GATEKEEPER_URL}/functions/v1/blind-token-issue`, {
+      const response = await fetch(`${ZULE_URL}/functions/v1/blind-token-issue`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${currentSession.access_token}`,
@@ -89,7 +89,7 @@ class BlindTokenManager {
     if (!currentSession) return false;
 
     try {
-      const response = await fetch(`${GATEKEEPER_URL}/functions/v1/revoke-token`, {
+      const response = await fetch(`${ZULE_URL}/functions/v1/revoke-token`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${currentSession.access_token}`,
@@ -140,7 +140,7 @@ class XenonQueueManager {
     let synced = 0;
     for (const item of pending) {
       try {
-        // Call ENGINE (not Gatekeeper) with blind token
+        // Call ENGINE (not Zule) with blind token
         const response = await fetch(`${ENGINE_URL}/functions/v1/queue-enqueue`, {
           method: 'POST',
           headers: {
@@ -253,7 +253,7 @@ window.handleLogin = async function () {
 
   try {
     // Use GATEKEEPER for auth
-    const { error } = await gatekeeperClient.auth.signInWithPassword({ email, password });
+    const { error } = await zuleClient.auth.signInWithPassword({ email, password });
     if (error) msg.innerText = error.message;
   } catch (err) {
     msg.innerText = err.message;
@@ -265,7 +265,7 @@ window.handleLogout = async function () {
   await blindTokenManager.revokeAll();
 
   // Then sign out from GATEKEEPER
-  await gatekeeperClient.auth.signOut();
+  await zuleClient.auth.signOut();
 };
 ```
 
@@ -278,7 +278,7 @@ async function fetchUserProfile() {
   if (!currentSession) return null;
 
   try {
-    const response = await fetch(`${GATEKEEPER_URL}/functions/v1/user-profile`, {
+    const response = await fetch(`${ZULE_URL}/functions/v1/user-profile`, {
       headers: {
         'Authorization': `Bearer ${currentSession.access_token}`
       }
@@ -298,10 +298,10 @@ async function fetchUserProfile() {
 
 | Action | Project | Endpoint |
 |--------|---------|----------|
-| Login/Signup | Gatekeeper | Supabase Auth |
-| Get blind token | Gatekeeper | `/functions/v1/blind-token-issue` |
-| Get/update profile | Gatekeeper | `/functions/v1/user-profile` |
-| Revoke tokens | Gatekeeper | `/functions/v1/revoke-token` |
+| Login/Signup | Zule | Supabase Auth |
+| Get blind token | Zule | `/functions/v1/blind-token-issue` |
+| Get/update profile | Zule | `/functions/v1/user-profile` |
+| Revoke tokens | Zule | `/functions/v1/revoke-token` |
 | Enqueue event | Engine | `/functions/v1/queue-enqueue` |
 | Get queue status | Engine | `/functions/v1/queue-status` |
 | Query ledger | Engine | Direct table query via client |

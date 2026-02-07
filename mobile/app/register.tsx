@@ -15,7 +15,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../src/contexts/AuthContext';
 
 /**
- * Register Screen for Gatekeeper Mobile
+ * Register Screen for Zule Mobile
  *
  * Account creation with email verification
  */
@@ -137,11 +137,11 @@ export default function RegisterScreen() {
           By creating an account, you agree to our
         </Text>
         <View style={styles.legalLinks}>
-          <TouchableOpacity onPress={() => Linking.openURL('https://gatekeeper-nine.vercel.app/terms')}>
+          <TouchableOpacity onPress={() => Linking.openURL('https://zule.mazzizax.net/terms')}>
             <Text style={styles.legalLinkText}>Terms of Service</Text>
           </TouchableOpacity>
           <Text style={styles.legalSeparator}>&</Text>
-          <TouchableOpacity onPress={() => Linking.openURL('https://gatekeeper-nine.vercel.app/privacy')}>
+          <TouchableOpacity onPress={() => Linking.openURL('https://zule.mazzizax.net/privacy')}>
             <Text style={styles.legalLinkText}>Privacy Policy</Text>
           </TouchableOpacity>
         </View>

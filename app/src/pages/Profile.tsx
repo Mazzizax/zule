@@ -49,7 +49,7 @@ export default function Profile() {
       setError(null);
 
       const response = await fetch(
-        `${import.meta.env.GATEKEEPER_URL}/functions/v1/user-profile`,
+        `${import.meta.env.ZULE_URL}/functions/v1/user-profile`,
         {
           method: 'GET',
           headers: {
@@ -84,7 +84,7 @@ export default function Profile() {
       setSuccess(null);
 
       const response = await fetch(
-        `${import.meta.env.GATEKEEPER_URL}/functions/v1/user-profile`,
+        `${import.meta.env.ZULE_URL}/functions/v1/user-profile`,
         {
           method: 'PUT',
           headers: {

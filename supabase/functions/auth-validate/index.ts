@@ -1,12 +1,12 @@
 /**
  * Auth Validate Endpoint
  *
- * PURPOSE: Validate user credentials and return a blind attestation to Dawg Tag.
+ * PURPOSE: Validate user credentials and return a blind attestation to Vinzrik.
  *
  * SECURITY:
- * - Dawg Tag receives ONLY an attestation (proof of auth, no user identity)
+ * - Vinzrik receives ONLY an attestation (proof of auth, no user identity)
  * - Attestation contains NO user_id, NO email, NO identifying information
- * - Gatekeeper never knows which app the user is accessing
+ * - Zule never knows which app the user is accessing
  *
  * REQUEST:
  * POST /auth-validate
@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
       .eq('id', userId)
 
     // Check if user has a registered passkey (for biometric login on future visits)
-    // We return the credential_id so Dawg Tag can store it locally
+    // We return the credential_id so Vinzrik can store it locally
     const { data: passkeys } = await serviceClient
       .from('user_passkeys')
       .select('credential_id')
@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
       const privateKey = await importJWK(attestationKey, 'ES256')
       const now = Math.floor(Date.now() / 1000)
 
-      // Attestation for Dawg Tag (5 minutes)
+      // Attestation for Vinzrik (5 minutes)
       // Contains NO user_id, NO email - just proof that someone authenticated
       attestation = await new SignJWT({
         type: 'attestation',
@@ -203,7 +203,7 @@ Deno.serve(async (req) => {
       return errorResponse('Failed to generate attestation', 500, origin)
     }
 
-    // Return attestation, tier, and credential_id to Dawg Tag
+    // Return attestation, tier, and credential_id to Vinzrik
     // NO user_id, NO email - just blind proof of authentication
     // credential_id allows biometric login on future visits
     return jsonResponse({

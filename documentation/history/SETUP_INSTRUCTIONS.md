@@ -1,24 +1,24 @@
-# Gatekeeper Project Setup Instructions
+# Zule Project Setup Instructions
 
-## What is Gatekeeper?
+## What is Zule?
 
-**Gatekeeper is a dedicated secure user authentication service.**
+**Zule is a dedicated secure user authentication service.**
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                                                                         │
 │   "I know WHO you are. I will NEVER know WHAT you do."                  │
 │                                                                         │
-│   - Gatekeeper authenticates identity                                   │
-│   - Gatekeeper issues anonymous tokens per-app                          │
-│   - Gatekeeper cannot see inside any connected application              │
+│   - Zule authenticates identity                                   │
+│   - Zule issues anonymous tokens per-app                          │
+│   - Zule cannot see inside any connected application              │
 │   - Connected applications cannot see each other's users                │
 │   - Physical token holder controls their identity absolutely            │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-This guide walks you through setting up the Gatekeeper Supabase project for the privacy-preserving multi-app architecture.
+This guide walks you through setting up the Zule Supabase project for the privacy-preserving multi-app architecture.
 
 ## Architecture Overview
 
@@ -55,7 +55,7 @@ This guide walks you through setting up the Gatekeeper Supabase project for the 
 
 ---
 
-## Step 1: Create Gatekeeper Supabase Project
+## Step 1: Create Zule Supabase Project
 
 1. Go to [supabase.com/dashboard](https://supabase.com/dashboard)
 2. Click **"New Project"**
@@ -92,9 +92,9 @@ openssl rand -base64 32
 
 ---
 
-## Step 3: Run Gatekeeper Database Migration
+## Step 3: Run Zule Database Migration
 
-1. Go to **SQL Editor** in your new Gatekeeper project
+1. Go to **SQL Editor** in your new Zule project
 2. Copy the contents of `gatekeeper-project/migrations/00001_gatekeeper_schema.sql`
 3. Paste and click **Run**
 4. Verify tables were created:
@@ -107,7 +107,7 @@ openssl rand -base64 32
 
 ---
 
-## Step 4: Configure Gatekeeper Secrets
+## Step 4: Configure Zule Secrets
 
 Go to **Project Settings > Edge Functions > Secrets** and add:
 
@@ -119,12 +119,12 @@ Go to **Project Settings > Edge Functions > Secrets** and add:
 
 ---
 
-## Step 5: Deploy Gatekeeper Edge Functions
+## Step 5: Deploy Zule Edge Functions
 
 From your terminal, in the `gatekeeper-project` directory:
 
 ```bash
-# Link to your new Gatekeeper project
+# Link to your new Zule project
 npx supabase login
 npx supabase link --project-ref YOUR_GATEKEEPER_PROJECT_REF
 
@@ -153,13 +153,13 @@ Add the shared secret to your existing Engine project:
 
 | Name | Value |
 |------|-------|
-| `BLIND_TOKEN_SECRET` | Same value as Gatekeeper (from Step 2) |
+| `BLIND_TOKEN_SECRET` | Same value as Zule (from Step 2) |
 
 ---
 
 ## Step 7: Configure Authentication
 
-In your Gatekeeper project, go to **Authentication > Settings**:
+In your Zule project, go to **Authentication > Settings**:
 
 ### Email Auth
 - [x] Enable Email Signup
@@ -188,7 +188,7 @@ In your Gatekeeper project, go to **Authentication > Settings**:
 
 ```javascript
 const CONFIG = {
-  GATEKEEPER_URL: 'https://YOUR_GATEKEEPER_REF.supabase.co',
+  ZULE_URL: 'https://YOUR_GATEKEEPER_REF.supabase.co',
   GATEKEEPER_ANON_KEY: 'eyJhbG...',
   ENGINE_URL: 'https://YOUR_ENGINE_REF.supabase.co',
   ENGINE_ANON_KEY: 'eyJhbG...',
@@ -209,7 +209,7 @@ const CONFIG = {
 
 ## Step 10: Test the Setup
 
-### Test 1: Gatekeeper Auth
+### Test 1: Zule Auth
 ```bash
 # Should return user profile
 curl -X GET \
@@ -239,10 +239,10 @@ curl -X GET \
 
 ## Verification Checklist
 
-- [ ] Gatekeeper project created
+- [ ] Zule project created
 - [ ] Migration applied successfully
 - [ ] BLIND_TOKEN_SECRET set on both projects
-- [ ] Edge functions deployed to Gatekeeper
+- [ ] Edge functions deployed to Zule
 - [ ] Authentication settings configured
 - [ ] Frontend config updated
 - [ ] Mobile config updated
@@ -262,7 +262,7 @@ If issues arise:
 
 ## Step 11: Register Xenon Engine as First App
 
-After migration, run this SQL in Gatekeeper's SQL Editor to register Xenon Engine:
+After migration, run this SQL in Zule's SQL Editor to register Xenon Engine:
 
 ```sql
 -- Register Xenon Engine as first app
@@ -288,7 +288,7 @@ Add the `shared_secret` to your Engine project's Edge Functions secrets as `BLIN
 
 ## Registering Third-Party Apps
 
-When other applications want to use Gatekeeper for authentication:
+When other applications want to use Zule for authentication:
 
 ### Via API (Authenticated User)
 ```bash
@@ -360,9 +360,9 @@ SELECT * FROM report_token_lost('user-uuid', 'XNT-00001-2024', 'lost');
 
 ---
 
-## Phase 2: Gatekeeper Portal Frontend
+## Phase 2: Zule Portal Frontend
 
-After the Gatekeeper backend is deployed and tested, build the **Gatekeeper Portal** - a user-facing app for managing identity and app connections.
+After the Zule backend is deployed and tested, build the **Zule Portal** - a user-facing app for managing identity and app connections.
 
 ### Starting Point
 
@@ -393,8 +393,8 @@ mobile/
 
 ### Changes Required
 
-#### 1. Point Auth to Gatekeeper Project
-Update `src/lib/supabase.ts` to connect to Gatekeeper instead of Engine.
+#### 1. Point Auth to Zule Project
+Update `src/lib/supabase.ts` to connect to Zule instead of Engine.
 
 #### 2. Add Multi-App Ghost ID Derivation
 Modify `src/lib/ghostKeys.ts`:
@@ -420,7 +420,7 @@ async function deriveGhostId(userId: string, secret: string, appId: string): Pro
 
 #### 4. Add BlindTokenManager
 Copy `gatekeeper-project/mobile-updates/BlindTokenManager.ts` to handle:
-- Requesting blind tokens from Gatekeeper
+- Requesting blind tokens from Zule
 - Caching tokens with expiry
 - Per-app token management
 
@@ -444,7 +444,7 @@ App
 
 ### Implementation Order
 
-1. **Update Supabase connection** - Point to Gatekeeper project
+1. **Update Supabase connection** - Point to Zule project
 2. **Modify ghostKeys.ts** - Add app_id to derivation
 3. **Add BlindTokenManager** - Token request/caching
 4. **ConnectedAppsScreen** - View/revoke apps (uses existing API)

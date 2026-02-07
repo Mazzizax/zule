@@ -2,15 +2,15 @@ import { supabase } from './supabase';
 import { Session } from '@supabase/supabase-js';
 
 /**
- * Attestation Service for Gatekeeper Mobile
+ * Attestation Service for Zule Mobile
  *
  * Issues signed attestations that prove a user authenticated
  * WITHOUT revealing their identity (no user_id, no email).
  *
  * Flow:
- * 1. User authenticates with Gatekeeper
+ * 1. User authenticates with Zule
  * 2. Call issue-attestation edge function
- * 3. Returns signed JWT for Dawg Tag to send to ghozerauth
+ * 3. Returns signed JWT for Vinzrik to send to ghozerauth
  */
 
 export interface AttestationResult {
@@ -19,7 +19,7 @@ export interface AttestationResult {
 }
 
 /**
- * Request an attestation from the Gatekeeper backend
+ * Request an attestation from the Zule backend
  *
  * @param session - The authenticated user's session
  * @returns Signed attestation JWT
@@ -46,9 +46,9 @@ export async function issueAttestation(session: Session): Promise<AttestationRes
 }
 
 /**
- * Build the callback URL with attestation for Dawg Tag
+ * Build the callback URL with attestation for Vinzrik
  *
- * @param callbackUrl - The callback URL from Dawg Tag
+ * @param callbackUrl - The callback URL from Vinzrik
  * @param attestation - The signed attestation JWT
  * @returns Full callback URL with attestation parameter
  */
@@ -62,7 +62,7 @@ export function buildCallbackUrl(callbackUrl: string, attestation: string): stri
 /**
  * Build a cancelled callback URL
  *
- * @param callbackUrl - The callback URL from Dawg Tag
+ * @param callbackUrl - The callback URL from Vinzrik
  * @returns Callback URL indicating cancellation
  */
 export function buildCancelledCallbackUrl(callbackUrl: string): string {

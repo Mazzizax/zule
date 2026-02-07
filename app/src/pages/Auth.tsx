@@ -3,18 +3,18 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 /**
- * Auth Page for Dawg Tag
+ * Auth Page for Vinzrik
  *
- * This page handles authentication requests from Dawg Tag.
+ * This page handles authentication requests from Vinzrik.
  * Flow:
- * 1. Dawg Tag opens: /auth?callback=dawgtag://auth-callback
+ * 1. Vinzrik opens: /auth?callback=vinzrik://auth-callback
  * 2. User logs in with email/password
  * 3. On success, call issue-attestation to get signed JWT
  * 4. Redirect to callback with attestation (NOT user_id)
  *
  * The attestation proves "a valid user authenticated" without revealing identity.
  *
- * This is specifically for the Dawg Tag auth flow.
+ * This is specifically for the Vinzrik auth flow.
  */
 
 export default function Auth() {
@@ -31,7 +31,7 @@ export default function Auth() {
 
   // Validate callback URL
   const isValidCallback = callbackUrl && (
-    callbackUrl.startsWith('dawgtag://') ||
+    callbackUrl.startsWith('vinzrik://') ||
     callbackUrl.startsWith('exp://') || // Expo development
     callbackUrl.startsWith('https://')
   );
@@ -42,7 +42,7 @@ export default function Auth() {
       console.log('[AUTH] Attempting redirect to:', redirectUrl);
 
       // For custom schemes on mobile, try multiple approaches
-      if (redirectUrl.startsWith('dawgtag://') || redirectUrl.startsWith('exp://')) {
+      if (redirectUrl.startsWith('vinzrik://') || redirectUrl.startsWith('exp://')) {
         // Try iframe first (works better on iOS Safari)
         const iframe = document.createElement('iframe');
         iframe.style.display = 'none';
@@ -147,7 +147,7 @@ export default function Auth() {
             <p>Authentication Error</p>
           </div>
           <div className="error-message">
-            Invalid or missing callback URL. This page should be opened from Dawg Tag.
+            Invalid or missing callback URL. This page should be opened from Vinzrik.
           </div>
         </div>
       </div>
@@ -161,7 +161,7 @@ export default function Auth() {
         <div className="auth-card">
           <div className="auth-header">
             <h1>GATEKEEPER</h1>
-            <p>Redirecting to Dawg Tag...</p>
+            <p>Redirecting to Vinzrik...</p>
           </div>
           <div style={{ textAlign: 'center', padding: '24px' }}>
             <div className="loading-spinner" style={{ margin: '0 auto 16px' }} />
@@ -236,9 +236,9 @@ export default function Auth() {
 
         <div style={{ marginTop: '24px', textAlign: 'center' }}>
           <p style={{ color: '#666', fontSize: '12px' }}>
-            Your credentials are verified by Gatekeeper.
+            Your credentials are verified by Zule.
             <br />
-            Your identity stays private with Dawg Tag.
+            Your identity stays private with Vinzrik.
           </p>
         </div>
       </div>

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Gatekeeper",
+    "name": "Zule",
     "slug": "gatekeeper",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -17,7 +17,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.xenon.gatekeeper",
       "associatedDomains": [
-        "applinks:gatekeeper-nine.vercel.app",
+        "applinks:zule.mazzizax.net",
         "applinks:sgjulzvgcyotebbexfue.supabase.co"
       ]
     },
@@ -35,7 +35,7 @@
           "data": [
             {
               "scheme": "https",
-              "host": "gatekeeper-nine.vercel.app",
+              "host": "zule.mazzizax.net",
               "pathPrefix": "/auth"
             },
             {

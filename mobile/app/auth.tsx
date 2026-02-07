@@ -18,9 +18,9 @@ import { isValidCallbackUrl, openUrl } from '../src/lib/linking';
 import { authenticateWithBiometrics, checkBiometricStatus } from '../src/lib/security';
 
 /**
- * Auth Screen for Dawg Tag Integration
+ * Auth Screen for Vinzrik Integration
  *
- * This screen handles authentication requests from Dawg Tag.
+ * This screen handles authentication requests from Vinzrik.
  */
 export default function AuthScreen() {
   const params = useLocalSearchParams<{ callback?: string }>();
@@ -51,7 +51,7 @@ export default function AuthScreen() {
     }
 
     try {
-      const success = await authenticateWithBiometrics('Log in to Dawg Tag');
+      const success = await authenticateWithBiometrics('Log in to Vinzrik');
       if (success) {
         setLoading(true);
         const { attestation } = await issueAttestation(session);
@@ -120,7 +120,7 @@ export default function AuthScreen() {
       <View style={styles.container}>
         <View style={styles.card}>
           <Text style={styles.title}>GATEKEEPER</Text>
-          <Text style={styles.subtitle}>Redirecting to Dawg Tag...</Text>
+          <Text style={styles.subtitle}>Redirecting to Vinzrik...</Text>
           <ActivityIndicator size="large" color="#4CAF50" style={styles.spinner} />
         </View>
       </View>
@@ -190,8 +190,8 @@ export default function AuthScreen() {
         </TouchableOpacity>
 
         <Text style={styles.footerText}>
-          Your credentials are verified by Gatekeeper.{'\n'}
-          Your identity stays private with Dawg Tag.
+          Your credentials are verified by Zule.{'\n'}
+          Your identity stays private with Vinzrik.
         </Text>
       </View>
     </KeyboardAvoidingView>
