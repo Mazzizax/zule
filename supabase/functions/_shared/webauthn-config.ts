@@ -29,7 +29,9 @@ export const EXPECTED_ORIGINS = [
   // Legacy domains (keep until May 8, 2026)
   'https://gatekeeper-nine.vercel.app',
   'https://xenon-engine-web.vercel.app',
-  // Android
+  // Android - Vinzrik (com.xenon.vinzrik, debug keystore)
+  'android:apk-key-hash:7XrT7DwGTOXZgUhB78XwgBc-sQatZaRGvJvEEDhDvPU',
+  // Android - Legacy gatekeeper (com.xenon.gatekeeper, remove after May 8, 2026)
   'android:apk-key-hash:Uoi_lyYD2kQgh8Q-hPG3jyij0Bn5n9e8yKnxbdc8zfk',
 ]
 

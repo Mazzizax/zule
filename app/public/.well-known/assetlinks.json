@@ -6,6 +6,19 @@
     ],
     "target": {
       "namespace": "android_app",
+      "package_name": "com.xenon.vinzrik",
+      "sha256_cert_fingerprints": [
+        "ED:7A:D3:EC:3C:06:4C:E5:D9:81:48:41:EF:C5:F0:80:17:3E:B1:06:AD:65:A4:46:BC:9B:C4:10:38:43:BC:F5"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
       "package_name": "com.xenon.gatekeeper",
       "sha256_cert_fingerprints": [
         "52:88:BF:97:26:03:DA:44:20:87:C4:3E:84:F1:B7:8F:28:A3:D0:09:F9:9F:D7:BC:C8:A9:F1:6D:D7:3C:CD:F9"
