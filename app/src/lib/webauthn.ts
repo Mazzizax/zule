@@ -99,38 +99,50 @@ export async function registerPasskey(
   }
 
   try {
-    // Generate registration options
-    const challenge = generateChallenge();
+    // Get session for authenticated requests
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      return { success: false, error: 'Not authenticated' };
+    }
 
-    const rpId = window.location.hostname;
-    const rpName = 'Zule';
+    // Step 1: Get registration options + challenge_key from server
+    const optionsResponse = await fetch(
+      `${ZULE_URL}/functions/v1/passkey-register?action=options`,
+      {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      }
+    );
 
+    if (!optionsResponse.ok) {
+      const err = await optionsResponse.text();
+      return { success: false, error: `Failed to get registration options: ${err}` };
+    }
+
+    const { options, challenge_key } = await optionsResponse.json();
+
+    // Step 2: Convert server options to browser-compatible format
     const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
-      challenge: challenge,
-      rp: {
-        name: rpName,
-        id: rpId,
-      },
+      challenge: base64urlToBuffer(options.challenge),
+      rp: options.rp,
       user: {
-        id: new TextEncoder().encode(userId),
-        name: userEmail,
-        displayName: userEmail.split('@')[0],
+        id: base64urlToBuffer(options.user.id),
+        name: options.user.name,
+        displayName: options.user.displayName,
       },
-      pubKeyCredParams: [
-        { type: 'public-key', alg: -7 },   // ES256
-        { type: 'public-key', alg: -257 }, // RS256
-      ],
-      authenticatorSelection: {
-        // Don't restrict to platform - let browser/device decide
-        // This allows both Face ID/Touch ID AND security keys
-        userVerification: 'preferred', // Changed from 'required' to avoid mobile issues
-        residentKey: 'preferred',
-      },
-      timeout: 120000, // Increased timeout for slow biometric prompts
-      attestation: 'none',
+      pubKeyCredParams: options.pubKeyCredParams,
+      authenticatorSelection: options.authenticatorSelection,
+      timeout: options.timeout,
+      attestation: options.attestation || 'none',
+      excludeCredentials: options.excludeCredentials?.map((c: any) => ({
+        type: c.type,
+        id: base64urlToBuffer(c.id),
+        transports: c.transports,
+      })) || [],
     };
 
-    // Create credential
+    // Step 3: Create credential with browser API
     const credential = await navigator.credentials.create({
       publicKey: publicKeyCredentialCreationOptions,
     }) as PublicKeyCredential;
@@ -139,26 +151,28 @@ export async function registerPasskey(
       return { success: false, error: 'Failed to create credential' };
     }
 
-    const response = credential.response as AuthenticatorAttestationResponse;
+    const attestationResponse = credential.response as AuthenticatorAttestationResponse;
 
-    // Extract public key from attestation
-    const publicKeyBytes = response.getPublicKey();
-    if (!publicKeyBytes) {
-      return { success: false, error: 'Failed to get public key' };
-    }
+    // Step 4: Build RegistrationResponseJSON for server verification
+    const registrationResponse = {
+      id: bufferToBase64url(credential.rawId),
+      rawId: bufferToBase64url(credential.rawId),
+      type: credential.type,
+      response: {
+        clientDataJSON: bufferToBase64url(attestationResponse.clientDataJSON),
+        attestationObject: bufferToBase64url(attestationResponse.attestationObject),
+        transports: attestationResponse.getTransports?.() || ['internal'],
+        publicKey: attestationResponse.getPublicKey()
+          ? bufferToBase64url(attestationResponse.getPublicKey()!)
+          : undefined,
+        authenticatorData: attestationResponse.getAuthenticatorData
+          ? bufferToBase64url(attestationResponse.getAuthenticatorData())
+          : undefined,
+      },
+      clientExtensionResults: credential.getClientExtensionResults(),
+    };
 
-    // Get the access token for API call
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      return { success: false, error: 'Not authenticated' };
-    }
-
-    // Determine authenticator type
-    const authenticatorType = response.getTransports?.()?.includes('internal')
-      ? 'platform'
-      : 'cross-platform';
-
-    // Register with Zule
+    // Step 5: Send challenge_key + response to server for verification
     const registerResponse = await fetch(`${ZULE_URL}/functions/v1/passkey-register`, {
       method: 'POST',
       headers: {
@@ -166,11 +180,9 @@ export async function registerPasskey(
         'Authorization': `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({
-        credential_id: bufferToBase64url(credential.rawId),
-        public_key: bufferToBase64(publicKeyBytes),
+        challenge_key,
+        response: registrationResponse,
         device_name: deviceName || getDeviceName(),
-        authenticator_type: authenticatorType,
-        transports: response.getTransports?.() || ['internal'],
       }),
     });
 
@@ -186,7 +198,6 @@ export async function registerPasskey(
   } catch (error: any) {
     console.error('[WebAuthn] Registration error:', error);
 
-    // Handle specific WebAuthn errors
     if (error.name === 'NotAllowedError') {
       return { success: false, error: 'Registration was cancelled or not allowed' };
     }
