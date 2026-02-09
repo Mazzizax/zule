@@ -30,7 +30,7 @@ export const EXPECTED_ORIGINS = [
   'https://gatekeeper-nine.vercel.app',
   'https://xenon-engine-web.vercel.app',
   // Android - Vinzrik (com.xenon.vinzrik, debug keystore)
-  'android:apk-key-hash:7XrT7DwGTOXZgUhB78XwgBc-sQatZaRGvJvEEDhDvPU',
+  'android:apk-key-hash:-sYXRdwJA3hvue3mKpYrOZ9zSPC7b4mbgzJmdZEDO5w',
   // Android - Legacy gatekeeper (com.xenon.gatekeeper, remove after May 8, 2026)
   'android:apk-key-hash:Uoi_lyYD2kQgh8Q-hPG3jyij0Bn5n9e8yKnxbdc8zfk',
 ]
