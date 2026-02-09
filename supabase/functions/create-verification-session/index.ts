@@ -1,5 +1,5 @@
 /**
- * GATEKEEPER: Create Stripe Identity Verification Session
+ * Zule: Create Stripe Identity Verification Session
  *
  * Creates a Stripe Identity VerificationSession for KYC verification.
  * User must be authenticated via JWT.

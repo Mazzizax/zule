@@ -1,5 +1,5 @@
 /**
- * GATEKEEPER: Create Stripe Checkout Session
+ * Zule: Create Stripe Checkout Session
  *
  * Creates a Stripe Checkout session for subscription purchases.
  * User must be authenticated via JWT.

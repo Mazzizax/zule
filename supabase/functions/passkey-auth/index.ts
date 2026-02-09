@@ -462,7 +462,7 @@ async function handleVerifyAssertion(
       type: 'passkey_verified',
     })
       .setProtectedHeader({ alg: 'ES256', typ: 'JWT' })
-      .setIssuer('gatekeeper-passkey')
+      .setIssuer('zule-passkey')
       .setAudience('mint-session')
       .setSubject(credential.user_id)
       .setIssuedAt(now)
@@ -477,8 +477,8 @@ async function handleVerifyAssertion(
       auth_level: 'biometric',
     })
       .setProtectedHeader({ alg: 'ES256', typ: 'JWT' })
-      .setIssuer('gatekeeper')
-      .setAudience('ghost-auth')
+      .setIssuer('zule')
+      .setAudience('ghozerauth')
       .setIssuedAt(now)
       .setExpirationTime(now + 300)
       .setJti(crypto.randomUUID())

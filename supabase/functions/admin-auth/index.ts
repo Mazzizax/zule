@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
         const publicKey = await importJWK(publicKeyOnly, 'ES256')
 
         const { payload } = await jwtVerify(verification_token, publicKey, {
-          issuer: 'gatekeeper-passkey',
+          issuer: 'zule-passkey',
           audience: 'mint-session'
         })
 
@@ -186,9 +186,9 @@ Deno.serve(async (req) => {
     // ------------------------------------------------------------------
     // Issue Admin JWT
     // ------------------------------------------------------------------
-    const privateKeyJson = Deno.env.get('GATEKEEPER_JWT_PRIVATE_KEY')
+    const privateKeyJson = Deno.env.get('ZULE_JWT_PRIVATE_KEY') || Deno.env.get('GATEKEEPER_JWT_PRIVATE_KEY')
     if (!privateKeyJson) {
-      console.error('[ADMIN-AUTH] GATEKEEPER_JWT_PRIVATE_KEY not configured')
+      console.error('[ADMIN-AUTH] ZULE_JWT_PRIVATE_KEY not configured')
       return errorResponse('Server configuration error', 500, origin)
     }
 
@@ -206,7 +206,7 @@ Deno.serve(async (req) => {
         display_name: adminInfo.display_name
       })
         .setProtectedHeader({ alg: 'ES256', typ: 'JWT', kid: keyData.kid })
-        .setIssuer('gatekeeper')
+        .setIssuer('zule')
         .setAudience('goals-admin')
         .setSubject(authenticatedUserId)
         .setIssuedAt(now)

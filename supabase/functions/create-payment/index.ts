@@ -1,5 +1,5 @@
 /**
- * GATEKEEPER: Create Stripe Payment Intent
+ * Zule: Create Stripe Payment Intent
  *
  * Creates a Stripe PaymentIntent for one-time purchases (credits, unlocks, etc.).
  * User must be authenticated via JWT.

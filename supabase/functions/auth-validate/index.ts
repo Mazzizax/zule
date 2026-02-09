@@ -190,8 +190,8 @@ Deno.serve(async (req) => {
         auth_level: 'password',
       })
         .setProtectedHeader({ alg: 'ES256', typ: 'JWT' })
-        .setIssuer('gatekeeper')
-        .setAudience('ghost-auth')
+        .setIssuer('zule')
+        .setAudience('ghozerauth')
         .setIssuedAt(now)
         .setExpirationTime(now + 300)
         .setJti(crypto.randomUUID())

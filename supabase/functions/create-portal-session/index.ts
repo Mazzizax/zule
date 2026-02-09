@@ -1,5 +1,5 @@
 /**
- * GATEKEEPER: Create Stripe Customer Portal Session
+ * Zule: Create Stripe Customer Portal Session
  *
  * Creates a Stripe Customer Portal session for subscription management.
  * User must be authenticated and have an existing Stripe customer ID.

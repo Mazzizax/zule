@@ -9,7 +9,7 @@ import { handleCors, jsonResponse, errorResponse } from '../_shared/cors.ts'
  * FLOW:
  * 1. Receive verification_token from passkey-auth (proves fingerprint just verified)
  * 2. Validate verification_token (signed by ATTESTATION_SIGNING_KEY, short-lived)
- * 3. Mint access_token and refresh_token using GATEKEEPER_JWT_PRIVATE_KEY
+ * 3. Mint access_token and refresh_token using ZULE_JWT_PRIVATE_KEY
  * 4. Return tokens to client for supabase.auth.setSession()
  *
  * SECURITY:
@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
 
       console.log('[MINT-SESSION] Verifying token (first 50 chars):', verification_token.substring(0, 50))
       const { payload } = await jwtVerify(verification_token, publicKey, {
-        issuer: 'gatekeeper-passkey',
+        issuer: 'zule-passkey',
         audience: 'mint-session',
       })
       console.log('[MINT-SESSION] Token verified, payload type:', payload.type)
@@ -89,9 +89,9 @@ Deno.serve(async (req) => {
     // ------------------------------------------------------------------
     // 2. Load the JWT signing key
     // ------------------------------------------------------------------
-    const privateKeyJson = Deno.env.get('GATEKEEPER_JWT_PRIVATE_KEY')
+    const privateKeyJson = Deno.env.get('ZULE_JWT_PRIVATE_KEY') || Deno.env.get('GATEKEEPER_JWT_PRIVATE_KEY')
     if (!privateKeyJson) {
-      console.error('[MINT-SESSION] GATEKEEPER_JWT_PRIVATE_KEY not configured')
+      console.error('[MINT-SESSION] ZULE_JWT_PRIVATE_KEY not configured')
       return errorResponse('Server configuration error', 500, origin)
     }
 

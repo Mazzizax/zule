@@ -113,8 +113,8 @@ serve(async (req) => {
       auth_level: "authenticated", // Could be "biometric" if we track that
     })
       .setProtectedHeader({ alg: "ES256", typ: "JWT" })
-      .setIssuer("gatekeeper")
-      .setAudience("ghost-auth")
+      .setIssuer("zule")
+      .setAudience("ghozerauth")
       .setIssuedAt(now)
       .setExpirationTime(now + expiresIn)
       .setJti(crypto.randomUUID()) // Prevent replay

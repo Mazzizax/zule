@@ -1,5 +1,5 @@
 /**
- * GATEKEEPER: Stripe Webhook Handler
+ * Zule: Stripe Webhook Handler
  *
  * Handles Stripe subscription events to update user tiers.
  * This endpoint knows user_id (Zule privilege).

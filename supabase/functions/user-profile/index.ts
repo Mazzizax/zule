@@ -1,5 +1,5 @@
 /**
- * GATEKEEPER: User Profile Endpoint
+ * Zule: User Profile Endpoint
  *
  * Handles user profile read/update operations.
  * This endpoint knows user_id (Zule privilege).
