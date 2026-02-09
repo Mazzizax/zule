@@ -33,6 +33,10 @@ verify_jwt = false
 # Allow unauthenticated access - this endpoint validates via verification_token
 verify_jwt = false
 
+[functions.issue-attestation]
+# New sb_publishable_ keys not compatible with Edge JWT verification - verify inside function via JWKS
+verify_jwt = false
+
 [functions.stripe-webhook]
 # Stripe signs webhooks with its own signature, not JWT
 verify_jwt = false
