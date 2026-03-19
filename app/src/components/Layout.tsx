@@ -20,7 +20,7 @@ export default function Layout() {
     <div className="layout">
       {/* Mobile Header */}
       <header className="mobile-header">
-        <h1>GATEKEEPER</h1>
+        <h1>ZULE</h1>
         <button
           className="mobile-menu-btn"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -66,7 +66,7 @@ export default function Layout() {
 
       <nav className="sidebar">
         <div className="sidebar-header">
-          <h1>GATEKEEPER</h1>
+          <h1>ZULE</h1>
           <p className="user-email">{user?.email}</p>
         </div>
 
