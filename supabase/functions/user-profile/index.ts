@@ -199,7 +199,9 @@ Deno.serve(async (req) => {
           privacy_policy_accepted_at,
           privacy_policy_version,
           terms_accepted_at,
-          terms_version
+          terms_version,
+          plaid_institution_name,
+          plaid_connected_at
         `)
         .eq('id', user.id)
         .single();

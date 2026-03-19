@@ -5,7 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
  * Dashboard - Account Overview
  *
  * NOTE: Ghost ID display has been moved to Vinzrik.
- * This dashboard now shows account info and subscription status.
+ * This dashboard now shows account info, subscription status,
+ * and connected financial accounts (Plaid).
  * Zule knows WHO you are, Vinzrik handles app connections.
  */
 
@@ -15,6 +16,8 @@ interface ProfileSummary {
   subscription_expires_at: string | null;
   created_at: string;
   last_seen_at: string;
+  plaid_institution_name: string | null;
+  plaid_connected_at: string | null;
 }
 
 export default function Dashboard() {
@@ -22,6 +25,9 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [plaidLoading, setPlaidLoading] = useState(false);
+  const [pullLoading, setPullLoading] = useState(false);
+  const [pullResult, setPullResult] = useState<string | null>(null);
 
   useEffect(() => {
     if (session?.access_token) {
@@ -61,6 +67,100 @@ export default function Dashboard() {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString();
+  };
+
+  const openPlaidLink = async () => {
+    if (!session?.access_token) return;
+
+    setPlaidLoading(true);
+    try {
+      // 1. Get link_token from backend
+      const res = await fetch(
+        `${import.meta.env.ZULE_URL}/functions/v1/plaid-create-link-token`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to create link token');
+      }
+
+      const { link_token } = await res.json();
+
+      // 2. Open Plaid Link widget
+      const Plaid = (window as any).Plaid;
+      if (!Plaid) {
+        throw new Error('Plaid Link not loaded. Please refresh the page.');
+      }
+
+      const handler = Plaid.create({
+        token: link_token,
+        onSuccess: async (public_token: string) => {
+          try {
+            await fetch(
+              `${import.meta.env.ZULE_URL}/functions/v1/plaid-exchange-token`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${session.access_token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ public_token }),
+              }
+            );
+            fetchProfile(); // Refresh to show connected status
+          } catch (err) {
+            console.error('Token exchange failed:', err);
+            setError('Failed to connect account. Please try again.');
+          }
+        },
+        onExit: () => {
+          setPlaidLoading(false);
+        },
+      });
+
+      handler.open();
+    } catch (err: any) {
+      setError(err.message);
+      setPlaidLoading(false);
+    }
+  };
+
+  const pullTransactions = async () => {
+    if (!session?.access_token) return;
+
+    setPullLoading(true);
+    setPullResult(null);
+    try {
+      const res = await fetch(
+        `${import.meta.env.ZULE_URL}/functions/v1/plaid-pull-transactions`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to pull transactions');
+      }
+
+      const data = await res.json();
+      setPullResult(`Synced: +${data.added} new, ~${data.modified} updated, -${data.removed} removed`);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setPullLoading(false);
+    }
   };
 
   if (loading) {
@@ -130,6 +230,59 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Connected Accounts (Plaid) */}
+      <div className="card">
+        <h2>Connected Accounts</h2>
+        {profile?.plaid_institution_name ? (
+          <>
+            <div className="info-row">
+              <span className="label">Card:</span>
+              <span className="value">{profile.plaid_institution_name}</span>
+            </div>
+            <div className="info-row">
+              <span className="label">Connected:</span>
+              <span className="value">{formatDate(profile.plaid_connected_at)}</span>
+            </div>
+            <div className="info-row">
+              <span className="label">Status:</span>
+              <span className="value status-active">Connected</span>
+            </div>
+            <div style={{ marginTop: '16px' }}>
+              <button
+                className="btn-secondary"
+                onClick={pullTransactions}
+                disabled={pullLoading}
+              >
+                {pullLoading ? 'Pulling...' : 'Pull Latest Transactions'}
+              </button>
+              {pullResult && (
+                <div className="success-message" style={{ marginTop: '12px' }}>
+                  {pullResult}
+                </div>
+              )}
+            </div>
+            <div className="info-note" style={{ marginTop: '12px' }}>
+              <p>Transactions are stored in Zule. Use Vinzrik to sync them to Goals (anonymized via your ghost identity).</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="info-note">
+              <p>Link your card to track spending on your quests. Transaction data stays in Zule and is only relayed to Goals through Vinzrik, anonymized with your ghost identity.</p>
+            </div>
+            <div style={{ marginTop: '16px' }}>
+              <button
+                className="btn-primary"
+                onClick={openPlaidLink}
+                disabled={plaidLoading}
+              >
+                {plaidLoading ? 'Connecting...' : 'Link Card'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Vinzrik Notice */}
