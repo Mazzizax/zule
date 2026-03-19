@@ -198,15 +198,6 @@ export default function Dashboard() {
 
       {error && <div className="error-message">{error}</div>}
 
-      {/* Privacy Notice */}
-      <div className="privacy-banner">
-        <span className="privacy-icon">🔒</span>
-        <div>
-          <strong>Privacy by Design</strong>
-          <p>Zule manages your identity. Your app connections and activity are handled by Vinzrik on your device.</p>
-        </div>
-      </div>
-
       <div className="card-grid">
         {/* Account Info */}
         <div className="card">
