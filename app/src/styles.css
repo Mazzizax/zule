@@ -23,6 +23,33 @@
   --warning: #d4943c;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* Metallic surface gradients */
+  --metal-text: linear-gradient(135deg, #A08968 0%, #D4BC9A 25%, #C4A882 50%, #E0D0B8 75%, #A08968 100%);
+  --metal-surface: linear-gradient(135deg, #A08968 0%, #C4A882 40%, #D4BC9A 60%, #A08968 100%);
+  --metal-border: linear-gradient(135deg, #2a2520 0%, #C4A882 50%, #2a2520 100%);
+  --metal-shine: linear-gradient(90deg, transparent 0%, rgba(212, 188, 154, 0.08) 45%, rgba(212, 188, 154, 0.15) 50%, rgba(212, 188, 154, 0.08) 55%, transparent 100%);
+}
+
+/* Metallic text helper */
+.metal-text {
+  background: var(--metal-text);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Subtle shimmer animation */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes borderShimmer {
+  0% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+  100% { opacity: 0.3; }
 }
 
 * {
@@ -55,10 +82,12 @@ body {
 .auth-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
+  border-top: 1px solid rgba(196, 168, 130, 0.2);
   border-radius: 12px;
   padding: 40px;
   width: 100%;
   max-width: 400px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5), 0 0 2px rgba(196, 168, 130, 0.1);
 }
 
 .auth-header {
@@ -71,7 +100,12 @@ body {
   font-weight: 700;
   letter-spacing: 8px;
   margin-bottom: 8px;
-  color: var(--zule-gold);
+  background: var(--metal-text);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 6s ease-in-out infinite;
 }
 
 .auth-header p {
@@ -118,7 +152,8 @@ body {
    ================================ */
 
 .btn-primary {
-  background: var(--zule-gold);
+  background: var(--metal-surface);
+  background-size: 200% auto;
   color: #0a0908;
   border: none;
   border-radius: 8px;
@@ -126,12 +161,12 @@ body {
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--zule-gold-bright);
-  box-shadow: 0 0 20px rgba(196, 168, 130, 0.2);
+  background-position: right center;
+  box-shadow: 0 0 24px rgba(196, 168, 130, 0.25), 0 0 4px rgba(196, 168, 130, 0.4);
 }
 
 .btn-primary:disabled {
@@ -236,22 +271,41 @@ body {
 .btn-passkey {
   background: transparent;
   color: var(--text-primary);
-  border: 2px solid var(--zule-gold);
+  border: 1px solid var(--zule-gold-dim);
   border-radius: 8px;
   padding: 14px 20px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-passkey::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: var(--metal-shine);
+  transition: left 0.5s ease;
 }
 
 .btn-passkey:hover:not(:disabled) {
   background: var(--zule-gold-glow);
+  border-color: var(--zule-gold);
+  box-shadow: 0 0 16px rgba(196, 168, 130, 0.15);
+}
+
+.btn-passkey:hover:not(:disabled)::after {
+  left: 100%;
 }
 
 .btn-passkey:disabled {
@@ -357,10 +411,12 @@ body {
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid var(--border);
-  border-top-color: var(--zule-gold);
+  border: 2px solid var(--border);
+  border-top: 2px solid var(--zule-gold);
+  border-right: 2px solid var(--zule-gold-dim);
   border-radius: 50%;
   animation: spin 1s linear infinite;
+  box-shadow: 0 0 12px rgba(196, 168, 130, 0.15);
 }
 
 @keyframes spin {
@@ -410,14 +466,21 @@ body {
   height: 48px;
   border-radius: 10px;
   margin-bottom: 12px;
+  border: 1px solid rgba(196, 168, 130, 0.25);
+  box-shadow: 0 0 16px rgba(196, 168, 130, 0.1);
 }
 
 .sidebar-header h1 {
   font-size: 20px;
   font-weight: 700;
   letter-spacing: 6px;
-  color: var(--zule-gold);
   margin-bottom: 2px;
+  background: var(--metal-text);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 8s ease-in-out infinite;
 }
 
 .sidebar-tagline {
@@ -553,6 +616,12 @@ body {
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+  border-color: var(--border-light);
+  box-shadow: 0 0 0 1px rgba(196, 168, 130, 0.06), 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .card h2 {
@@ -637,13 +706,16 @@ body {
 }
 
 .tier-badge {
-  background: linear-gradient(135deg, var(--zule-gold-dim), var(--zule-gold));
+  background: var(--metal-surface);
+  background-size: 200% auto;
   color: #0a0908;
   padding: 4px 10px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: var(--font-mono);
 }
 
 .badge {
@@ -690,7 +762,8 @@ body {
   align-items: flex-start;
   gap: 12px;
   background: var(--zule-gold-glow);
-  border: 1px solid var(--zule-gold-dim);
+  border: 1px solid rgba(160, 137, 104, 0.3);
+  border-top: 1px solid rgba(196, 168, 130, 0.4);
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 20px;
