@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+
+async function getFreshToken(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ?? null;
+}
 
 interface RegisteredApp {
   id: string;
@@ -51,7 +57,8 @@ export default function Developer() {
   }, [session]);
 
   const fetchApps = async () => {
-    if (!session?.access_token) return;
+    const token = await getFreshToken();
+    if (!token) return;
 
     try {
       setLoading(true);
@@ -62,7 +69,7 @@ export default function Developer() {
         {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
             'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
           },
@@ -117,12 +124,13 @@ export default function Developer() {
         return;
       }
 
+      const postToken = await getFreshToken();
       const response = await fetch(
         `${import.meta.env.ZULE_URL}/functions/v1/app-register`,
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${postToken}`,
             'Content-Type': 'application/json',
             'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
           },

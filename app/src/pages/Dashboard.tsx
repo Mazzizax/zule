@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+
+/** Get a fresh access token from the Supabase client */
+async function getFreshToken(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ?? null;
+}
 
 /**
  * Dashboard - Account Overview
@@ -36,7 +43,8 @@ export default function Dashboard() {
   }, [session]);
 
   const fetchProfile = async () => {
-    if (!session?.access_token) return;
+    const token = await getFreshToken();
+    if (!token) return;
 
     try {
       setLoading(true);
@@ -45,7 +53,7 @@ export default function Dashboard() {
         {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
             'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
           },
@@ -71,7 +79,8 @@ export default function Dashboard() {
   };
 
   const openPlaidLink = async () => {
-    if (!session?.access_token) return;
+    const token = await getFreshToken();
+    if (!token) return;
 
     setPlaidLoading(true);
     try {
@@ -81,7 +90,7 @@ export default function Dashboard() {
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
             'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
           },
@@ -105,13 +114,15 @@ export default function Dashboard() {
         token: link_token,
         onSuccess: async (public_token: string) => {
           try {
+            const exchangeToken = await getFreshToken();
             await fetch(
               `${import.meta.env.ZULE_URL}/functions/v1/plaid-exchange-token`,
               {
                 method: 'POST',
                 headers: {
-                  'Authorization': `Bearer ${session.access_token}`,
+                  'Authorization': `Bearer ${exchangeToken}`,
                   'Content-Type': 'application/json',
+                  'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
                 },
                 body: JSON.stringify({ public_token }),
               }
@@ -135,7 +146,8 @@ export default function Dashboard() {
   };
 
   const pullTransactions = async () => {
-    if (!session?.access_token) return;
+    const token = await getFreshToken();
+    if (!token) return;
 
     setPullLoading(true);
     setPullResult(null);
@@ -145,7 +157,7 @@ export default function Dashboard() {
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
             'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
           },

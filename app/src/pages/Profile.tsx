@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
+async function getFreshToken(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ?? null;
+}
+
 interface UserProfile {
   display_name: string | null;
   avatar_url: string | null;
@@ -42,7 +47,8 @@ export default function Profile() {
   }, [session]);
 
   const fetchProfile = async () => {
-    if (!session?.access_token) return;
+    const token = await getFreshToken();
+    if (!token) return;
 
     try {
       setLoading(true);
@@ -53,7 +59,7 @@ export default function Profile() {
         {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
             'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
           },
@@ -84,12 +90,13 @@ export default function Profile() {
       setError(null);
       setSuccess(null);
 
+      const putToken = await getFreshToken();
       const response = await fetch(
         `${import.meta.env.ZULE_URL}/functions/v1/user-profile`,
         {
           method: 'PUT',
           headers: {
-            'Authorization': `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${putToken}`,
             'Content-Type': 'application/json',
             'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
           },
