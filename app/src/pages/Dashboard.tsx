@@ -47,6 +47,7 @@ export default function Dashboard() {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
           },
         }
       );
@@ -82,6 +83,7 @@ export default function Dashboard() {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
           },
         }
       );
@@ -145,6 +147,7 @@ export default function Dashboard() {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
           },
         }
       );

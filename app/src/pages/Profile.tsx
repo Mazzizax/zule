@@ -55,6 +55,7 @@ export default function Profile() {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
           },
         }
       );
@@ -90,6 +91,7 @@ export default function Profile() {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({
             display_name: displayName || null,

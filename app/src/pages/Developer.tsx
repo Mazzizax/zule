@@ -64,6 +64,7 @@ export default function Developer() {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
           },
         }
       );
@@ -123,6 +124,7 @@ export default function Developer() {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({
             app_id: formData.app_id,
