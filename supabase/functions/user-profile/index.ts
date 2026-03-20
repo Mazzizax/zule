@@ -217,8 +217,11 @@ Deno.serve(async (req) => {
         .select('id, institution_name, connected_at')
         .eq('user_id', user.id);
 
-      // Update last_seen
-      const { error: updateError } = await supabase
+      // Update last_seen (admin client — bypasses RLS)
+      const adminClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { error: updateError } = await adminClient
         .from('user_profiles')
         .update({ last_seen_at: new Date().toISOString() })
         .eq('id', user.id);
