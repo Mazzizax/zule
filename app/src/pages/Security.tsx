@@ -151,6 +151,48 @@ export default function Security() {
     }
   };
 
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (!confirm('This will permanently delete your Zule account and all associated data. This cannot be undone. Continue?')) {
+      return;
+    }
+    if (!confirm('Are you absolutely sure? Your identity data will be permanently destroyed.')) {
+      return;
+    }
+
+    setDeleting(true);
+    setError(null);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No active session');
+
+      const res = await fetch(
+        `${import.meta.env.ZULE_URL}/functions/v1/delete-account`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to delete account');
+      }
+
+      await supabase.auth.signOut();
+      window.location.href = '/login';
+    } catch (err: any) {
+      setError(err.message);
+      setDeleting(false);
+    }
+  };
+
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return 'Never';
     return new Date(dateStr).toLocaleDateString(undefined, {
@@ -280,6 +322,14 @@ export default function Security() {
         </p>
         <button className="btn-secondary" onClick={handleSignOutAllDevices}>
           Sign Out All Devices
+        </button>
+        <button
+          className="btn-secondary"
+          onClick={handleDeleteAccount}
+          disabled={deleting}
+          style={{ marginTop: '12px', color: '#ef4444', borderColor: '#ef4444' }}
+        >
+          {deleting ? 'Deleting...' : 'Delete Account'}
         </button>
       </div>
 
