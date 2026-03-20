@@ -480,7 +480,7 @@ Deno.serve(async (req) => {
       }
 
       // --- Quest template matching ---
-      const questHits = matchQuestTemplates(gear, activityTag, isOutdoor, questTemplates)
+      const questHits = matchQuestTemplates(null, activityTag, isOutdoor, questTemplates)
       const questXp = questHits.length > 0 ? 25 * questHits.length : 0
 
       // --- XP computation ---
