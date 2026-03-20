@@ -267,43 +267,52 @@ function matchQuestTemplates(gear: GearIdentification | null, activityTag: strin
 // GEAR IDENTIFICATION (Gemini-powered, same prompt as Goals gear-search)
 // =============================================================================
 
-const GEAR_IDENTIFY_PROMPT = `You are a product classifier for outdoor and athletic gear purchases. Given a transaction merchant name and category, identify what product was purchased.
+const BATCH_GEAR_PROMPT = `You are a product classifier. Given a JSON array of transactions, classify each one.
 
-Return JSON ONLY (no markdown, no code blocks):
-{
-  "is_gear": true/false,
-  "product_name": "Full product name if identifiable",
-  "brand": "Brand name",
-  "category": "Product category (e.g., trail running shoes, cycling jersey)",
-  "suggested_slot": "head|face|eyewear|earbuds|neck|shoulders|chest|back|arms|hands|waist|legs|feet|ring_1|ring_2|watch|pack|bottle|poles|gps",
-  "activity_types": ["activity1", "activity2"],
-  "activity_tag": "primary activity tag (e.g., trail_run, outdoor_ride, hike)",
-  "is_outdoor_recreation": true/false
+For each transaction, determine:
+- Is it a gear/product purchase? (not groceries, gas, dining, subscriptions, bills)
+- If yes: product_name, brand, category, suggested_slot, activity_types, activity_tag, is_outdoor_recreation
+- If no: is_gear: false, activity_tag if applicable, is_outdoor_recreation
+
+Slot options: head, face, eyewear, earbuds, neck, shoulders, chest, back, arms, hands, waist, legs, feet, ring_1, ring_2, watch, pack, bottle, poles, gps
+
+Return a JSON array with one result per transaction, in the same order. No markdown, no code blocks, just raw JSON array:
+[
+  {"idx":0,"is_gear":false},
+  {"idx":1,"is_gear":true,"product_name":"...","brand":"...","category":"...","suggested_slot":"...","activity_types":["..."],"activity_tag":"...","is_outdoor_recreation":true},
+  ...
+]`;
+
+interface BatchGearResult {
+  idx: number
+  is_gear: boolean
+  product_name?: string
+  brand?: string
+  category?: string
+  suggested_slot?: string
+  activity_types?: string[]
+  activity_tag?: string
+  is_outdoor_recreation?: boolean
 }
 
-Slot mapping:
-HEAD: head (hats/helmets/headlamps), face (masks), eyewear (sunglasses/goggles), earbuds (headphones), neck (gaiters)
-BODY: shoulders (pads), chest (jackets/shirts/jerseys), back (backpacks), arms (sleeves), hands (gloves)
-LOWER: waist (belts/hip packs), legs (shorts/pants/tights), feet (shoes/boots)
-ACCESSORIES: ring_1/ring_2 (smart rings), watch (GPS watches/trackers)
-GEAR: pack (larger packs), bottle (water bottles), poles (trekking poles), gps (GPS devices)
+async function batchIdentifyGear(transactions: RawTransaction[]): Promise<Map<number, { gear: GearIdentification | null, activityTag: string | null, isOutdoor: boolean }>> {
+  const results = new Map<number, { gear: GearIdentification | null, activityTag: string | null, isOutdoor: boolean }>()
 
-If the transaction is NOT a gear purchase (groceries, gas, dining, etc.), return {"is_gear": false}.
-
-Merchant: "{MERCHANT}"
-Description: "{DESCRIPTION}"
-Category: "{CATEGORY}"`;
-
-async function identifyGear(tx: RawTransaction): Promise<{ gear: GearIdentification | null, activityTag: string | null, isOutdoor: boolean }> {
-  if (!GOOGLE_API_KEY) {
-    return { gear: null, activityTag: null, isOutdoor: false }
+  // Default all to no gear
+  for (let i = 0; i < transactions.length; i++) {
+    results.set(i, { gear: null, activityTag: null, isOutdoor: false })
   }
 
+  if (!GOOGLE_API_KEY || transactions.length === 0) return results
+
   try {
-    const prompt = GEAR_IDENTIFY_PROMPT
-      .replace('{MERCHANT}', tx.merchant_name || 'Unknown')
-      .replace('{DESCRIPTION}', tx.subcategory || tx.category || '')
-      .replace('{CATEGORY}', tx.subcategory || tx.category || '')
+    const txArray = transactions.map((tx, i) => ({
+      idx: i,
+      merchant: tx.merchant_name || 'Unknown',
+      category: tx.subcategory || tx.category || '',
+    }))
+
+    const prompt = BATCH_GEAR_PROMPT + '\n\nTransactions:\n' + JSON.stringify(txArray)
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GOOGLE_API_KEY}`,
@@ -312,14 +321,14 @@ async function identifyGear(tx: RawTransaction): Promise<{ gear: GearIdentificat
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: 1024 },
+          generationConfig: { temperature: 0.1, maxOutputTokens: 8192 },
         }),
       }
     )
 
     if (!response.ok) {
-      console.error('[ENRICH] Gemini API error:', response.status)
-      return { gear: null, activityTag: null, isOutdoor: false }
+      console.error('[ENRICH] Gemini batch API error:', response.status)
+      return results
     }
 
     const data = await response.json()
@@ -328,42 +337,47 @@ async function identifyGear(tx: RawTransaction): Promise<{ gear: GearIdentificat
       ?.map((p: { text: string }) => p.text)
       ?.join('') || ''
 
-    if (!textContent) return { gear: null, activityTag: null, isOutdoor: false }
+    if (!textContent) return results
 
-    // Parse JSON (handle markdown code blocks)
+    // Parse JSON array
     let jsonStr = textContent
     const jsonMatch = textContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
     if (jsonMatch) jsonStr = jsonMatch[1]
 
-    const start = jsonStr.indexOf('{')
-    const end = jsonStr.lastIndexOf('}')
-    if (start === -1 || end === -1) return { gear: null, activityTag: null, isOutdoor: false }
+    const arrStart = jsonStr.indexOf('[')
+    const arrEnd = jsonStr.lastIndexOf(']')
+    if (arrStart === -1 || arrEnd === -1) return results
 
-    const parsed = JSON.parse(jsonStr.slice(start, end + 1))
+    const parsed: BatchGearResult[] = JSON.parse(jsonStr.slice(arrStart, arrEnd + 1))
 
-    if (!parsed.is_gear) {
-      return {
-        gear: null,
-        activityTag: parsed.activity_tag || null,
-        isOutdoor: parsed.is_outdoor_recreation || false,
+    for (const item of parsed) {
+      if (item.idx === undefined || item.idx < 0 || item.idx >= transactions.length) continue
+
+      if (item.is_gear && item.product_name) {
+        results.set(item.idx, {
+          gear: {
+            product_name: item.product_name,
+            brand: item.brand || '',
+            category: item.category || '',
+            suggested_slot: item.suggested_slot || 'pack',
+            activity_types: Array.isArray(item.activity_types) ? item.activity_types : [],
+          },
+          activityTag: item.activity_tag || null,
+          isOutdoor: item.is_outdoor_recreation || false,
+        })
+      } else {
+        results.set(item.idx, {
+          gear: null,
+          activityTag: item.activity_tag || null,
+          isOutdoor: item.is_outdoor_recreation || false,
+        })
       }
     }
-
-    return {
-      gear: {
-        product_name: parsed.product_name || 'Unknown Product',
-        brand: parsed.brand || '',
-        category: parsed.category || '',
-        suggested_slot: parsed.suggested_slot || 'pack',
-        activity_types: Array.isArray(parsed.activity_types) ? parsed.activity_types : [],
-      },
-      activityTag: parsed.activity_tag || null,
-      isOutdoor: parsed.is_outdoor_recreation || false,
-    }
   } catch (err) {
-    console.error('[ENRICH] Gear identification error:', err)
-    return { gear: null, activityTag: null, isOutdoor: false }
+    console.error('[ENRICH] Batch gear identification error:', err)
   }
+
+  return results
 }
 
 // =============================================================================
@@ -434,19 +448,21 @@ Deno.serve(async (req) => {
       fetchQuestTemplates(),
     ])
 
-    // 4. ENRICH EACH TRANSACTION
+    // 4. BATCH GEAR IDENTIFICATION (one Gemini call for all transactions)
+    const gearResults = await batchIdentifyGear(unminted as RawTransaction[])
+
+    // 5. ENRICH EACH TRANSACTION
     const cards: GameEventCard[] = []
     const mintedIds: string[] = []
     const poolClaimsToInsert: Array<{ pool_id: string, user_id: string, transaction_id: string, xp_awarded: number }> = []
     const poolClaimCounts: Record<string, number> = {}
 
-    for (const tx of unminted as RawTransaction[]) {
-      // Convert calendar date to cosmic tick
+    for (let txIdx = 0; txIdx < unminted.length; txIdx++) {
+      const tx = unminted[txIdx] as RawTransaction
       const cosmicTick = toCosmicTicks(new Date(tx.date + 'T00:00:00Z').getTime())
       const locationVerified = !!(tx.location_city || tx.location_state)
 
-      // --- Gear identification (Gemini) ---
-      const { gear, activityTag, isOutdoor } = await identifyGear(tx)
+      const { gear, activityTag, isOutdoor } = gearResults.get(txIdx) || { gear: null, activityTag: null, isOutdoor: false }
 
       // --- Sponsor pool matching ---
       const poolHits: string[] = []
