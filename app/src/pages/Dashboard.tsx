@@ -405,15 +405,14 @@ export default function Dashboard() {
                         {(card.xp_awards?.purchase_xp || 0) + (card.xp_awards?.sponsor_xp || 0) + (card.xp_awards?.quest_xp || 0)} XP
                       </span>
                     </div>
-                    {card.category && (
-                      <div style={{ color: '#888', fontSize: '11px', marginBottom: '4px' }}>
-                        {card.category}
+                    {card.description && (
+                      <div style={{ color: '#aaa', fontSize: '11px', marginBottom: '4px' }}>
+                        {card.description}
                       </div>
                     )}
-                    {card.gear && (
-                      <div style={{ color: '#d4a', fontSize: '11px', marginBottom: '4px' }}>
-                        {card.gear.brand ? card.gear.brand + ' ' : ''}{card.gear.product_name} · {card.gear.suggested_slot} slot
-                        {card.gear.activity_types?.length > 0 && ` · ${card.gear.activity_types.join(', ')}`}
+                    {card.category && (
+                      <div style={{ color: '#666', fontSize: '10px', marginBottom: '4px' }}>
+                        {card.category}
                       </div>
                     )}
                     <div style={{ color: '#666', fontSize: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>

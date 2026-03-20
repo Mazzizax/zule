@@ -136,6 +136,7 @@ Deno.serve(async (req) => {
             user_id: user.id,
             plaid_account_id: account.id,
             merchant_name: (tx.merchant_name as string) || (tx.name as string) || null,
+            description: (tx.name as string) || null,
             amount: Math.abs(tx.amount as number),
             date: tx.date as string,
             category: Array.isArray(tx.personal_finance_category)

@@ -32,6 +32,7 @@ const BASE_XP_PER_DOLLAR = 1
 interface RawTransaction {
   id: string
   merchant_name: string | null
+  description: string | null
   amount: number
   date: string
   category: string | null
@@ -86,13 +87,13 @@ interface GearIdentification {
 interface GameEventCard {
   cosmic_tick: string
   merchant: string | null
+  description: string | null
   category: string | null
   xp_awards: {
     purchase_xp: number
     sponsor_xp: number
     quest_xp: number
   }
-  gear: GearIdentification | null
   pool_hits: string[]
   quest_template_hits: string[]
   activity_tag: string | null
@@ -405,7 +406,7 @@ Deno.serve(async (req) => {
 
     const { data: unminted, error: fetchError } = await adminClient
       .from('user_transactions')
-      .select('id, merchant_name, amount, date, category, subcategory, location_city, location_state')
+      .select('id, merchant_name, description, amount, date, category, subcategory, location_city, location_state')
       .eq('user_id', user.id)
       .eq('minted', false)
 
@@ -435,10 +436,7 @@ Deno.serve(async (req) => {
       fetchQuestTemplates(),
     ])
 
-    // 4. BATCH ITEM IDENTIFICATION (one Gemini call for all transactions)
-    const itemResults = await batchIdentifyItems(unminted as RawTransaction[])
-
-    // 5. ENRICH EACH TRANSACTION
+    // 4. ENRICH EACH TRANSACTION
     const cards: GameEventCard[] = []
     const mintedIds: string[] = []
     const poolClaimsToInsert: Array<{ pool_id: string, user_id: string, transaction_id: string, xp_awarded: number }> = []
@@ -449,18 +447,8 @@ Deno.serve(async (req) => {
       const cosmicTick = toCosmicTicks(new Date(tx.date + 'T00:00:00Z').getTime())
       const locationVerified = !!(tx.location_city || tx.location_state)
 
-      const item = itemResults.get(txIdx) || null
-      const activityTag = item?.activity_tag || null
-      const isOutdoor = item?.is_outdoor_recreation || false
-
-      // Build gear object from item identification (for the gear system in Goals)
-      const gear: GearIdentification | null = item ? {
-        product_name: item.product_name,
-        brand: item.brand,
-        category: item.category,
-        suggested_slot: 'pack',
-        activity_types: item.activity_tag ? [item.activity_tag] : [],
-      } : null
+      const activityTag: string | null = null
+      const isOutdoor = false
 
       // --- Sponsor pool matching ---
       const poolHits: string[] = []
@@ -507,13 +495,13 @@ Deno.serve(async (req) => {
       cards.push({
         cosmic_tick: cosmicTick.toString(),
         merchant: tx.merchant_name || null,
+        description: tx.description || null,
         category: tx.subcategory || tx.category || null,
         xp_awards: {
           purchase_xp: purchaseXp,
           sponsor_xp: sponsorXp,
           quest_xp: questXp,
         },
-        gear,
         pool_hits: poolHits,
         quest_template_hits: questHits,
         activity_tag: finalActivityTag,
@@ -555,7 +543,7 @@ Deno.serve(async (req) => {
       console.error('[ENRICH] Failed to mark transactions as minted:', updateError)
     }
 
-    console.log(`[ENRICH] User ${user.id.substring(0, 8)}...: enriched ${cards.length} cards (${poolClaimsToInsert.length} pool claims, ${cards.filter(c => c.gear).length} gear items)`)
+    console.log(`[ENRICH] User ${user.id.substring(0, 8)}...: enriched ${cards.length} cards (${poolClaimsToInsert.length} pool claims)`)
 
     // 8. RETURN ATTESTATION
     return jsonResponse({
