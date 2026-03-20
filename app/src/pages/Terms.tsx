@@ -34,7 +34,7 @@ export default function Terms() {
 
           <h2 style={{ fontSize: '14px', color: '#fff', marginTop: '20px', marginBottom: '6px' }}>What We Provide</h2>
           <p>
-            Zule is part of a rewards and engagement platform for outdoor and athletic lifestyle. You can
+            Zule is part of a rewards and engagement platform for every lifestyle. You can
             link a financial account to automatically track gear purchases, earn XP, complete quests,
             and engage with brand-sponsored challenges — all through an anonymous identity that
             cannot be linked back to your real identity by any system in our architecture.
