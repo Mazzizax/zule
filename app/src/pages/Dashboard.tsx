@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [pullResult, setPullResult] = useState<string | null>(null);
   const [analyzeLoading, setAnalyzeLoading] = useState(false);
   const [analyzeResult, setAnalyzeResult] = useState<string | null>(null);
+  const [gameCards, setGameCards] = useState<any[] | null>(null);
 
   useEffect(() => {
     if (session?.access_token) {
@@ -211,14 +212,18 @@ export default function Dashboard() {
         return;
       }
 
-      // Encode attestation for deep link
-      const attestationEncoded = encodeURIComponent(data.card_attestation);
-      const deepLink = `vinzrik://receive-cards?attestation=${attestationEncoded}`;
+      // Decode JWT payload to display game event cards
+      try {
+        const parts = data.card_attestation.split('.');
+        let padded = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        while (padded.length % 4 !== 0) padded += '=';
+        const payload = JSON.parse(atob(padded));
+        setGameCards(payload.cards || []);
+      } catch {
+        setGameCards(null);
+      }
 
-      setAnalyzeResult(`Analyzed ${data.card_count} transactions, sent to Vinzrik`);
-
-      // Open deep link to Vinzrik
-      window.location.href = deepLink;
+      setAnalyzeResult(`Enriched ${data.card_count} transactions into game event cards`);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -330,8 +335,52 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+            {gameCards && gameCards.length > 0 && (
+              <div style={{ marginTop: '16px' }}>
+                <h3 style={{ fontSize: '12px', fontFamily: 'monospace', textTransform: 'uppercase', opacity: 0.5, marginBottom: '8px', letterSpacing: '0.1em' }}>
+                  Game Event Cards — This is what crosses the privacy boundary
+                </h3>
+                {gameCards.map((card: any, i: number) => (
+                  <div key={i} style={{
+                    border: '1px solid #333', borderRadius: '6px', padding: '12px',
+                    marginBottom: '8px', fontSize: '12px', fontFamily: 'monospace',
+                    background: '#0a0a0a',
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ color: '#d4a' }}>
+                        {card.gear ? `${card.gear.brand ? card.gear.brand + ' ' : ''}${card.gear.product_name}` : card.activity_tag || 'Event'}
+                      </span>
+                      <span style={{ color: '#f59e0b' }}>
+                        {(card.xp_awards?.purchase_xp || 0) + (card.xp_awards?.sponsor_xp || 0) + (card.xp_awards?.quest_xp || 0)} XP
+                      </span>
+                    </div>
+                    {card.gear && (
+                      <div style={{ color: '#888', fontSize: '11px', marginBottom: '4px' }}>
+                        {card.gear.category} · {card.gear.suggested_slot} slot
+                        {card.gear.activity_types?.length > 0 && ` · ${card.gear.activity_types.join(', ')}`}
+                      </div>
+                    )}
+                    <div style={{ color: '#666', fontSize: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {card.xp_awards?.purchase_xp > 0 && <span>base:{card.xp_awards.purchase_xp}</span>}
+                      {card.xp_awards?.sponsor_xp > 0 && <span style={{ color: '#10b981' }}>sponsor:{card.xp_awards.sponsor_xp}</span>}
+                      {card.xp_awards?.quest_xp > 0 && <span style={{ color: '#a855f7' }}>quest:{card.xp_awards.quest_xp}</span>}
+                      {card.pool_hits?.length > 0 && <span style={{ color: '#10b981' }}>pools:{card.pool_hits.join(',')}</span>}
+                      {card.quest_template_hits?.length > 0 && <span style={{ color: '#a855f7' }}>quests:{card.quest_template_hits.join(',')}</span>}
+                      {card.location_verified && <span style={{ color: '#22c55e' }}>LOC</span>}
+                      {card.is_outdoor_recreation && <span style={{ color: '#06b6d4' }}>OUTDOOR</span>}
+                      <span style={{ color: '#444' }}>tick:{card.cosmic_tick}</span>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ fontSize: '10px', color: '#555', fontFamily: 'monospace', marginTop: '8px', padding: '8px', border: '1px dashed #333', borderRadius: '4px' }}>
+                  No dollar amounts. No merchant names. No descriptions. No dates. No locations.
+                  This card is signed (ES256 JWT) and is the only data that would reach Goals,
+                  attached to an anonymous ghost_id computed on the user's device.
+                </div>
+              </div>
+            )}
             <div className="info-note" style={{ marginTop: '12px' }}>
-              <p>Pull transactions from Plaid, then analyze and send game events to Vinzrik. Transactions are enriched with XP, gear, and quest matches. Only game data reaches Goals — no financial details.</p>
+              <p>Pull transactions from Plaid, then analyze to see the enriched game event cards. Only game data reaches Goals — no financial details.</p>
             </div>
           </>
         ) : (
