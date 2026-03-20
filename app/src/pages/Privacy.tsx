@@ -89,8 +89,7 @@ export default function Privacy() {
 
           <h2 style={{ fontSize: '14px', color: '#fff', marginTop: '20px', marginBottom: '6px' }}>Your Rights</h2>
           <p>
-            You can request deletion of your account at any time by contacting
-            us at <a href="mailto:b.mazz@mazzizax.com" style={{ color: '#d4a' }}>b.mazz@mazzizax.com</a>.
+            You can delete your account at any time from the Security page in your Zule dashboard.
             When your account is deleted, all of your identity and personal data in Zule is permanently removed.
             Ownership of anonymized game data (XP, gear records, quest history) that is abandoned
             upon account deletion is transferred to Mazz Ink's in-game account.
