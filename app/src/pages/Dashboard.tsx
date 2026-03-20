@@ -40,12 +40,12 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [plaidLoading, setPlaidLoading] = useState(false);
-  const [pullLoading, setPullLoading] = useState(false);
+  const [pullLoadingId, setPullLoadingId] = useState<string | null>(null);
   const [pullResult, setPullResult] = useState<string | null>(null);
   const [analyzeLoading, setAnalyzeLoading] = useState(false);
   const [analyzeResult, setAnalyzeResult] = useState<string | null>(null);
   const [gameCards, setGameCards] = useState<any[] | null>(null);
-  const [removeLoading, setRemoveLoading] = useState(false);
+  const [removeLoadingId, setRemoveLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (session?.access_token) {
@@ -167,7 +167,7 @@ export default function Dashboard() {
     const token = await getFreshToken();
     if (!token) return;
 
-    setPullLoading(true);
+    setPullLoadingId(accountId);
     setPullResult(null);
     try {
       const res = await fetch(
@@ -193,7 +193,7 @@ export default function Dashboard() {
     } catch (err: any) {
       setError(err.message);
     } finally {
-      setPullLoading(false);
+      setPullLoadingId(null);
     }
   };
 
@@ -203,7 +203,7 @@ export default function Dashboard() {
     const token = await getFreshToken();
     if (!token) return;
 
-    setRemoveLoading(true);
+    setRemoveLoadingId(accountId);
     try {
       const res = await fetch(
         `${import.meta.env.ZULE_URL}/functions/v1/remove-card`,
@@ -222,7 +222,7 @@ export default function Dashboard() {
     } catch (err: any) {
       setError(err.message);
     } finally {
-      setRemoveLoading(false);
+      setRemoveLoadingId(null);
     }
   };
 
@@ -351,17 +351,17 @@ export default function Dashboard() {
                   <button
                     className="btn-secondary"
                     onClick={() => pullTransactions(acct.id)}
-                    disabled={pullLoading}
+                    disabled={pullLoadingId === acct.id}
                     style={{ fontSize: '11px', padding: '4px 10px' }}
                   >
-                    {pullLoading ? 'Pulling...' : 'Pull'}
+                    {pullLoadingId === acct.id ? 'Pulling...' : 'Pull'}
                   </button>
                   <button
                     onClick={() => removeCard(acct.id)}
-                    disabled={removeLoading}
+                    disabled={removeLoadingId === acct.id}
                     style={{ fontSize: '10px', color: '#ef4444', background: 'none', border: '1px solid #ef4444', padding: '3px 8px', borderRadius: '3px', cursor: 'pointer' }}
                   >
-                    {removeLoading ? '...' : 'Remove'}
+                    {removeLoadingId === acct.id ? '...' : 'Remove'}
                   </button>
                 </div>
                 {pullResult && (
