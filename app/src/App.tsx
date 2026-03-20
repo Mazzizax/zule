@@ -10,6 +10,7 @@ import Security from './pages/Security';
 import Developer from './pages/Developer';
 import Auth from './pages/Auth';
 import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
 import './styles.css';
 
 /**
@@ -88,8 +89,9 @@ function AppRoutes() {
       {/* Auth route for Vinzrik (no session required, uses passkey) */}
       <Route path="/auth" element={<Auth />} />
 
-      {/* Public privacy policy */}
+      {/* Public pages */}
       <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
 
       {/* Protected routes with layout */}
       <Route

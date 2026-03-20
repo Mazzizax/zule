@@ -115,7 +115,7 @@ export default function Register() {
               Already have an account? <Link to="/login">Sign In</Link>
             </p>
             <p style={{ marginTop: '8px', fontSize: '11px', opacity: 0.5 }}>
-              <Link to="/privacy">Privacy Policy</Link>
+              <Link to="/privacy">Privacy</Link> · <Link to="/terms">Terms</Link>
             </p>
           </div>
         </form>
