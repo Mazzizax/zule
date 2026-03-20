@@ -423,11 +423,6 @@ export default function Dashboard() {
                     </div>
                   </div>
                 ))}
-                <div style={{ fontSize: '10px', color: '#555', fontFamily: 'monospace', marginTop: '8px', padding: '8px', border: '1px dashed #333', borderRadius: '4px' }}>
-                  No dollar amounts. No merchant names. No descriptions. No dates. No locations.
-                  This card is signed (ES256 JWT) and is the only data that would reach Goals,
-                  attached to an anonymous ghost_id computed on the user's device.
-                </div>
               </div>
             )}
             <div className="info-note" style={{ marginTop: '12px' }}>
