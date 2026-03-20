@@ -269,41 +269,40 @@ function matchQuestTemplates(gear: GearIdentification | null, activityTag: strin
 // GEAR IDENTIFICATION (Gemini-powered, same prompt as Goals gear-search)
 // =============================================================================
 
-const BATCH_GEAR_PROMPT = `You are a product classifier. Given a JSON array of transactions, classify each one.
+const BATCH_IDENTIFY_PROMPT = `You are a transaction classifier for a rewards platform. Given a JSON array of transactions, identify what was purchased in each one.
 
-For each transaction, determine:
-- Is it a gear/product purchase? (not groceries, gas, dining, subscriptions, bills)
-- If yes: product_name, brand, category, suggested_slot, activity_types, activity_tag, is_outdoor_recreation
-- If no: is_gear: false, activity_tag if applicable, is_outdoor_recreation
-
-Slot options: head, face, eyewear, earbuds, neck, shoulders, chest, back, arms, hands, waist, legs, feet, ring_1, ring_2, watch, pack, bottle, poles, gps
+For EVERY transaction, provide:
+- product_name: What was bought or what service was used (e.g., "Grande Latte", "Lyft Ride", "Checking Account Transfer", "Chicken Bucket Meal")
+- brand: The brand or merchant (e.g., "Starbucks", "Lyft", "KFC")
+- category: What type of purchase (e.g., "coffee", "transportation", "fast food", "sporting goods", "books", "clothing", "bill payment")
+- activity_tag: The activity this relates to (e.g., "commute", "dining", "shopping", "fitness", "reading", "entertainment", "bill_pay")
+- is_outdoor_recreation: true/false
 
 Return a JSON array with one result per transaction, in the same order. No markdown, no code blocks, just raw JSON array:
 [
-  {"idx":0,"is_gear":false},
-  {"idx":1,"is_gear":true,"product_name":"...","brand":"...","category":"...","suggested_slot":"...","activity_types":["..."],"activity_tag":"...","is_outdoor_recreation":true},
+  {"idx":0,"product_name":"...","brand":"...","category":"...","activity_tag":"...","is_outdoor_recreation":false},
   ...
 ]`;
 
-interface BatchGearResult {
+interface BatchIdentifyResult {
   idx: number
-  is_gear: boolean
-  product_name?: string
-  brand?: string
-  category?: string
-  suggested_slot?: string
-  activity_types?: string[]
-  activity_tag?: string
-  is_outdoor_recreation?: boolean
+  product_name: string
+  brand: string
+  category: string
+  activity_tag: string
+  is_outdoor_recreation: boolean
 }
 
-async function batchIdentifyGear(transactions: RawTransaction[]): Promise<Map<number, { gear: GearIdentification | null, activityTag: string | null, isOutdoor: boolean }>> {
-  const results = new Map<number, { gear: GearIdentification | null, activityTag: string | null, isOutdoor: boolean }>()
+interface ItemIdentification {
+  product_name: string
+  brand: string
+  category: string
+  activity_tag: string
+  is_outdoor_recreation: boolean
+}
 
-  // Default all to no gear
-  for (let i = 0; i < transactions.length; i++) {
-    results.set(i, { gear: null, activityTag: null, isOutdoor: false })
-  }
+async function batchIdentifyItems(transactions: RawTransaction[]): Promise<Map<number, ItemIdentification>> {
+  const results = new Map<number, ItemIdentification>()
 
   if (!GOOGLE_API_KEY || transactions.length === 0) return results
 
@@ -314,7 +313,7 @@ async function batchIdentifyGear(transactions: RawTransaction[]): Promise<Map<nu
       category: tx.subcategory || tx.category || '',
     }))
 
-    const prompt = BATCH_GEAR_PROMPT + '\n\nTransactions:\n' + JSON.stringify(txArray)
+    const prompt = BATCH_IDENTIFY_PROMPT + '\n\nTransactions:\n' + JSON.stringify(txArray)
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GOOGLE_API_KEY}`,
@@ -341,7 +340,6 @@ async function batchIdentifyGear(transactions: RawTransaction[]): Promise<Map<nu
 
     if (!textContent) return results
 
-    // Parse JSON array
     let jsonStr = textContent
     const jsonMatch = textContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
     if (jsonMatch) jsonStr = jsonMatch[1]
@@ -350,33 +348,20 @@ async function batchIdentifyGear(transactions: RawTransaction[]): Promise<Map<nu
     const arrEnd = jsonStr.lastIndexOf(']')
     if (arrStart === -1 || arrEnd === -1) return results
 
-    const parsed: BatchGearResult[] = JSON.parse(jsonStr.slice(arrStart, arrEnd + 1))
+    const parsed: BatchIdentifyResult[] = JSON.parse(jsonStr.slice(arrStart, arrEnd + 1))
 
     for (const item of parsed) {
       if (item.idx === undefined || item.idx < 0 || item.idx >= transactions.length) continue
-
-      if (item.is_gear && item.product_name) {
-        results.set(item.idx, {
-          gear: {
-            product_name: item.product_name,
-            brand: item.brand || '',
-            category: item.category || '',
-            suggested_slot: item.suggested_slot || 'pack',
-            activity_types: Array.isArray(item.activity_types) ? item.activity_types : [],
-          },
-          activityTag: item.activity_tag || null,
-          isOutdoor: item.is_outdoor_recreation || false,
-        })
-      } else {
-        results.set(item.idx, {
-          gear: null,
-          activityTag: item.activity_tag || null,
-          isOutdoor: item.is_outdoor_recreation || false,
-        })
-      }
+      results.set(item.idx, {
+        product_name: item.product_name || '',
+        brand: item.brand || '',
+        category: item.category || '',
+        activity_tag: item.activity_tag || '',
+        is_outdoor_recreation: item.is_outdoor_recreation || false,
+      })
     }
   } catch (err) {
-    console.error('[ENRICH] Batch gear identification error:', err)
+    console.error('[ENRICH] Batch identification error:', err)
   }
 
   return results
@@ -450,8 +435,8 @@ Deno.serve(async (req) => {
       fetchQuestTemplates(),
     ])
 
-    // 4. BATCH GEAR IDENTIFICATION (one Gemini call for all transactions)
-    const gearResults = await batchIdentifyGear(unminted as RawTransaction[])
+    // 4. BATCH ITEM IDENTIFICATION (one Gemini call for all transactions)
+    const itemResults = await batchIdentifyItems(unminted as RawTransaction[])
 
     // 5. ENRICH EACH TRANSACTION
     const cards: GameEventCard[] = []
@@ -464,7 +449,18 @@ Deno.serve(async (req) => {
       const cosmicTick = toCosmicTicks(new Date(tx.date + 'T00:00:00Z').getTime())
       const locationVerified = !!(tx.location_city || tx.location_state)
 
-      const { gear, activityTag, isOutdoor } = gearResults.get(txIdx) || { gear: null, activityTag: null, isOutdoor: false }
+      const item = itemResults.get(txIdx) || null
+      const activityTag = item?.activity_tag || null
+      const isOutdoor = item?.is_outdoor_recreation || false
+
+      // Build gear object from item identification (for the gear system in Goals)
+      const gear: GearIdentification | null = item ? {
+        product_name: item.product_name,
+        brand: item.brand,
+        category: item.category,
+        suggested_slot: 'pack',
+        activity_types: item.activity_tag ? [item.activity_tag] : [],
+      } : null
 
       // --- Sponsor pool matching ---
       const poolHits: string[] = []
