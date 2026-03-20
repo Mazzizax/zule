@@ -173,6 +173,9 @@ export default function Login() {
             <p>
               Don't have an account? <Link to="/register">Create Account</Link>
             </p>
+            <p style={{ marginTop: '8px', fontSize: '11px', opacity: 0.5 }}>
+              <Link to="/privacy">Privacy Policy</Link>
+            </p>
           </div>
         </form>
       </div>
