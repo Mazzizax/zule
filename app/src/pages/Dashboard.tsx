@@ -46,9 +46,9 @@ export default function Dashboard() {
   }, [session]);
 
   const fetchProfile = async () => {
-    // Force a session refresh before fetching
-    const { data: { session: refreshed } } = await supabase.auth.refreshSession();
-    const token = refreshed?.access_token || await getFreshToken();
+    // Always get the latest token — session in closure may be stale
+    const { data: { session: current } } = await supabase.auth.getSession();
+    const token = current?.access_token;
     if (!token) return;
 
     try {
@@ -66,11 +66,6 @@ export default function Dashboard() {
       );
 
       if (!response.ok) {
-        if (response.status === 401) {
-          // Session expired — redirect to login
-          window.location.href = '/login';
-          return;
-        }
         throw new Error('Failed to fetch profile');
       }
 
