@@ -84,7 +84,7 @@ export default function Privacy() {
             Brands can sponsor reward pools and quests on the platform. They see aggregate, anonymous
             engagement data — for example, how many users are using their products or how many times a
             reward pool has been claimed. They never receive your email, name, purchase amounts, or any
-            information that could identify you individually.
+            information that could identify you in the real world.
           </p>
 
           <h2 style={{ fontSize: '14px', color: '#fff', marginTop: '20px', marginBottom: '6px' }}>Your Rights</h2>
