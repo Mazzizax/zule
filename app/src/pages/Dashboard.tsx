@@ -430,19 +430,19 @@ export default function Dashboard() {
         ) : (
           <>
             <div className="info-note">
-              <p>Link your card to track spending on your quests. Transaction data stays in Zule and is only relayed to Goals through Vinzrik, anonymized with your ghost identity.</p>
-            </div>
-            <div style={{ marginTop: '16px' }}>
-              <button
-                className="btn-primary"
-                onClick={openPlaidLink}
-                disabled={plaidLoading}
-              >
-                {plaidLoading ? 'Connecting...' : 'Link Card'}
-              </button>
+              <p>Link your card to track purchases for your quests and gear. Transaction data stays in Zule — only game events reach Goals.</p>
             </div>
           </>
         )}
+        <div style={{ marginTop: '16px' }}>
+          <button
+            className="btn-primary"
+            onClick={openPlaidLink}
+            disabled={plaidLoading}
+          >
+            {plaidLoading ? 'Connecting...' : 'Link Card'}
+          </button>
+        </div>
       </div>
 
       {/* Vinzrik Notice */}
