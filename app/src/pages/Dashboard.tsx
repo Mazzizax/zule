@@ -38,6 +38,7 @@ export default function Dashboard() {
   const [analyzeLoading, setAnalyzeLoading] = useState(false);
   const [analyzeResult, setAnalyzeResult] = useState<string | null>(null);
   const [gameCards, setGameCards] = useState<any[] | null>(null);
+  const [removeLoading, setRemoveLoading] = useState(false);
 
   useEffect(() => {
     if (session?.access_token) {
@@ -188,6 +189,35 @@ export default function Dashboard() {
     }
   };
 
+  const removeCard = async () => {
+    if (!confirm('Disconnect your linked card?')) return;
+
+    const token = await getFreshToken();
+    if (!token) return;
+
+    setRemoveLoading(true);
+    try {
+      // Clear Plaid fields from user_profiles via admin-scoped edge function
+      const res = await fetch(
+        `${import.meta.env.ZULE_URL}/functions/v1/remove-card`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
+          },
+        }
+      );
+      if (!res.ok) throw new Error('Failed to remove card');
+      await fetchProfile();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setRemoveLoading(false);
+    }
+  };
+
   const analyzeAndSend = async () => {
     const token = await getFreshToken();
     if (!token) return;
@@ -314,6 +344,13 @@ export default function Dashboard() {
             <div className="info-row">
               <span className="label">Status:</span>
               <span className="value status-active">Connected</span>
+              <button
+                onClick={removeCard}
+                disabled={removeLoading}
+                style={{ marginLeft: '12px', fontSize: '11px', color: '#ef4444', background: 'none', border: '1px solid #ef4444', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                {removeLoading ? 'Removing...' : 'Remove Card'}
+              </button>
             </div>
             <div style={{ marginTop: '16px' }}>
               <button
