@@ -85,6 +85,8 @@ interface GearIdentification {
 
 interface GameEventCard {
   cosmic_tick: string
+  merchant: string | null
+  category: string | null
   xp_awards: {
     purchase_xp: number
     sponsor_xp: number
@@ -508,6 +510,8 @@ Deno.serve(async (req) => {
 
       cards.push({
         cosmic_tick: cosmicTick.toString(),
+        merchant: tx.merchant_name || null,
+        category: tx.subcategory || tx.category || null,
         xp_awards: {
           purchase_xp: purchaseXp,
           sponsor_xp: sponsorXp,
@@ -564,7 +568,8 @@ Deno.serve(async (req) => {
     }, 200, origin)
 
   } catch (error) {
-    console.error('[ENRICH] Error:', error)
-    return errorResponse('Internal server error', 500, origin)
+    const msg = error instanceof Error ? error.message : String(error)
+    console.error('[ENRICH] Error:', msg, error)
+    return errorResponse('Enrichment error: ' + msg, 500, origin)
   }
 })

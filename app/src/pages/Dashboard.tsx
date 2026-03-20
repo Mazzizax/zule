@@ -397,17 +397,22 @@ export default function Dashboard() {
                     marginBottom: '8px', fontSize: '12px', fontFamily: 'monospace',
                     background: '#0a0a0a',
                   }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                      <span style={{ color: '#d4a' }}>
-                        {card.gear ? `${card.gear.brand ? card.gear.brand + ' ' : ''}${card.gear.product_name}` : card.activity_tag || 'Event'}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ color: '#fff', fontWeight: 'bold' }}>
+                        {card.merchant || 'Unknown'}
                       </span>
                       <span style={{ color: '#f59e0b' }}>
                         {(card.xp_awards?.purchase_xp || 0) + (card.xp_awards?.sponsor_xp || 0) + (card.xp_awards?.quest_xp || 0)} XP
                       </span>
                     </div>
-                    {card.gear && (
+                    {card.category && (
                       <div style={{ color: '#888', fontSize: '11px', marginBottom: '4px' }}>
-                        {card.gear.category} · {card.gear.suggested_slot} slot
+                        {card.category}
+                      </div>
+                    )}
+                    {card.gear && (
+                      <div style={{ color: '#d4a', fontSize: '11px', marginBottom: '4px' }}>
+                        {card.gear.brand ? card.gear.brand + ' ' : ''}{card.gear.product_name} · {card.gear.suggested_slot} slot
                         {card.gear.activity_types?.length > 0 && ` · ${card.gear.activity_types.join(', ')}`}
                       </div>
                     )}
@@ -417,8 +422,8 @@ export default function Dashboard() {
                       {card.xp_awards?.quest_xp > 0 && <span style={{ color: '#a855f7' }}>quest:{card.xp_awards.quest_xp}</span>}
                       {card.pool_hits?.length > 0 && <span style={{ color: '#10b981' }}>pools:{card.pool_hits.join(',')}</span>}
                       {card.quest_template_hits?.length > 0 && <span style={{ color: '#a855f7' }}>quests:{card.quest_template_hits.join(',')}</span>}
+                      {card.activity_tag && <span style={{ color: '#06b6d4' }}>{card.activity_tag}</span>}
                       {card.location_verified && <span style={{ color: '#22c55e' }}>LOC</span>}
-                      {card.is_outdoor_recreation && <span style={{ color: '#06b6d4' }}>OUTDOOR</span>}
                       <span style={{ color: '#444' }}>tick:{card.cosmic_tick}</span>
                     </div>
                   </div>
