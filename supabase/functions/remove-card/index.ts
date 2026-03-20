@@ -36,32 +36,58 @@ Deno.serve(async (req) => {
       return errorResponse('Invalid or expired token', 401, origin)
     }
 
+    let body: { account_id?: string } = {}
+    try { body = await req.json() } catch { /* no body is fine for remove-all */ }
+
     const adminClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    // Delete transactions (cascade from plaid_account_id handles linked ones)
-    await adminClient
-      .from('user_transactions')
-      .delete()
-      .eq('user_id', user.id)
+    if (body.account_id) {
+      // Remove specific account + its transactions
+      await adminClient
+        .from('user_transactions')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('plaid_account_id', body.account_id)
 
-    // Delete all plaid accounts
-    await adminClient
+      await adminClient
+        .from('plaid_accounts')
+        .delete()
+        .eq('id', body.account_id)
+        .eq('user_id', user.id)
+
+      console.log(`[REMOVE-CARD] Removed account ${body.account_id} for user ${user.id.substring(0, 8)}...`)
+    } else {
+      // Remove all
+      await adminClient
+        .from('user_transactions')
+        .delete()
+        .eq('user_id', user.id)
+
+      await adminClient
+        .from('plaid_accounts')
+        .delete()
+        .eq('user_id', user.id)
+
+      console.log(`[REMOVE-CARD] Removed all accounts for user ${user.id.substring(0, 8)}...`)
+    }
+
+    // Update display fields based on remaining accounts
+    const { data: remaining } = await adminClient
       .from('plaid_accounts')
-      .delete()
+      .select('institution_name, connected_at')
       .eq('user_id', user.id)
+      .order('connected_at', { ascending: false })
+      .limit(1)
 
-    // Clear display fields from user_profiles
     await adminClient
       .from('user_profiles')
       .update({
-        plaid_institution_name: null,
-        plaid_connected_at: null,
+        plaid_institution_name: remaining?.[0]?.institution_name || null,
+        plaid_connected_at: remaining?.[0]?.connected_at || null,
       })
       .eq('id', user.id)
-
-    console.log(`[REMOVE-CARD] Disconnected Plaid for user ${user.id.substring(0, 8)}...`)
 
     return jsonResponse({ removed: true }, 200, origin)
 

@@ -196,15 +196,14 @@ export default function Dashboard() {
     }
   };
 
-  const removeCard = async () => {
-    if (!confirm('Disconnect your linked card?')) return;
+  const removeCard = async (accountId: string) => {
+    if (!confirm('Disconnect this card?')) return;
 
     const token = await getFreshToken();
     if (!token) return;
 
     setRemoveLoading(true);
     try {
-      // Clear Plaid fields from user_profiles via admin-scoped edge function
       const res = await fetch(
         `${import.meta.env.ZULE_URL}/functions/v1/remove-card`,
         {
@@ -214,6 +213,7 @@ export default function Dashboard() {
             'Content-Type': 'application/json',
             'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
           },
+          body: JSON.stringify({ account_id: accountId }),
         }
       );
       if (!res.ok) throw new Error('Failed to remove card');
@@ -344,17 +344,15 @@ export default function Dashboard() {
               <div key={acct.id} className="info-row" style={{ marginBottom: '4px' }}>
                 <span className="label">{acct.institution_name}</span>
                 <span className="value" style={{ fontSize: '11px', opacity: 0.5 }}>{formatDate(acct.connected_at)}</span>
+                <button
+                  onClick={() => removeCard(acct.id)}
+                  disabled={removeLoading}
+                  style={{ marginLeft: '8px', fontSize: '10px', color: '#ef4444', background: 'none', border: '1px solid #ef4444', padding: '1px 6px', borderRadius: '3px', cursor: 'pointer' }}
+                >
+                  {removeLoading ? '...' : 'Remove'}
+                </button>
               </div>
             ))}
-            <div style={{ marginTop: '8px' }}>
-              <button
-                onClick={removeCard}
-                disabled={removeLoading}
-                style={{ fontSize: '11px', color: '#ef4444', background: 'none', border: '1px solid #ef4444', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer' }}
-              >
-                {removeLoading ? 'Removing...' : 'Remove All Cards'}
-              </button>
-            </div>
             <div style={{ marginTop: '16px' }}>
               <button
                 className="btn-secondary"
