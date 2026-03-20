@@ -30,7 +30,7 @@ export default function Privacy() {
           <p>
             Zule is part of a rewards and engagement platform. When you link a financial account through Plaid,
             we receive read-only transaction data — merchant name, amount, date, category, and location —
-            for one purpose: to identify products you purchase so we can populate your gear inventory,
+            for one purpose: to identify products and services you purchase so we can populate your gear inventory,
             award XP, match sponsor reward pools, and advance quests.
           </p>
           <p style={{ marginTop: '10px' }}>
