@@ -89,10 +89,12 @@ export default function Privacy() {
 
           <h2 style={{ fontSize: '14px', color: '#fff', marginTop: '20px', marginBottom: '6px' }}>Your Rights</h2>
           <p>
-            You can request deletion of your account and all associated data at any time by contacting
+            You can request deletion of your account at any time by contacting
             us at <a href="mailto:b.mazz@mazzizax.com" style={{ color: '#d4a' }}>b.mazz@mazzizax.com</a>.
-            When your account is deleted, your identity data in Zule and your game data in Goals
-            are both permanently removed.
+            When your account is deleted, all of your identity and personal data in Zule is permanently removed.
+            Anonymous game data generated under your ghost_id (XP, gear records, quest history) may be
+            retained in anonymized, aggregate form — it is not linked to any identity and cannot be
+            reconnected to you after account deletion.
           </p>
 
           <h2 style={{ fontSize: '14px', color: '#fff', marginTop: '20px', marginBottom: '6px' }}>Security</h2>
