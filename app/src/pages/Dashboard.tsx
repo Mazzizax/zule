@@ -371,6 +371,7 @@ export default function Dashboard() {
                 )}
               </div>
             ))}
+            <div style={{ marginTop: '16px' }}>
               <button
                 className="btn-primary"
                 onClick={analyzeAndSend}
