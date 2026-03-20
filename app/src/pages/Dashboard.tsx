@@ -416,7 +416,6 @@ export default function Dashboard() {
                       </div>
                     )}
                     <div style={{ color: '#666', fontSize: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      {card.xp_awards?.purchase_xp > 0 && <span>base:{card.xp_awards.purchase_xp}</span>}
                       {card.xp_awards?.sponsor_xp > 0 && <span style={{ color: '#10b981' }}>sponsor:{card.xp_awards.sponsor_xp}</span>}
                       {card.xp_awards?.quest_xp > 0 && <span style={{ color: '#a855f7' }}>quest:{card.xp_awards.quest_xp}</span>}
                       {card.pool_hits?.length > 0 && <span style={{ color: '#10b981' }}>pools:{card.pool_hits.join(',')}</span>}
