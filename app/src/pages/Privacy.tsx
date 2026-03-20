@@ -104,7 +104,7 @@ export default function Privacy() {
 
           <h2 style={{ fontSize: '14px', color: '#fff', marginTop: '20px', marginBottom: '6px' }}>Contact</h2>
           <p>
-            Brian Mazzuckelli — <a href="mailto:b.mazz@mazzizax.com" style={{ color: '#d4a' }}>b.mazz@mazzizax.com</a>
+            <a href="mailto:sifumazz@mazzizax.com" style={{ color: '#d4a' }}>sifumazz@mazzizax.com</a>
           </p>
 
         </div>
