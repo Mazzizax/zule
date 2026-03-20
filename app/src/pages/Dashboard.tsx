@@ -46,7 +46,9 @@ export default function Dashboard() {
   }, [session]);
 
   const fetchProfile = async () => {
-    const token = await getFreshToken();
+    // Force a session refresh before fetching
+    const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+    const token = refreshed?.access_token || await getFreshToken();
     if (!token) return;
 
     try {
@@ -64,6 +66,11 @@ export default function Dashboard() {
       );
 
       if (!response.ok) {
+        if (response.status === 401) {
+          // Session expired — redirect to login
+          window.location.href = '/login';
+          return;
+        }
         throw new Error('Failed to fetch profile');
       }
 
@@ -118,7 +125,7 @@ export default function Dashboard() {
         onSuccess: async (public_token: string) => {
           try {
             const exchangeToken = await getFreshToken();
-            await fetch(
+            const exchangeRes = await fetch(
               `${import.meta.env.ZULE_URL}/functions/v1/plaid-exchange-token`,
               {
                 method: 'POST',
@@ -130,10 +137,15 @@ export default function Dashboard() {
                 body: JSON.stringify({ public_token }),
               }
             );
-            fetchProfile(); // Refresh to show connected status
+            if (!exchangeRes.ok) {
+              throw new Error('Exchange failed: ' + exchangeRes.status);
+            }
+            await fetchProfile();
           } catch (err) {
             console.error('Token exchange failed:', err);
             setError('Failed to connect account. Please try again.');
+          } finally {
+            setPlaidLoading(false);
           }
         },
         onExit: () => {

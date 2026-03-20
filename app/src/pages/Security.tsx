@@ -293,6 +293,7 @@ export default function Security() {
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Enter new password"
               minLength={8}
+              autoComplete="new-password"
             />
           </div>
 
@@ -305,6 +306,7 @@ export default function Security() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm new password"
               minLength={8}
+              autoComplete="new-password"
             />
           </div>
 
