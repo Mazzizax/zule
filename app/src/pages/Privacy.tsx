@@ -92,8 +92,8 @@ export default function Privacy() {
             You can request deletion of your account at any time by contacting
             us at <a href="mailto:b.mazz@mazzizax.com" style={{ color: '#d4a' }}>b.mazz@mazzizax.com</a>.
             When your account is deleted, all of your identity and personal data in Zule is permanently removed.
-            Anonymous game data generated under your ghost_id (XP, gear records, quest history) may be
-            retained in anonymized, aggregate form — it is not linked to any identity and cannot be
+            Anonymous game data generated under your ghost_id (XP, gear records, quest history) is
+            permanently retained — it is not linked to any identity and cannot be
             reconnected to you after account deletion.
           </p>
 
