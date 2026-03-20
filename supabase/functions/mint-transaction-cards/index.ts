@@ -32,7 +32,6 @@ const BASE_XP_PER_DOLLAR = 1
 interface RawTransaction {
   id: string
   merchant_name: string | null
-  description: string | null
   amount: number
   date: string
   category: string | null
@@ -174,7 +173,7 @@ function evaluateCondition(condition: MatchCondition, tx: RawTransaction): boole
       return false
     }
     case 'keyword': {
-      const text = `${tx.merchant_name || ''} ${tx.description || ''} ${tx.category || ''} ${tx.subcategory || ''}`.toLowerCase()
+      const text = `${tx.merchant_name || ''} ${tx.category || ''} ${tx.subcategory || ''}`.toLowerCase()
       if (op === 'any_of' && condition.values) {
         return condition.values.some(kw => text.includes(kw.toLowerCase()))
       }
@@ -268,7 +267,7 @@ function matchQuestTemplates(gear: GearIdentification | null, activityTag: strin
 // GEAR IDENTIFICATION (Gemini-powered, same prompt as Goals gear-search)
 // =============================================================================
 
-const GEAR_IDENTIFY_PROMPT = `You are a product classifier for outdoor and athletic gear purchases. Given a transaction merchant name and description, identify what product was purchased.
+const GEAR_IDENTIFY_PROMPT = `You are a product classifier for outdoor and athletic gear purchases. Given a transaction merchant name and category, identify what product was purchased.
 
 Return JSON ONLY (no markdown, no code blocks):
 {
@@ -303,7 +302,7 @@ async function identifyGear(tx: RawTransaction): Promise<{ gear: GearIdentificat
   try {
     const prompt = GEAR_IDENTIFY_PROMPT
       .replace('{MERCHANT}', tx.merchant_name || 'Unknown')
-      .replace('{DESCRIPTION}', tx.description || '')
+      .replace('{DESCRIPTION}', tx.subcategory || tx.category || '')
       .replace('{CATEGORY}', tx.subcategory || tx.category || '')
 
     const response = await fetch(
@@ -405,7 +404,7 @@ Deno.serve(async (req) => {
 
     const { data: unminted, error: fetchError } = await adminClient
       .from('user_transactions')
-      .select('id, merchant_name, description, amount, date, category, subcategory, location_city, location_state')
+      .select('id, merchant_name, amount, date, category, subcategory, location_city, location_state')
       .eq('user_id', user.id)
       .eq('minted', false)
 
