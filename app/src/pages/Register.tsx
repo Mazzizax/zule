@@ -67,7 +67,7 @@ export default function Register() {
       <div className="auth-card">
         <div className="auth-header">
           <h1>CREATE ACCOUNT</h1>
-          <p>Create your Zule account</p>
+          <p>Join the fleet</p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
