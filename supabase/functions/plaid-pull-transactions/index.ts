@@ -64,15 +64,24 @@ Deno.serve(async (req) => {
       return errorResponse('Invalid or expired token', 401, origin);
     }
 
-    // 2. GET ALL LINKED PLAID ACCOUNTS
+    // 2. GET PLAID ACCOUNT(S)
+    let body: { account_id?: string } = {};
+    try { body = await req.json(); } catch { /* no body pulls all */ }
+
     const adminClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: accounts, error: accountsError } = await adminClient
+    let query = adminClient
       .from('plaid_accounts')
       .select('id, plaid_access_token, plaid_item_id')
       .eq('user_id', user.id);
+
+    if (body.account_id) {
+      query = query.eq('id', body.account_id);
+    }
+
+    const { data: accounts, error: accountsError } = await query;
 
     if (accountsError || !accounts || accounts.length === 0) {
       return errorResponse('No Plaid accounts connected', 400, origin);

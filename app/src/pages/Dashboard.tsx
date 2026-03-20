@@ -163,7 +163,7 @@ export default function Dashboard() {
     }
   };
 
-  const pullTransactions = async () => {
+  const pullTransactions = async (accountId: string) => {
     const token = await getFreshToken();
     if (!token) return;
 
@@ -179,6 +179,7 @@ export default function Dashboard() {
             'Content-Type': 'application/json',
             'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
           },
+          body: JSON.stringify({ account_id: accountId }),
         }
       );
 
@@ -341,31 +342,35 @@ export default function Dashboard() {
         {profile?.plaid_accounts && profile.plaid_accounts.length > 0 ? (
           <>
             {profile.plaid_accounts.map((acct) => (
-              <div key={acct.id} className="info-row" style={{ marginBottom: '4px' }}>
-                <span className="label">{acct.institution_name}</span>
-                <span className="value" style={{ fontSize: '11px', opacity: 0.5 }}>{formatDate(acct.connected_at)}</span>
-                <button
-                  onClick={() => removeCard(acct.id)}
-                  disabled={removeLoading}
-                  style={{ marginLeft: '8px', fontSize: '10px', color: '#ef4444', background: 'none', border: '1px solid #ef4444', padding: '1px 6px', borderRadius: '3px', cursor: 'pointer' }}
-                >
-                  {removeLoading ? '...' : 'Remove'}
-                </button>
+              <div key={acct.id} style={{ marginBottom: '12px', padding: '8px', border: '1px solid #222', borderRadius: '4px' }}>
+                <div className="info-row" style={{ marginBottom: '4px' }}>
+                  <span className="label">{acct.institution_name}</span>
+                  <span className="value" style={{ fontSize: '11px', opacity: 0.5 }}>{formatDate(acct.connected_at)}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                  <button
+                    className="btn-secondary"
+                    onClick={() => pullTransactions(acct.id)}
+                    disabled={pullLoading}
+                    style={{ fontSize: '11px', padding: '4px 10px' }}
+                  >
+                    {pullLoading ? 'Pulling...' : 'Pull'}
+                  </button>
+                  <button
+                    onClick={() => removeCard(acct.id)}
+                    disabled={removeLoading}
+                    style={{ fontSize: '10px', color: '#ef4444', background: 'none', border: '1px solid #ef4444', padding: '3px 8px', borderRadius: '3px', cursor: 'pointer' }}
+                  >
+                    {removeLoading ? '...' : 'Remove'}
+                  </button>
+                </div>
+                {pullResult && (
+                  <div className="success-message" style={{ marginTop: '6px', fontSize: '11px' }}>
+                    {pullResult}
+                  </div>
+                )}
               </div>
             ))}
-            <div style={{ marginTop: '16px' }}>
-              <button
-                className="btn-secondary"
-                onClick={pullTransactions}
-                disabled={pullLoading}
-              >
-                {pullLoading ? 'Pulling...' : 'Pull Latest Transactions'}
-              </button>
-              {pullResult && (
-                <div className="success-message" style={{ marginTop: '12px' }}>
-                  {pullResult}
-                </div>
-              )}
               <button
                 className="btn-primary"
                 onClick={analyzeAndSend}
