@@ -109,7 +109,17 @@ Deno.serve(async (req) => {
 
       // Process added transactions
       if (syncData.added?.length > 0) {
-        const rows = syncData.added.map((tx: Record<string, unknown>) => ({
+        // GATE: Shred any transaction without a plaid_transaction_id.
+        // If Plaid didn't give it an ID, it's not a real transaction.
+        const certified = syncData.added.filter((tx: Record<string, unknown>) => {
+          if (!tx.transaction_id) {
+            console.log('[PLAID-PULL] Shredded transaction without plaid ID:', tx.name || 'unknown');
+            return false;
+          }
+          return true;
+        });
+
+        const rows = certified.map((tx: Record<string, unknown>) => ({
           user_id: user.id,
           merchant_name: (tx.merchant_name as string) || (tx.name as string) || null,
           amount: Math.abs(tx.amount as number), // Plaid uses negative for debits
@@ -124,7 +134,6 @@ Deno.serve(async (req) => {
           location_state: (tx.location as Record<string, string>)?.region || null,
           iso_currency_code: (tx.iso_currency_code as string) || 'USD',
           plaid_transaction_id: tx.transaction_id as string,
-          synced_to_goals: false,
         }));
 
         const { error: insertError } = await supabase
@@ -151,7 +160,7 @@ Deno.serve(async (req) => {
               subcategory: tx.personal_finance_category?.detailed || null,
               location_city: tx.location?.city || null,
               location_state: tx.location?.region || null,
-              synced_to_goals: false, // Mark as needing re-sync
+              minted: false, // Mark as needing re-mint
             })
             .eq('plaid_transaction_id', tx.transaction_id);
 

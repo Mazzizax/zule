@@ -107,7 +107,7 @@ export default function Login() {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <h1>GATEKEEPER</h1>
+          <h1>ZULE</h1>
           <p>
             {callbackUrl
               ? 'Sign in to continue to your app'

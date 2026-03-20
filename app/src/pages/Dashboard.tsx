@@ -35,6 +35,8 @@ export default function Dashboard() {
   const [plaidLoading, setPlaidLoading] = useState(false);
   const [pullLoading, setPullLoading] = useState(false);
   const [pullResult, setPullResult] = useState<string | null>(null);
+  const [analyzeLoading, setAnalyzeLoading] = useState(false);
+  const [analyzeResult, setAnalyzeResult] = useState<string | null>(null);
 
   useEffect(() => {
     if (session?.access_token) {
@@ -178,6 +180,52 @@ export default function Dashboard() {
     }
   };
 
+  const analyzeAndSend = async () => {
+    const token = await getFreshToken();
+    if (!token) return;
+
+    setAnalyzeLoading(true);
+    setAnalyzeResult(null);
+    try {
+      const res = await fetch(
+        `${import.meta.env.ZULE_URL}/functions/v1/mint-transaction-cards`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to analyze transactions');
+      }
+
+      const data = await res.json();
+
+      if (!data.card_attestation || data.card_count === 0) {
+        setAnalyzeResult('No new transactions to analyze');
+        return;
+      }
+
+      // Encode attestation for deep link
+      const attestationEncoded = encodeURIComponent(data.card_attestation);
+      const deepLink = `vinzrik://receive-cards?attestation=${attestationEncoded}`;
+
+      setAnalyzeResult(`Analyzed ${data.card_count} transactions, sent to Vinzrik`);
+
+      // Open deep link to Vinzrik
+      window.location.href = deepLink;
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setAnalyzeLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="page-container">
@@ -268,9 +316,22 @@ export default function Dashboard() {
                   {pullResult}
                 </div>
               )}
+              <button
+                className="btn-primary"
+                onClick={analyzeAndSend}
+                disabled={analyzeLoading}
+                style={{ marginTop: '8px' }}
+              >
+                {analyzeLoading ? 'Analyzing...' : 'Analyze & Send to Vinzrik'}
+              </button>
+              {analyzeResult && (
+                <div className="success-message" style={{ marginTop: '12px' }}>
+                  {analyzeResult}
+                </div>
+              )}
             </div>
             <div className="info-note" style={{ marginTop: '12px' }}>
-              <p>Transactions are stored in Zule. Use Vinzrik to sync them to Goals (anonymized via your ghost identity).</p>
+              <p>Pull transactions from Plaid, then analyze and send game events to Vinzrik. Transactions are enriched with XP, gear, and quest matches. Only game data reaches Goals — no financial details.</p>
             </div>
           </>
         ) : (
