@@ -28,7 +28,7 @@ export default function Privacy() {
 
           <h2 style={{ fontSize: '14px', color: '#fff', marginTop: '20px', marginBottom: '6px' }}>What We Collect and Why</h2>
           <p>
-            Mazzizax is a rewards and engagement platform. When you link a financial account through Plaid,
+            Zule is part of a rewards and engagement platform. When you link a financial account through Plaid,
             we receive read-only transaction data — merchant name, amount, date, category, and location —
             for one purpose: to identify products you purchase so we can populate your gear inventory,
             award XP, match sponsor reward pools, and advance quests.
