@@ -134,21 +134,34 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 5. UPDATE USER PROFILE with Plaid credentials
-    const { error: updateError } = await supabase
-      .from('user_profiles')
-      .update({
+    // 5. INSERT INTO plaid_accounts (supports multiple cards)
+    const adminClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    const { error: insertError } = await adminClient
+      .from('plaid_accounts')
+      .upsert({
+        user_id: user.id,
         plaid_access_token: access_token,
         plaid_item_id: item_id,
+        institution_name: institutionName,
+        connected_at: new Date().toISOString(),
+      }, { onConflict: 'plaid_item_id' });
+
+    if (insertError) {
+      console.error('[PLAID-EXCHANGE] Plaid account insert error:', insertError);
+      return errorResponse('Failed to save connection', 500, origin);
+    }
+
+    // Update user_profiles with latest linked institution (for dashboard display)
+    await adminClient
+      .from('user_profiles')
+      .update({
         plaid_institution_name: institutionName,
         plaid_connected_at: new Date().toISOString(),
       })
       .eq('id', user.id);
-
-    if (updateError) {
-      console.error('[PLAID-EXCHANGE] Profile update error:', updateError);
-      return errorResponse('Failed to save connection', 500, origin);
-    }
 
     console.log(`[PLAID-EXCHANGE] Connected ${institutionName} for user ${user.id.substring(0, 8)}...`);
 

@@ -64,133 +64,129 @@ Deno.serve(async (req) => {
       return errorResponse('Invalid or expired token', 401, origin);
     }
 
-    // 2. GET PLAID CREDENTIALS from user profile
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('plaid_access_token, plaid_cursor')
-      .eq('id', user.id)
-      .single();
+    // 2. GET ALL LINKED PLAID ACCOUNTS
+    const adminClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
-    if (profileError || !profile?.plaid_access_token) {
-      return errorResponse('No Plaid account connected', 400, origin);
+    const { data: accounts, error: accountsError } = await adminClient
+      .from('plaid_accounts')
+      .select('id, plaid_access_token, plaid_item_id')
+      .eq('user_id', user.id);
+
+    if (accountsError || !accounts || accounts.length === 0) {
+      return errorResponse('No Plaid accounts connected', 400, origin);
     }
 
-    // 3. SYNC TRANSACTIONS via Plaid API
+    // 3. SYNC TRANSACTIONS FROM ALL ACCOUNTS
     const baseUrl = PLAID_BASE_URL[PLAID_ENV] || PLAID_BASE_URL.sandbox;
-    let hasMore = true;
-    let cursor = profile.plaid_cursor || '';
     let totalAdded = 0;
     let totalModified = 0;
     let totalRemoved = 0;
 
-    while (hasMore) {
-      const syncBody: Record<string, unknown> = {
-        client_id: PLAID_CLIENT_ID,
-        secret: PLAID_SECRET,
-        access_token: profile.plaid_access_token,
-      };
-      if (cursor) {
-        syncBody.cursor = cursor;
-      }
+    for (const account of accounts) {
+      let hasMore = true;
+      // Cursor stored per-account (not per-profile)
+      let cursor = '';
 
-      const syncResponse = await fetch(`${baseUrl}/transactions/sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(syncBody),
-      });
+      while (hasMore) {
+        const syncBody: Record<string, unknown> = {
+          client_id: PLAID_CLIENT_ID,
+          secret: PLAID_SECRET,
+          access_token: account.plaid_access_token,
+        };
+        if (cursor) {
+          syncBody.cursor = cursor;
+        }
 
-      if (!syncResponse.ok) {
-        const err = await syncResponse.json().catch(() => ({}));
-        console.error('[PLAID-PULL] Sync error:', err);
-        return errorResponse('Failed to sync transactions', 500, origin);
-      }
-
-      const syncData = await syncResponse.json();
-
-      // Process added transactions
-      if (syncData.added?.length > 0) {
-        // GATE: Shred any transaction without a plaid_transaction_id.
-        // If Plaid didn't give it an ID, it's not a real transaction.
-        const certified = syncData.added.filter((tx: Record<string, unknown>) => {
-          if (!tx.transaction_id) {
-            console.log('[PLAID-PULL] Shredded transaction without plaid ID:', tx.name || 'unknown');
-            return false;
-          }
-          return true;
+        const syncResponse = await fetch(`${baseUrl}/transactions/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(syncBody),
         });
 
-        const rows = certified.map((tx: Record<string, unknown>) => ({
-          user_id: user.id,
-          merchant_name: (tx.merchant_name as string) || (tx.name as string) || null,
-          amount: Math.abs(tx.amount as number), // Plaid uses negative for debits
-          date: tx.date as string,
-          category: Array.isArray(tx.personal_finance_category)
-            ? null
-            : (tx.personal_finance_category as Record<string, string>)?.primary || null,
-          subcategory: Array.isArray(tx.personal_finance_category)
-            ? null
-            : (tx.personal_finance_category as Record<string, string>)?.detailed || null,
-          location_city: (tx.location as Record<string, string>)?.city || null,
-          location_state: (tx.location as Record<string, string>)?.region || null,
-          iso_currency_code: (tx.iso_currency_code as string) || 'USD',
-          plaid_transaction_id: tx.transaction_id as string,
-        }));
-
-        const { error: insertError } = await supabase
-          .from('user_transactions')
-          .upsert(rows, { onConflict: 'plaid_transaction_id' });
-
-        if (insertError) {
-          console.error('[PLAID-PULL] Insert error:', insertError);
-        } else {
-          totalAdded += rows.length;
+        if (!syncResponse.ok) {
+          const err = await syncResponse.json().catch(() => ({}));
+          console.error(`[PLAID-PULL] Sync error for account ${account.id}:`, err);
+          break; // Skip this account, continue with others
         }
-      }
 
-      // Process modified transactions
-      if (syncData.modified?.length > 0) {
-        for (const tx of syncData.modified) {
-          const { error: modError } = await supabase
+        const syncData = await syncResponse.json();
+
+        // Process added transactions
+        if (syncData.added?.length > 0) {
+          const certified = syncData.added.filter((tx: Record<string, unknown>) => {
+            if (!tx.transaction_id) {
+              console.log('[PLAID-PULL] Shredded transaction without plaid ID:', tx.name || 'unknown');
+              return false;
+            }
+            return true;
+          });
+
+          const rows = certified.map((tx: Record<string, unknown>) => ({
+            user_id: user.id,
+            plaid_account_id: account.id,
+            merchant_name: (tx.merchant_name as string) || (tx.name as string) || null,
+            amount: Math.abs(tx.amount as number),
+            date: tx.date as string,
+            category: Array.isArray(tx.personal_finance_category)
+              ? null
+              : (tx.personal_finance_category as Record<string, string>)?.primary || null,
+            subcategory: Array.isArray(tx.personal_finance_category)
+              ? null
+              : (tx.personal_finance_category as Record<string, string>)?.detailed || null,
+            location_city: (tx.location as Record<string, string>)?.city || null,
+            location_state: (tx.location as Record<string, string>)?.region || null,
+            iso_currency_code: (tx.iso_currency_code as string) || 'USD',
+            plaid_transaction_id: tx.transaction_id as string,
+          }));
+
+          const { error: insertError } = await adminClient
             .from('user_transactions')
-            .update({
-              merchant_name: tx.merchant_name || tx.name || null,
-              amount: Math.abs(tx.amount),
-              date: tx.date,
-              category: tx.personal_finance_category?.primary || null,
-              subcategory: tx.personal_finance_category?.detailed || null,
-              location_city: tx.location?.city || null,
-              location_state: tx.location?.region || null,
-              minted: false, // Mark as needing re-mint
-            })
-            .eq('plaid_transaction_id', tx.transaction_id);
+            .upsert(rows, { onConflict: 'plaid_transaction_id' });
 
-          if (!modError) totalModified++;
+          if (insertError) {
+            console.error('[PLAID-PULL] Insert error:', insertError);
+          } else {
+            totalAdded += rows.length;
+          }
         }
+
+        // Process modified transactions
+        if (syncData.modified?.length > 0) {
+          for (const tx of syncData.modified) {
+            const { error: modError } = await adminClient
+              .from('user_transactions')
+              .update({
+                merchant_name: tx.merchant_name || tx.name || null,
+                amount: Math.abs(tx.amount),
+                date: tx.date,
+                category: tx.personal_finance_category?.primary || null,
+                subcategory: tx.personal_finance_category?.detailed || null,
+                location_city: tx.location?.city || null,
+                location_state: tx.location?.region || null,
+                minted: false,
+              })
+              .eq('plaid_transaction_id', tx.transaction_id);
+
+            if (!modError) totalModified++;
+          }
+        }
+
+        // Process removed transactions
+        if (syncData.removed?.length > 0) {
+          const removedIds = syncData.removed.map((tx: Record<string, string>) => tx.transaction_id);
+          const { error: delError } = await adminClient
+            .from('user_transactions')
+            .delete()
+            .in('plaid_transaction_id', removedIds);
+
+          if (!delError) totalRemoved += removedIds.length;
+        }
+
+        cursor = syncData.next_cursor;
+        hasMore = syncData.has_more;
       }
-
-      // Process removed transactions
-      if (syncData.removed?.length > 0) {
-        const removedIds = syncData.removed.map((tx: Record<string, string>) => tx.transaction_id);
-        const { error: delError } = await supabase
-          .from('user_transactions')
-          .delete()
-          .in('plaid_transaction_id', removedIds);
-
-        if (!delError) totalRemoved += removedIds.length;
-      }
-
-      cursor = syncData.next_cursor;
-      hasMore = syncData.has_more;
-    }
-
-    // 4. UPDATE CURSOR for next sync
-    const { error: cursorError } = await supabase
-      .from('user_profiles')
-      .update({ plaid_cursor: cursor })
-      .eq('id', user.id);
-
-    if (cursorError) {
-      console.error('[PLAID-PULL] Cursor update error:', cursorError);
     }
 
     console.log(`[PLAID-PULL] User ${user.id.substring(0, 8)}...: +${totalAdded} ~${totalModified} -${totalRemoved}`);

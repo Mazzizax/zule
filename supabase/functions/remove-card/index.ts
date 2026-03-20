@@ -40,22 +40,26 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    // Clear Plaid fields
-    await adminClient
-      .from('user_profiles')
-      .update({
-        plaid_access_token: null,
-        plaid_item_id: null,
-        plaid_institution_name: null,
-        plaid_connected_at: null,
-      })
-      .eq('id', user.id)
-
-    // Delete any transactions
+    // Delete transactions (cascade from plaid_account_id handles linked ones)
     await adminClient
       .from('user_transactions')
       .delete()
       .eq('user_id', user.id)
+
+    // Delete all plaid accounts
+    await adminClient
+      .from('plaid_accounts')
+      .delete()
+      .eq('user_id', user.id)
+
+    // Clear display fields from user_profiles
+    await adminClient
+      .from('user_profiles')
+      .update({
+        plaid_institution_name: null,
+        plaid_connected_at: null,
+      })
+      .eq('id', user.id)
 
     console.log(`[REMOVE-CARD] Disconnected Plaid for user ${user.id.substring(0, 8)}...`)
 

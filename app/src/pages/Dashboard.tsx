@@ -17,6 +17,12 @@ async function getFreshToken(): Promise<string | null> {
  * Zule knows WHO you are, Vinzrik handles app connections.
  */
 
+interface PlaidAccount {
+  id: string;
+  institution_name: string;
+  connected_at: string;
+}
+
 interface ProfileSummary {
   subscription_tier: string;
   subscription_status: string;
@@ -25,6 +31,7 @@ interface ProfileSummary {
   last_seen_at: string;
   plaid_institution_name: string | null;
   plaid_connected_at: string | null;
+  plaid_accounts: PlaidAccount[];
 }
 
 export default function Dashboard() {
@@ -331,25 +338,21 @@ export default function Dashboard() {
       {/* Connected Accounts (Plaid) */}
       <div className="card">
         <h2>Connected Accounts</h2>
-        {profile?.plaid_institution_name ? (
+        {profile?.plaid_accounts && profile.plaid_accounts.length > 0 ? (
           <>
-            <div className="info-row">
-              <span className="label">Card:</span>
-              <span className="value">{profile.plaid_institution_name}</span>
-            </div>
-            <div className="info-row">
-              <span className="label">Connected:</span>
-              <span className="value">{formatDate(profile.plaid_connected_at)}</span>
-            </div>
-            <div className="info-row">
-              <span className="label">Status:</span>
-              <span className="value status-active">Connected</span>
+            {profile.plaid_accounts.map((acct) => (
+              <div key={acct.id} className="info-row" style={{ marginBottom: '4px' }}>
+                <span className="label">{acct.institution_name}</span>
+                <span className="value" style={{ fontSize: '11px', opacity: 0.5 }}>{formatDate(acct.connected_at)}</span>
+              </div>
+            ))}
+            <div style={{ marginTop: '8px' }}>
               <button
                 onClick={removeCard}
                 disabled={removeLoading}
-                style={{ marginLeft: '12px', fontSize: '11px', color: '#ef4444', background: 'none', border: '1px solid #ef4444', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer' }}
+                style={{ fontSize: '11px', color: '#ef4444', background: 'none', border: '1px solid #ef4444', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer' }}
               >
-                {removeLoading ? 'Removing...' : 'Remove Card'}
+                {removeLoading ? 'Removing...' : 'Remove All Cards'}
               </button>
             </div>
             <div style={{ marginTop: '16px' }}>
@@ -428,11 +431,9 @@ export default function Dashboard() {
             </div>
           </>
         ) : (
-          <>
-            <div className="info-note">
-              <p>Link your card to track purchases for your quests and gear. Transaction data stays in Zule — only game events reach Goals.</p>
-            </div>
-          </>
+          <div className="info-note">
+            <p>Link your card to track purchases for your quests and gear. Transaction data stays in Zule — only game events reach Goals.</p>
+          </div>
         )}
         <div style={{ marginTop: '16px' }}>
           <button

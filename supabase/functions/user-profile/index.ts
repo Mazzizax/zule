@@ -211,6 +211,12 @@ Deno.serve(async (req) => {
         return errorResponse('Failed to fetch profile', 500, origin);
       }
 
+      // Fetch linked Plaid accounts
+      const { data: plaidAccounts } = await supabase
+        .from('plaid_accounts')
+        .select('id, institution_name, connected_at')
+        .eq('user_id', user.id);
+
       // Update last_seen
       const { error: updateError } = await supabase
         .from('user_profiles')
@@ -219,13 +225,13 @@ Deno.serve(async (req) => {
 
       if (updateError) {
         console.error('[PROFILE] Last seen update error:', updateError);
-        // Don't fail the request for this
       }
 
       return jsonResponse(
         {
           email: user.email,
           ...profile,
+          plaid_accounts: plaidAccounts || [],
         },
         200,
         origin
