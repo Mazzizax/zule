@@ -225,7 +225,10 @@ serve(async (req) => {
         const features = TIER_FEATURES[tier] || TIER_FEATURES.free;
 
         // Map Stripe status to our status
-        const subscriptionStatus = mapSubscriptionStatus(status);
+        // If cancel_at_period_end is set, treat as canceled even though Stripe says active
+        const subscriptionStatus = subscription.cancel_at_period_end
+          ? 'canceled'
+          : mapSubscriptionStatus(status);
 
         // Calculate expiration
         let expiresAt: string | null = null;
