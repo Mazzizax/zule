@@ -40,7 +40,12 @@ export default function Layout() {
       <header className="mobile-header">
         <div className="mobile-brand">
           <img src="/icon-192.png" alt="" className="brand-icon" />
-          <h1>ZULE</h1>
+          <h1 style={{ fontSize: '20px', letterSpacing: '0.15em', fontFamily: "'Cormorant Garamond', serif", fontWeight: 400 }}>
+            <span className="metal-text" style={{ display: 'inline-block' }}>Z</span>
+            <span className="metal-text" style={{ display: 'inline-block' }}>U</span>
+            <span className="metal-text" style={{ display: 'inline-block' }}>L</span>
+            <span className="metal-text" style={{ display: 'inline-block' }}>E</span>
+          </h1>
         </div>
         <button
           className="mobile-menu-btn"
@@ -78,8 +83,12 @@ export default function Layout() {
       <nav className="sidebar">
         <div className="sidebar-header">
           <img src="/icon-192.png" alt="" className="brand-icon" />
-          <h1>ZULE</h1>
-          <p className="sidebar-tagline">Identity Vault</p>
+          <h1 style={{ fontSize: '24px', letterSpacing: '0.15em', fontFamily: "'Cormorant Garamond', serif", fontWeight: 400 }}>
+            <span className="metal-text" style={{ display: 'inline-block' }}>Z</span>
+            <span className="metal-text" style={{ display: 'inline-block' }}>U</span>
+            <span className="metal-text" style={{ display: 'inline-block' }}>L</span>
+            <span className="metal-text" style={{ display: 'inline-block' }}>E</span>
+          </h1>
           <p className="user-email">{user?.email}</p>
         </div>
 
