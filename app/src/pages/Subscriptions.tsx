@@ -307,10 +307,12 @@ export default function Subscriptions() {
                   const canChange = tier.stripe_price_id && !isActive;
                   const loadingKey = `${service!.id}-${tier.stripe_price_id}`;
 
+                  const remaining = tier.limit !== undefined ? tier.limit - purchaseCount : undefined;
+
                   let label = 'Subscribe';
                   if (isGoals) label = 'Purchased';
-                  else if (isOneTime && atLimit) label = tier.limit === 1 ? 'Owned' : `Owned (${purchaseCount}/${tier.limit})`;
-                  else if (isOneTime && purchaseCount > 0) label = `Purchase (${purchaseCount}/${tier.limit || '∞'})`;
+                  else if (isOneTime && atLimit) label = tier.limit === 1 ? 'Owned' : `${purchaseCount}/${tier.limit} Owned`;
+                  else if (isOneTime && remaining !== undefined) label = `Purchase · ${remaining}/${tier.limit} Available`;
                   else if (isOneTime) label = 'Purchase';
                   else if (isActive) label = 'Active';
                   else if (hasExisting && canChange) label = 'Switch';
