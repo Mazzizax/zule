@@ -408,7 +408,7 @@ export default function Dashboard() {
                 <div className="info-row" key={sub.service_id}>
                   <span className="label">{SERVICE_DISPLAY_NAME[sub.service_id] || sub.service_id}</span>
                   <span className="value">
-                    <div onClick={() => navigate(`/subscriptions?service=${sub.service_id}`)} style={{
+                    <div className="metal-btn" onClick={() => navigate(`/subscriptions?service=${sub.service_id}`)} style={{
                       cursor: 'pointer', display: 'inline-block', minWidth: '120px', textAlign: 'center',
                       padding: '8px 12px', borderRadius: '4px',
                       fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, fontSize: '12px',
@@ -431,7 +431,7 @@ export default function Dashboard() {
             <div className="info-row">
               <span className="label">Goals</span>
               <span className="value">
-                <div onClick={() => navigate('/subscriptions?service=goals')} style={{
+                <div className="metal-btn" onClick={() => navigate('/subscriptions?service=goals')} style={{
                   cursor: 'pointer', display: 'inline-block', minWidth: '120px', textAlign: 'center',
                   padding: '8px 12px', borderRadius: '4px',
                   fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, fontSize: '12px',

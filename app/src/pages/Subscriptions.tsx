@@ -277,6 +277,7 @@ export default function Subscriptions() {
 
                   return (
                     <div
+                      className="metal-btn"
                       onClick={() => {
                         if (canChange && tier.stripe_price_id) {
                           if (hasExisting) {
