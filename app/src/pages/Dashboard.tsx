@@ -334,11 +334,11 @@ export default function Dashboard() {
   return (
     <div className="page-container">
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '14px', fontFamily: 'var(--font-mono)', fontWeight: 400, letterSpacing: '0.15em', color: 'var(--text-secondary)' }}>
-          <span className="metal-text" style={{ fontWeight: 700, fontSize: '16px' }}>Z</span>ero-knowledge{' '}
-          <span className="metal-text" style={{ fontWeight: 700, fontSize: '16px' }}>U</span>ser{' '}
-          <span className="metal-text" style={{ fontWeight: 700, fontSize: '16px' }}>L</span>icense{' '}
-          <span className="metal-text" style={{ fontWeight: 700, fontSize: '16px' }}>E</span>nclave
+        <h1 className="metal-text" style={{ fontSize: '13px', fontFamily: 'var(--font-mono)', fontWeight: 400, letterSpacing: '0.12em' }}>
+          <span style={{ fontWeight: 700, fontSize: '18px', letterSpacing: '0.02em', textShadow: '0 0 8px rgba(196,168,130,0.3)' }}>Z</span>ero-knowledge{' '}
+          <span style={{ fontWeight: 700, fontSize: '18px', letterSpacing: '0.02em', textShadow: '0 0 8px rgba(196,168,130,0.3)' }}>U</span>ser{' '}
+          <span style={{ fontWeight: 700, fontSize: '18px', letterSpacing: '0.02em', textShadow: '0 0 8px rgba(196,168,130,0.3)' }}>L</span>icense{' '}
+          <span style={{ fontWeight: 700, fontSize: '18px', letterSpacing: '0.02em', textShadow: '0 0 8px rgba(196,168,130,0.3)' }}>E</span>nclave
         </h1>
       </div>
 
