@@ -64,6 +64,8 @@ export default function Subscriptions() {
   const [selectedService, setSelectedService] = useState<string | null>(searchParams.get('service'));
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [cancelConfirm, setCancelConfirm] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   useEffect(() => {
     fetchSubscriptions();
@@ -133,6 +135,40 @@ export default function Subscriptions() {
       console.error('Checkout error:', err.message);
     } finally {
       setCheckoutLoading(null);
+    }
+  };
+
+  const handleCancel = async (serviceId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return;
+
+    setCancelLoading(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.ZULE_URL}/functions/v1/cancel-subscription`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ service_id: serviceId }),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to cancel');
+      }
+
+      setCancelConfirm(false);
+      await fetchSubscriptions();
+    } catch (err: any) {
+      console.error('Cancel error:', err.message);
+    } finally {
+      setCancelLoading(false);
     }
   };
 
@@ -242,6 +278,46 @@ export default function Subscriptions() {
               </div>
             ))}
           </div>
+
+          {service && getActiveSubscription(service.id) && !cancelConfirm && (
+            <div style={{ marginTop: '24px', textAlign: 'center' }}>
+              <button
+                onClick={() => setCancelConfirm(true)}
+                style={{ background: 'none', border: '1px solid #ef4444', color: '#ef4444', padding: '8px 24px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
+              >
+                Cancel Subscription
+              </button>
+            </div>
+          )}
+
+          {service && cancelConfirm && (
+            <div style={{ marginTop: '24px', padding: '16px', border: '1px solid #ef4444', borderRadius: '6px', textAlign: 'center' }}>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer', marginBottom: '12px' }}>
+                <input
+                  type="checkbox"
+                  id="cancel-confirm-check"
+                  style={{ cursor: 'pointer' }}
+                />
+                I want to cancel my {service.name} subscription
+              </label>
+              <button
+                onClick={() => {
+                  const checked = (document.getElementById('cancel-confirm-check') as HTMLInputElement)?.checked;
+                  if (checked) handleCancel(service.id);
+                }}
+                disabled={cancelLoading}
+                style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 24px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', marginRight: '8px', opacity: cancelLoading ? 0.6 : 1 }}
+              >
+                {cancelLoading ? 'Canceling...' : 'Confirm Cancellation'}
+              </button>
+              <button
+                onClick={() => setCancelConfirm(false)}
+                style={{ background: 'none', border: '1px solid #444', color: '#888', padding: '8px 24px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
+              >
+                Never Mind
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
