@@ -579,13 +579,18 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Vinzrik Notice */}
+      {/* App Connections */}
       <div className="card">
         <h2>App Connections</h2>
         <div className="info-note">
           <p>
             Connect your daily use apps here. Don't see an app you use? Let us know and we'll see what we can do.
           </p>
+        </div>
+        <div style={{ marginTop: '16px' }}>
+          <button className="btn-primary" onClick={() => navigate('/apps')}>
+            Manage Apps
+          </button>
         </div>
       </div>
     </div>

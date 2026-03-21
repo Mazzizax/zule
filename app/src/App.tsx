@@ -12,6 +12,7 @@ import Auth from './pages/Auth';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import Subscriptions from './pages/Subscriptions';
+import Apps from './pages/Apps';
 import './styles.css';
 
 /**
@@ -106,6 +107,7 @@ function AppRoutes() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/security" element={<Security />} />
         <Route path="/subscriptions" element={<Subscriptions />} />
+        <Route path="/apps" element={<Apps />} />
       </Route>
 
       {/* Developer page — no layout, no sidebar */}
