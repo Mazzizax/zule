@@ -34,7 +34,7 @@ export default function Subscriptions() {
               onClick={() => setSelectedService(svc.id)}
               style={{ cursor: 'pointer' }}
             >
-              <h2 style={{ fontFamily: g, fontSize: '22px', fontWeight: 400, letterSpacing: '0.06em' }}>{svc.name}</h2>
+              <h2 className="metal-text" style={{ fontFamily: g, fontSize: '22px', fontWeight: 400, letterSpacing: '0.12em', textTransform: 'uppercase', display: 'inline-block' }}>{svc.name}</h2>
               <p style={{ opacity: 0.6, fontSize: '13px' }}>{svc.description}</p>
             </div>
           ))}
@@ -49,7 +49,7 @@ export default function Subscriptions() {
             Back
           </button>
 
-          <h2 style={{ fontFamily: g, fontSize: '24px', fontWeight: 400, letterSpacing: '0.06em', marginBottom: '16px' }}>{service?.name}</h2>
+          <h2 className="metal-text" style={{ fontFamily: g, fontSize: '24px', fontWeight: 400, letterSpacing: '0.12em', textTransform: 'uppercase', display: 'inline-block', marginBottom: '16px' }}>{service?.name}</h2>
 
           <div className="card-grid">
             {service?.tiers.map(tier => (
