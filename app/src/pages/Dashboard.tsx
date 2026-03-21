@@ -371,8 +371,8 @@ export default function Dashboard() {
         {/* Subscriptions */}
         <div className="card">
           <h2>Subscriptions</h2>
-          {profile?.subscriptions && profile.subscriptions.length > 0 ? (
-            profile.subscriptions.map((sub) => (
+          {profile?.subscriptions && profile.subscriptions.filter(s => s.status === 'active').length > 0 ? (
+            profile.subscriptions.filter(s => s.status === 'active').map((sub) => (
               <div className="info-row" key={sub.service_id}>
                 <span className="label">{SERVICE_DISPLAY_NAME[sub.service_id] || sub.service_id}</span>
                 <span className="value">
