@@ -334,11 +334,11 @@ export default function Dashboard() {
   return (
     <div className="page-container">
       <div style={{ marginBottom: '32px' }}>
-        <h1 className="metal-text" style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', fontWeight: 300, letterSpacing: '0.18em' }}>
-          <span style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', 'Georgia', serif", fontWeight: 300, fontSize: '26px', letterSpacing: '0.04em', fontStyle: 'normal' }}>Z</span>ero-knowledge{' '}
-          <span style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', 'Georgia', serif", fontWeight: 300, fontSize: '26px', letterSpacing: '0.04em', fontStyle: 'normal' }}>U</span>ser{' '}
-          <span style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', 'Georgia', serif", fontWeight: 300, fontSize: '26px', letterSpacing: '0.04em', fontStyle: 'normal' }}>L</span>icense{' '}
-          <span style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', 'Georgia', serif", fontWeight: 300, fontSize: '26px', letterSpacing: '0.04em', fontStyle: 'normal' }}>E</span>nclave
+        <h1 style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', fontWeight: 300, letterSpacing: '0.18em', color: 'var(--zule-gold-dim)' }}>
+          <span className="metal-text" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, fontSize: '28px', letterSpacing: '0.04em', display: 'inline-block' }}>Z</span>ero-knowledge{' '}
+          <span className="metal-text" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, fontSize: '28px', letterSpacing: '0.04em', display: 'inline-block' }}>U</span>ser{' '}
+          <span className="metal-text" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, fontSize: '28px', letterSpacing: '0.04em', display: 'inline-block' }}>L</span>icense{' '}
+          <span className="metal-text" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, fontSize: '28px', letterSpacing: '0.04em', display: 'inline-block' }}>E</span>nclave
         </h1>
       </div>
 
