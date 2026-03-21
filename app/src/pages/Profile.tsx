@@ -184,17 +184,6 @@ export default function Profile() {
           </div>
         </div>
 
-        <div className="card">
-          <h2>Subscription</h2>
-          <div className="info-row">
-            <span className="label">Current Tier:</span>
-            <span className="value tier-badge">{profile?.subscription_tier || 'free'}</span>
-          </div>
-          <p className="info-note">
-            Your subscription tier affects rate limits and available features across connected apps.
-          </p>
-        </div>
-
         <div className="form-actions">
           <button type="submit" className="btn-primary" disabled={saving}>
             {saving ? 'Saving...' : 'Save Changes'}
