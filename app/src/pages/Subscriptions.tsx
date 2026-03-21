@@ -92,6 +92,7 @@ export default function Subscriptions() {
   const [searchParams] = useSearchParams();
   const [selectedService, setSelectedService] = useState<string | null>(searchParams.get('service'));
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [purchases, setPurchases] = useState<{ product_id: string }[]>([]);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
@@ -122,6 +123,7 @@ export default function Subscriptions() {
       if (res.ok) {
         const data = await res.json();
         setSubscriptions(data.subscriptions || []);
+        setPurchases(data.purchases || []);
       }
     } catch {
       // Silently fail — subscriptions just won't show active state
@@ -300,11 +302,15 @@ export default function Subscriptions() {
                   const isGoals = service!.id === 'goals';
                   const isOneTime = tier.mode === 'payment';
                   const hasExisting = !!activeSub;
+                  const purchaseCount = tier.product_id ? purchases.filter(p => p.product_id === tier.product_id).length : 0;
+                  const atLimit = tier.limit !== undefined && purchaseCount >= tier.limit;
                   const canChange = tier.stripe_price_id && !isActive;
                   const loadingKey = `${service!.id}-${tier.stripe_price_id}`;
 
                   let label = 'Subscribe';
                   if (isGoals) label = 'Purchased';
+                  else if (isOneTime && atLimit) label = tier.limit === 1 ? 'Owned' : `Owned (${purchaseCount}/${tier.limit})`;
+                  else if (isOneTime && purchaseCount > 0) label = `Purchase (${purchaseCount}/${tier.limit || '∞'})`;
                   else if (isOneTime) label = 'Purchase';
                   else if (isActive) label = 'Active';
                   else if (hasExisting && canChange) label = 'Switch';
@@ -314,7 +320,7 @@ export default function Subscriptions() {
                       className="metal-btn"
                       onClick={() => {
                         if (!tier.stripe_price_id) return;
-                        if (isOneTime) {
+                        if (isOneTime && !atLimit) {
                           handleSubscribe(service!.id, tier.stripe_price_id, tier.product_id, 'payment');
                         } else if (canChange) {
                           if (hasExisting) {
@@ -338,7 +344,7 @@ export default function Subscriptions() {
                         textShadow: `0 1px 0 ${m.highlight}`,
                         position: 'relative',
                         overflow: 'hidden',
-                        cursor: (canChange || isOneTime) ? 'pointer' : 'default',
+                        cursor: (canChange || (isOneTime && !atLimit)) ? 'pointer' : 'default',
                         opacity: checkoutLoading === loadingKey ? 0.6 : 1,
                       }}>
                       <span style={{ position: 'relative', zIndex: 1 }}>

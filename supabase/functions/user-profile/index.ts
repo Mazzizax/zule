@@ -217,6 +217,13 @@ Deno.serve(async (req) => {
         .select('service_id, tier, status, stripe_subscription_id, expires_at')
         .eq('user_id', user.id);
 
+      // Fetch completed purchases
+      const { data: purchases } = await supabase
+        .from('user_purchases')
+        .select('product_id, product_type, status, created_at')
+        .eq('user_id', user.id)
+        .eq('status', 'completed');
+
       // Fetch linked Plaid accounts
       const { data: plaidAccounts } = await supabase
         .from('plaid_accounts')
@@ -241,6 +248,7 @@ Deno.serve(async (req) => {
           email: user.email,
           ...profile,
           subscriptions: subscriptions || [],
+          purchases: purchases || [],
           plaid_accounts: plaidAccounts || [],
         },
         200,

@@ -490,6 +490,33 @@ serve(async (req) => {
             }
           }
 
+          // Handle one-time purchases (no subscription ID means payment mode)
+          const sessionProductId = session.metadata?.product_id;
+          if (sessionServiceId && sessionProductId && !sessionSubscriptionId && session.payment_status === 'paid') {
+            const { error: purchaseError } = await supabase.rpc('log_purchase', {
+              p_user_id: userId,
+              p_payment_intent_id: session.payment_intent || session.id,
+              p_product_type: 'one_time',
+              p_product_id: sessionProductId,
+              p_amount_cents: session.amount_total || 0,
+              p_app_id: null,
+              p_metadata: { service_id: sessionServiceId, price_id: session.metadata?.price_id },
+            });
+
+            if (purchaseError) {
+              console.error('[STRIPE] Purchase log error:', purchaseError);
+            } else {
+              console.log(`[STRIPE] Logged purchase ${sessionProductId} for user ${userId}`);
+            }
+
+            // Auto-complete the purchase since checkout payment is already confirmed
+            if (session.payment_intent) {
+              await supabase.rpc('complete_purchase', {
+                p_payment_intent_id: session.payment_intent,
+              });
+            }
+          }
+
           // Log audit event
           await supabase.rpc('log_audit_event', {
             p_user_id: userId,
@@ -497,7 +524,7 @@ serve(async (req) => {
             p_category: 'subscription',
             p_ip_address: null,
             p_user_agent: null,
-            p_metadata: { customer_id: customerId, service_id: sessionServiceId },
+            p_metadata: { customer_id: customerId, service_id: sessionServiceId, product_id: sessionProductId },
           });
         } else {
           console.log('[STRIPE] Checkout completed but missing user_id or customer_id for linking');
