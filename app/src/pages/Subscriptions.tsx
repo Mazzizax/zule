@@ -311,8 +311,9 @@ export default function Subscriptions() {
 
                   let label = 'Subscribe';
                   if (isGoals) label = 'Purchased';
-                  else if (isOneTime && atLimit) label = tier.limit === 1 ? 'Owned' : `${purchaseCount}/${tier.limit} Owned`;
-                  else if (isOneTime && remaining !== undefined) label = `Purchase · ${remaining}/${tier.limit} Available`;
+                  else if (isOneTime && atLimit && tier.limit === 1) label = 'Owned';
+                  else if (isOneTime && atLimit) label = `${purchaseCount}/${tier.limit} Owned`;
+                  else if (isOneTime && remaining !== undefined && tier.limit! > 1) label = `Purchase · ${remaining}/${tier.limit} Available`;
                   else if (isOneTime) label = 'Purchase';
                   else if (isActive) label = 'Active';
                   else if (hasExisting && canChange) label = 'Switch';
