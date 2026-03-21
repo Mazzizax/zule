@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
           quantity: 1,
         },
       ],
-      success_url: `${success_url}?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${success_url}${success_url.includes('?') ? '&' : '?'}session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancel_url,
       client_reference_id: user.id, // Links customer to our user on completion
       metadata: {
