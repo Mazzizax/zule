@@ -19,11 +19,11 @@ const metals: Record<string, { gradient: string, border: string, shadow: string,
     highlight: 'rgba(207,216,220,0.5)',
   },
   gunmetal: {
-    gradient: 'linear-gradient(145deg, #2a2d30 0%, #4a4e52 15%, #5c6166 30%, #4a4e52 45%, #383c40 55%, #4a4e52 70%, #5c6166 85%, #2a2d30 100%)',
-    border: 'rgba(92,97,102,0.5)',
-    shadow: 'inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.6), 0 1px 0 rgba(74,78,82,0.2)',
+    gradient: 'linear-gradient(145deg, #2d3035 0%, #3d4248 12%, #515760 25%, #5a6068 35%, #4a5058 45%, #3d4248 55%, #515760 68%, #5a6068 78%, #4a5058 88%, #2d3035 100%)',
+    border: 'rgba(90,96,104,0.4)',
+    shadow: 'inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.5), 0 1px 0 rgba(74,78,82,0.15)',
     text: '#111214',
-    highlight: 'rgba(92,97,102,0.3)',
+    highlight: 'rgba(120,126,134,0.3)',
   },
 };
 
