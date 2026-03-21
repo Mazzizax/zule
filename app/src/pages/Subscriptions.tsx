@@ -279,7 +279,7 @@ export default function Subscriptions() {
             ))}
           </div>
 
-          {service && getActiveSubscription(service.id) && !cancelConfirm && (
+          {service && service.id !== 'goals' && getActiveSubscription(service.id) && !cancelConfirm && (
             <div style={{ marginTop: '24px', textAlign: 'center' }}>
               <button
                 onClick={() => setCancelConfirm(true)}
@@ -290,7 +290,7 @@ export default function Subscriptions() {
             </div>
           )}
 
-          {service && cancelConfirm && (
+          {service && service.id !== 'goals' && cancelConfirm && (
             <div style={{ marginTop: '24px', padding: '16px', border: '1px solid #ef4444', borderRadius: '6px', textAlign: 'center' }}>
               <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer', marginBottom: '12px' }}>
                 <input
