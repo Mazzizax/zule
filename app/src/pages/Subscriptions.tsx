@@ -65,13 +65,30 @@ export default function Subscriptions() {
                   </ul>
                 </div>
                 <div style={{
-                  marginTop: '16px', width: '100%', padding: '12px',
-                  background: 'var(--metal-surface)', backgroundSize: '200% auto',
-                  borderRadius: '8px', textAlign: 'center',
-                  fontFamily: g, fontSize: '14px', fontWeight: 500,
-                  color: '#0a0908', letterSpacing: '0.1em', textTransform: 'uppercase',
+                  marginTop: '16px', width: '100%', padding: '10px 12px',
+                  background: 'linear-gradient(145deg, #8a7560 0%, #C4A882 15%, #E0D0B8 30%, #D4BC9A 45%, #A08968 55%, #C4A882 70%, #E0D0B8 85%, #8a7560 100%)',
+                  backgroundSize: '200% auto',
+                  borderRadius: '4px', textAlign: 'center',
+                  fontFamily: g, fontSize: '13px', fontWeight: 500,
+                  color: '#1a1510', letterSpacing: '0.14em', textTransform: 'uppercase',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5), 0 1px 0 rgba(196,168,130,0.15)',
+                  borderTop: '1px solid rgba(224,208,184,0.4)',
+                  borderBottom: '1px solid rgba(100,80,60,0.6)',
+                  textShadow: '0 1px 0 rgba(224,208,184,0.4)',
+                  position: 'relative',
+                  overflow: 'hidden',
                 }}>
-                  Purchased
+                  <span style={{ position: 'relative', zIndex: 1 }}>Purchased</span>
+                  <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%)',
+                    pointerEvents: 'none',
+                  }} />
+                  <div style={{
+                    position: 'absolute', top: '1px', left: '4px', right: '4px', height: '1px',
+                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+                    pointerEvents: 'none',
+                  }} />
                 </div>
               </div>
             ))}
