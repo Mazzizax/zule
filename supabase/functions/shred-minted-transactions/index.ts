@@ -22,8 +22,6 @@ import { handleCors, jsonResponse, errorResponse } from '../_shared/cors.ts'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-// Grace period: 24 hours after minting before shredding
-const GRACE_PERIOD_HOURS = 24
 
 Deno.serve(async (req) => {
   const origin = req.headers.get('Origin')
@@ -56,41 +54,34 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    // Calculate cutoff: minted_at must be older than grace period
-    const cutoff = new Date(Date.now() - GRACE_PERIOD_HOURS * 60 * 60 * 1000).toISOString()
-
-    // Count before delete (for reporting)
+    // Count minted transactions
     const { count: eligibleCount } = await adminClient
       .from('user_transactions')
       .select('id', { count: 'exact', head: true })
       .eq('minted', true)
-      .lt('minted_at', cutoff)
 
     if (!eligibleCount || eligibleCount === 0) {
       return jsonResponse({
         shredded: 0,
-        message: 'No minted transactions past grace period',
+        message: 'No minted transactions to shred',
       }, 200, origin)
     }
 
-    // DELETE minted transactions past grace period
+    // DELETE all minted transactions
     const { error: deleteError } = await adminClient
       .from('user_transactions')
       .delete()
       .eq('minted', true)
-      .lt('minted_at', cutoff)
 
     if (deleteError) {
       console.error('[SHRED] Delete error:', deleteError)
       return errorResponse('Failed to shred transactions', 500, origin)
     }
 
-    console.log(`[SHRED] Shredded ${eligibleCount} minted transactions (grace: ${GRACE_PERIOD_HOURS}h)`)
+    console.log(`[SHRED] Shredded ${eligibleCount} minted transactions`)
 
     return jsonResponse({
       shredded: eligibleCount,
-      grace_period_hours: GRACE_PERIOD_HOURS,
-      cutoff,
     }, 200, origin)
 
   } catch (error) {
