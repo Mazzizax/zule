@@ -3,7 +3,7 @@
    Rose Gold / Champagne on Dark
    ================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Jost:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap');
 
 :root {
   --zule-gold: #C4A882;
@@ -21,8 +21,8 @@
   --text-muted: #4a453e;
   --danger: #c44;
   --warning: #d4943c;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+  --font-body: 'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Space Mono', 'Courier New', monospace;
 
   /* Metallic surface gradients */
   --metal-text: linear-gradient(135deg, #A08968 0%, #D4BC9A 25%, #C4A882 50%, #E0D0B8 75%, #A08968 100%);
