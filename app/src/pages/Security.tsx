@@ -206,9 +206,13 @@ export default function Security() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <h1>Security</h1>
-        <p>Manage your account security settings</p>
+      <div style={{ marginBottom: '32px' }}>
+        <h1 className="metal-text" style={{ fontSize: '13px', fontFamily: 'var(--font-mono)', fontWeight: 300, letterSpacing: '0.18em' }}>
+          <span className="metal-text" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, fontSize: '28px', letterSpacing: '0.04em', display: 'inline-block' }}>Z</span>ero-knowledge{' '}
+          <span className="metal-text" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, fontSize: '28px', letterSpacing: '0.04em', display: 'inline-block' }}>U</span>ser{' '}
+          <span className="metal-text" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, fontSize: '28px', letterSpacing: '0.04em', display: 'inline-block' }}>L</span>icense{' '}
+          <span className="metal-text" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, fontSize: '28px', letterSpacing: '0.04em', display: 'inline-block' }}>E</span>nclave
+        </h1>
       </div>
 
       {error && <div className="error-message">{error}</div>}
