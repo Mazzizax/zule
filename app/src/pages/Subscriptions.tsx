@@ -81,7 +81,7 @@ const services: Service[] = [
     description: 'Keys, artifacts, and cosmic instruments',
     tiers: [
       { id: 'secret_door_key', name: 'Secret Door Key', metal: 'rose', price: '$5', stripe_price_id: 'price_1Sui0sDRpCHsf7Inh8xp45BV', product_id: 'secret_door_key', mode: 'payment', limit: 33, features: ['Secret Door Key 3-Pack'] },
-      { id: 'need_more_data', name: 'Need More Data', metal: 'rose', price: '$10', stripe_price_id: 'price_1Sui3qDRpCHsf7Inqw16CsUk', product_id: 'need_more_data', mode: 'payment', features: [] },
+      { id: 'need_more_data', name: 'Need More Data', metal: 'rose', price: '$10', stripe_price_id: 'price_1Sui3qDRpCHsf7Inqw16CsUk', product_id: 'need_more_data', mode: 'payment', limit: 5, features: ['Replay the base Iterations game from the start'] },
       { id: 'dragon_eye', name: 'Dragon Eye', metal: 'rose', price: '$500', stripe_price_id: 'price_1Sui7tDRpCHsf7InSpqU9Bu7', product_id: 'dragon_eye', mode: 'payment', limit: 1, features: ['One per account'] },
     ],
   },

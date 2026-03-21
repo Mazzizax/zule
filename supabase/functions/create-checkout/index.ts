@@ -133,6 +133,7 @@ Deno.serve(async (req) => {
       const PURCHASE_LIMITS: Record<string, number> = {
         'dragon_eye': 1,
         'secret_door_key': 33,
+        'need_more_data': 5,
       };
 
       const limit = PURCHASE_LIMITS[product_id];
