@@ -584,11 +584,7 @@ export default function Dashboard() {
         <h2>App Connections</h2>
         <div className="info-note">
           <p>
-            Your app connections and ghost identity are managed by <strong>Vinzrik</strong> on your device.
-            This ensures that even Zule cannot see which apps you use or link your identity to your activity.
-          </p>
-          <p style={{ marginTop: '0.5rem', opacity: 0.7 }}>
-            Open Vinzrik to view and manage your connected apps.
+            Connect your daily use apps here. Don't see an app you use? Let us know and we'll see what we can do.
           </p>
         </div>
       </div>
