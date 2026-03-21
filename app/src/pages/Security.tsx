@@ -331,17 +331,6 @@ export default function Security() {
         </button>
       </div>
 
-      {/* Ghost Identity Notice */}
-      <div className="card">
-        <h2>Ghost Identity</h2>
-        <div className="info-note">
-          <p>
-            Your ghost identity is managed by <strong>Vinzrik</strong> on your device.
-            To reset your ghost identity or manage app connections, use the Vinzrik app.
-          </p>
-        </div>
-      </div>
-
       {/* Account Info */}
       <div className="card">
         <h2>Account Information</h2>
