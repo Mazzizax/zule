@@ -35,7 +35,7 @@ const services = [
     tiers: [
       { id: 'standard', name: 'Standard', metal: 'rose', features: ['Basic XP tracking', '5 gear slots', 'Community quests'] },
       { id: 'premium', name: 'Premium', metal: 'titanium', features: ['Full XP tracking', 'All 20 gear slots', 'Loadouts', 'Sponsor pools', 'Priority quest matching'] },
-      { id: 'sovereign', name: 'Sovereign', metal: 'gunmetal', features: ['Everything in Premium', 'Advanced analytics', 'Custom loadout themes', 'Early access features', 'Direct brand engagement'] },
+      { id: 'citizen', name: 'Citizen', metal: 'gunmetal', features: ['Everything in Premium', 'Advanced analytics', 'Custom loadout themes', 'Early access features', 'Direct brand engagement'] },
     ],
   },
 ];
