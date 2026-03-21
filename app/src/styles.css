@@ -673,12 +673,14 @@ body {
 
 .info-row .label {
   color: var(--text-secondary);
-  font-size: 14px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
 }
 
 .info-row .value {
   color: var(--text-primary);
-  font-size: 14px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
   text-align: right;
   max-width: 60%;
   word-break: break-all;
