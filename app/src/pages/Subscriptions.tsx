@@ -56,13 +56,23 @@ interface Service {
 
 const services: Service[] = [
   {
-    id: 'goals',
-    name: 'Goals',
-    description: 'Rewards platform — XP, gear, quests, brand engagement',
+    id: 'conversations-with-xenon',
+    name: 'Conversations with Xenon',
+    description: 'Relics, legacy, and lore',
     tiers: [
-      { id: 'standard', name: 'Standard', metal: 'rose', price: null, stripe_price_id: null, features: ['Basic XP tracking', '5 gear slots', 'Community quests'] },
-      { id: 'premium', name: 'Premium', metal: 'titanium', price: null, stripe_price_id: null, features: ['Full XP tracking', 'All 20 gear slots', 'Loadouts', 'Sponsor pools', 'Priority quest matching'] },
-      { id: 'citizen', name: 'Citizen', metal: 'gunmetal', price: null, stripe_price_id: null, features: ['Everything in Premium', 'Advanced analytics', 'Custom loadout themes', 'Early access features', 'Direct brand engagement'] },
+      { id: 'sage_relic', name: 'Sage Relic', metal: 'rose', price: null, stripe_price_id: null, features: [] },
+      { id: 'founder_account', name: 'Founder Account', metal: 'rose', price: null, stripe_price_id: null, features: [] },
+      { id: 'novel_chapter', name: 'Novel Chapter', metal: 'rose', price: null, stripe_price_id: null, features: [] },
+    ],
+  },
+  {
+    id: 'iterations',
+    name: 'Iterations',
+    description: 'Keys, artifacts, and cosmic instruments',
+    tiers: [
+      { id: 'secret_door_key', name: 'Secret Door Key', metal: 'rose', price: '$5', stripe_price_id: 'price_1Sui0sDRpCHsf7Inh8xp45BV', product_id: 'secret_door_key', mode: 'payment', limit: 33, features: ['Secret Door Key 3-Pack'] },
+      { id: 'need_more_data', name: 'Need More Data', metal: 'rose', price: '$10', stripe_price_id: 'price_1Sui3qDRpCHsf7Inqw16CsUk', product_id: 'need_more_data', mode: 'payment', limit: 5, features: ['Replay Iterations phases 1-4'] },
+      { id: 'dragon_eye', name: 'Dragon Eye', metal: 'rose', price: '$500', stripe_price_id: 'price_1Sui7tDRpCHsf7InSpqU9Bu7', product_id: 'dragon_eye', mode: 'payment', limit: 1, features: ['One per account'] },
     ],
   },
   {
@@ -76,16 +86,6 @@ const services: Service[] = [
     ],
   },
   {
-    id: 'conversations-with-xenon',
-    name: 'Conversations with Xenon',
-    description: 'Relics, legacy, and lore',
-    tiers: [
-      { id: 'sage_relic', name: 'Sage Relic', metal: 'rose', price: null, stripe_price_id: null, features: [] },
-      { id: 'founder_account', name: 'Founder Account', metal: 'rose', price: null, stripe_price_id: null, features: [] },
-      { id: 'novel_chapter', name: 'Novel Chapter', metal: 'rose', price: null, stripe_price_id: null, features: [] },
-    ],
-  },
-  {
     id: 'hardware',
     name: 'Hardware',
     description: 'Physical devices and peripherals',
@@ -95,13 +95,13 @@ const services: Service[] = [
     ],
   },
   {
-    id: 'iterations',
-    name: 'Iterations',
-    description: 'Keys, artifacts, and cosmic instruments',
+    id: 'goals',
+    name: 'Goals',
+    description: 'Rewards platform — XP, gear, quests, brand engagement',
     tiers: [
-      { id: 'secret_door_key', name: 'Secret Door Key', metal: 'rose', price: '$5', stripe_price_id: 'price_1Sui0sDRpCHsf7Inh8xp45BV', product_id: 'secret_door_key', mode: 'payment', limit: 33, features: ['Secret Door Key 3-Pack'] },
-      { id: 'need_more_data', name: 'Need More Data', metal: 'rose', price: '$10', stripe_price_id: 'price_1Sui3qDRpCHsf7Inqw16CsUk', product_id: 'need_more_data', mode: 'payment', limit: 5, features: ['Replay Iterations phases 1-4'] },
-      { id: 'dragon_eye', name: 'Dragon Eye', metal: 'rose', price: '$500', stripe_price_id: 'price_1Sui7tDRpCHsf7InSpqU9Bu7', product_id: 'dragon_eye', mode: 'payment', limit: 1, features: ['One per account'] },
+      { id: 'standard', name: 'Standard', metal: 'rose', price: null, stripe_price_id: null, features: ['Basic XP tracking', '5 gear slots', 'Community quests'] },
+      { id: 'premium', name: 'Premium', metal: 'titanium', price: null, stripe_price_id: null, features: ['Full XP tracking', 'All 20 gear slots', 'Loadouts', 'Sponsor pools', 'Priority quest matching'] },
+      { id: 'citizen', name: 'Citizen', metal: 'gunmetal', price: null, stripe_price_id: null, features: ['Everything in Premium', 'Advanced analytics', 'Custom loadout themes', 'Early access features', 'Direct brand engagement'] },
     ],
   },
 ];
