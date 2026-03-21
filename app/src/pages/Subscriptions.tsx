@@ -166,6 +166,8 @@ export default function Subscriptions() {
       }
 
       setUpgradeTarget(null);
+      // Wait for webhook to update the DB, then refresh
+      await new Promise(r => setTimeout(r, 2000));
       await fetchSubscriptions();
     } catch (err: any) {
       console.error('Upgrade error:', err.message);
