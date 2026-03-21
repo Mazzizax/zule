@@ -298,7 +298,7 @@ export default function Subscriptions() {
                         textShadow: `0 1px 0 ${m.highlight}`,
                         position: 'relative',
                         overflow: 'hidden',
-                        cursor: canSubscribe ? 'pointer' : 'default',
+                        cursor: canChange ? 'pointer' : 'default',
                         opacity: checkoutLoading === loadingKey ? 0.6 : 1,
                       }}>
                       <span style={{ position: 'relative', zIndex: 1 }}>
