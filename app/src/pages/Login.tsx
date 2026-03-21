@@ -107,7 +107,12 @@ export default function Login() {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <h1>ZULE</h1>
+          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400 }}>
+            <span className="metal-text" style={{ display: 'inline-block' }}>Z</span>
+            <span className="metal-text" style={{ display: 'inline-block' }}>U</span>
+            <span className="metal-text" style={{ display: 'inline-block' }}>L</span>
+            <span className="metal-text" style={{ display: 'inline-block' }}>E</span>
+          </h1>
           <p>
             {callbackUrl
               ? 'Sign in to continue to your app'

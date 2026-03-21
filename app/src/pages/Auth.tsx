@@ -143,7 +143,7 @@ export default function Auth() {
       <div className="auth-container">
         <div className="auth-card">
           <div className="auth-header">
-            <h1>ZULE</h1>
+            <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400 }}><span className="metal-text" style={{ display: 'inline-block' }}>Z</span><span className="metal-text" style={{ display: 'inline-block' }}>U</span><span className="metal-text" style={{ display: 'inline-block' }}>L</span><span className="metal-text" style={{ display: 'inline-block' }}>E</span></h1>
             <p>Authentication Error</p>
           </div>
           <div className="error-message">
@@ -160,7 +160,7 @@ export default function Auth() {
       <div className="auth-container">
         <div className="auth-card">
           <div className="auth-header">
-            <h1>ZULE</h1>
+            <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400 }}><span className="metal-text" style={{ display: 'inline-block' }}>Z</span><span className="metal-text" style={{ display: 'inline-block' }}>U</span><span className="metal-text" style={{ display: 'inline-block' }}>L</span><span className="metal-text" style={{ display: 'inline-block' }}>E</span></h1>
             <p>Redirecting to Vinzrik...</p>
           </div>
           <div style={{ textAlign: 'center', padding: '24px' }}>
@@ -188,7 +188,7 @@ export default function Auth() {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <h1>ZULE</h1>
+          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400 }}><span className="metal-text" style={{ display: 'inline-block' }}>Z</span><span className="metal-text" style={{ display: 'inline-block' }}>U</span><span className="metal-text" style={{ display: 'inline-block' }}>L</span><span className="metal-text" style={{ display: 'inline-block' }}>E</span></h1>
           <p>Sign in to continue to your app</p>
         </div>
 
