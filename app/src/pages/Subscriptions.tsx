@@ -78,7 +78,7 @@ const services: Service[] = [
   {
     id: 'aca',
     name: 'Advanced Cognitive Assistant',
-    description: 'A chorus of 4 frontier AI models arguing over your daily life',
+    description: '4 frontier AI models arguing over your daily life',
     tiers: [
       { id: 'standard', name: 'Standard', metal: 'rose', price: '$65/mo', stripe_price_id: 'price_1SuhgaDRpCHsf7InZqtoYRA3', features: [] },
       { id: 'enthusiast', name: 'Enthusiast', metal: 'titanium', price: '$125/mo', stripe_price_id: 'price_1SuhqgDRpCHsf7InpPL2w5d9', features: [] },
@@ -88,7 +88,7 @@ const services: Service[] = [
   {
     id: 'hardware',
     name: 'Hardware',
-    description: 'Custom crafted devices to help you manage your life',
+    description: 'Custom crafted equipment to elevate your game',
     tiers: [
       { id: 'axe_s', name: 'AXE S', metal: 'rose', price: null, stripe_price_id: null, features: [] },
       { id: 'torch', name: 'TORCH', metal: 'rose', price: null, stripe_price_id: null, features: [] },
