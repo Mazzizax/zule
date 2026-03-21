@@ -104,8 +104,14 @@ function AppRoutes() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/security" element={<Security />} />
-        <Route path="/developer" element={<Developer />} />
       </Route>
+
+      {/* Developer page — no layout, no sidebar */}
+      <Route path="/developer" element={
+        <ProtectedRoute>
+          <Developer />
+        </ProtectedRoute>
+      } />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
