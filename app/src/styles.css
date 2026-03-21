@@ -158,8 +158,10 @@ body {
   border: none;
   border-radius: 8px;
   padding: 14px 20px;
-  font-size: 16px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   cursor: pointer;
   transition: all 0.3s;
 }
@@ -180,8 +182,10 @@ body {
   border: 1px solid var(--zule-gold-dim);
   border-radius: 8px;
   padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   cursor: pointer;
   transition: all 0.2s;
   width: 100%;
@@ -274,8 +278,10 @@ body {
   border: 1px solid var(--zule-gold-dim);
   border-radius: 8px;
   padding: 14px 20px;
-  font-size: 16px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   cursor: pointer;
   transition: all 0.3s;
   display: flex;

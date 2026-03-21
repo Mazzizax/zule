@@ -360,7 +360,7 @@ export default function Dashboard() {
           <div className="info-row">
             <span className="label">Goals</span>
             <span className="value">
-              <span className="tier-badge" onClick={() => navigate('/subscriptions')} style={{ cursor: 'pointer', textDecoration: 'underline' }}>{profile?.subscription_tier || 'free'}</span>
+              <span className="tier-badge" onClick={() => navigate('/subscriptions')} style={{ cursor: 'pointer' }}>{profile?.subscription_tier || 'free'}</span>
               {' · '}
               <span className={`status-${profile?.subscription_status || 'active'}`}>
                 {profile?.subscription_status || 'Active'}
