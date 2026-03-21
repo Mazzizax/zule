@@ -49,6 +49,36 @@ const SERVICE_DISPLAY_NAME: Record<string, string> = {
   aca: 'Advanced Cognitive Assistant',
 };
 
+const metals: Record<string, { gradient: string, border: string, shadow: string, text: string, highlight: string }> = {
+  rose: {
+    gradient: 'linear-gradient(145deg, #8a7560 0%, #C4A882 15%, #E0D0B8 30%, #D4BC9A 45%, #A08968 55%, #C4A882 70%, #E0D0B8 85%, #8a7560 100%)',
+    border: 'rgba(224,208,184,0.4)',
+    shadow: 'inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5), 0 1px 0 rgba(196,168,130,0.15)',
+    text: '#1a1510',
+    highlight: 'rgba(224,208,184,0.4)',
+  },
+  titanium: {
+    gradient: 'linear-gradient(145deg, #7a8590 0%, #B0BEC5 15%, #CFD8DC 30%, #B0BEC5 45%, #8a9aa5 55%, #B0BEC5 70%, #CFD8DC 85%, #7a8590 100%)',
+    border: 'rgba(207,216,220,0.4)',
+    shadow: 'inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -1px 0 rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5), 0 1px 0 rgba(176,190,197,0.15)',
+    text: '#1a1e22',
+    highlight: 'rgba(207,216,220,0.5)',
+  },
+  gunmetal: {
+    gradient: 'linear-gradient(145deg, #2d3035 0%, #3d4248 12%, #515760 25%, #5a6068 35%, #4a5058 45%, #3d4248 55%, #515760 68%, #5a6068 78%, #4a5058 88%, #2d3035 100%)',
+    border: 'rgba(90,96,104,0.4)',
+    shadow: 'inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.5), 0 1px 0 rgba(74,78,82,0.15)',
+    text: '#111214',
+    highlight: 'rgba(120,126,134,0.3)',
+  },
+};
+
+// Map service_id + tier to metal
+const TIER_METAL: Record<string, Record<string, string>> = {
+  goals: { standard: 'rose', premium: 'titanium', citizen: 'gunmetal' },
+  aca: { standard: 'rose', enthusiast: 'titanium', padawan: 'gunmetal' },
+};
+
 export default function Dashboard() {
   const { user, session } = useAuth();
   const navigate = useNavigate();
@@ -372,21 +402,57 @@ export default function Dashboard() {
         <div className="card">
           <h2>Subscriptions</h2>
           {profile?.subscriptions && profile.subscriptions.filter(s => s.status === 'active').length > 0 ? (
-            profile.subscriptions.filter(s => s.status === 'active').map((sub) => (
-              <div className="info-row" key={sub.service_id}>
-                <span className="label">{SERVICE_DISPLAY_NAME[sub.service_id] || sub.service_id}</span>
-                <span className="value">
-                  <span className="tier-badge" onClick={() => navigate(`/subscriptions?service=${sub.service_id}`)} style={{ cursor: 'pointer', fontFamily: "'Cormorant Garamond', serif", display: 'inline-block', minWidth: '120px', textAlign: 'center' }}>{sub.tier}</span>
-                </span>
-              </div>
-            ))
+            profile.subscriptions.filter(s => s.status === 'active').map((sub) => {
+              const m = metals[TIER_METAL[sub.service_id]?.[sub.tier] || 'rose'] || metals.rose;
+              return (
+                <div className="info-row" key={sub.service_id}>
+                  <span className="label">{SERVICE_DISPLAY_NAME[sub.service_id] || sub.service_id}</span>
+                  <span className="value">
+                    <div onClick={() => navigate(`/subscriptions?service=${sub.service_id}`)} style={{
+                      cursor: 'pointer', display: 'inline-block', minWidth: '120px', textAlign: 'center',
+                      padding: '8px 12px', borderRadius: '4px',
+                      fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, fontSize: '12px',
+                      letterSpacing: '0.14em', textTransform: 'uppercase',
+                      background: m.gradient, backgroundSize: '200% auto',
+                      color: m.text, boxShadow: m.shadow,
+                      borderTop: `1px solid ${m.border}`,
+                      borderBottom: '1px solid rgba(0,0,0,0.4)',
+                      textShadow: `0 1px 0 ${m.highlight}`,
+                      position: 'relative', overflow: 'hidden',
+                    }}>
+                      <span style={{ position: 'relative', zIndex: 1 }}>{sub.tier}</span>
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%)', pointerEvents: 'none' }} />
+                    </div>
+                  </span>
+                </div>
+              );
+            })
           ) : (
-            <div className="info-row">
-              <span className="label">Goals</span>
-              <span className="value">
-                <span className="tier-badge" onClick={() => navigate('/subscriptions?service=goals')} style={{ cursor: 'pointer', fontFamily: "'Cormorant Garamond', serif", display: 'inline-block', minWidth: '120px', textAlign: 'center' }}>citizen</span>
-              </span>
-            </div>
+            {(() => {
+              const m = metals.gunmetal;
+              return (
+                <div className="info-row">
+                  <span className="label">Goals</span>
+                  <span className="value">
+                    <div onClick={() => navigate('/subscriptions?service=goals')} style={{
+                      cursor: 'pointer', display: 'inline-block', minWidth: '120px', textAlign: 'center',
+                      padding: '8px 12px', borderRadius: '4px',
+                      fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, fontSize: '12px',
+                      letterSpacing: '0.14em', textTransform: 'uppercase',
+                      background: m.gradient, backgroundSize: '200% auto',
+                      color: m.text, boxShadow: m.shadow,
+                      borderTop: `1px solid ${m.border}`,
+                      borderBottom: '1px solid rgba(0,0,0,0.4)',
+                      textShadow: `0 1px 0 ${m.highlight}`,
+                      position: 'relative', overflow: 'hidden',
+                    }}>
+                      <span style={{ position: 'relative', zIndex: 1 }}>citizen</span>
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%)', pointerEvents: 'none' }} />
+                    </div>
+                  </span>
+                </div>
+              );
+            })()}
           )}
         </div>
       </div>
