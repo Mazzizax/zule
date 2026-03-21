@@ -66,6 +66,8 @@ export default function Subscriptions() {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [upgradeTarget, setUpgradeTarget] = useState<{ serviceId: string; tierId: string; tierName: string; priceId: string; price: string } | null>(null);
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
 
   useEffect(() => {
     fetchSubscriptions();
@@ -135,6 +137,40 @@ export default function Subscriptions() {
       console.error('Checkout error:', err.message);
     } finally {
       setCheckoutLoading(null);
+    }
+  };
+
+  const handleUpgrade = async (serviceId: string, newPriceId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return;
+
+    setUpgradeLoading(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.ZULE_URL}/functions/v1/upgrade-subscription`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ service_id: serviceId, new_price_id: newPriceId }),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to upgrade');
+      }
+
+      setUpgradeTarget(null);
+      await fetchSubscriptions();
+    } catch (err: any) {
+      console.error('Upgrade error:', err.message);
+    } finally {
+      setUpgradeLoading(false);
     }
   };
 
@@ -228,18 +264,24 @@ export default function Subscriptions() {
                   const activeSub = getActiveSubscription(service!.id);
                   const isActive = activeSub?.tier === tier.id;
                   const isGoals = service!.id === 'goals';
-                  const canSubscribe = tier.stripe_price_id && !isActive;
+                  const hasExisting = !!activeSub;
+                  const canChange = tier.stripe_price_id && !isActive;
                   const loadingKey = `${service!.id}-${tier.stripe_price_id}`;
 
                   let label = 'Subscribe';
                   if (isGoals) label = 'Purchased';
                   else if (isActive) label = 'Active';
+                  else if (hasExisting && canChange) label = 'Switch';
 
                   return (
                     <div
                       onClick={() => {
-                        if (canSubscribe && tier.stripe_price_id) {
-                          handleSubscribe(service!.id, tier.stripe_price_id);
+                        if (canChange && tier.stripe_price_id) {
+                          if (hasExisting) {
+                            setUpgradeTarget({ serviceId: service!.id, tierId: tier.id, tierName: tier.name, priceId: tier.stripe_price_id, price: tier.price || '' });
+                          } else {
+                            handleSubscribe(service!.id, tier.stripe_price_id);
+                          }
                         }
                       }}
                       style={{
@@ -278,6 +320,27 @@ export default function Subscriptions() {
               </div>
             ))}
           </div>
+
+          {upgradeTarget && upgradeTarget.serviceId === service?.id && (
+            <div style={{ marginTop: '24px', padding: '16px', border: '1px solid var(--zule-gold, #c4a882)', borderRadius: '6px', textAlign: 'center' }}>
+              <p style={{ fontSize: '14px', marginBottom: '12px' }}>
+                Switch to <strong>{upgradeTarget.tierName}</strong>{upgradeTarget.price ? ` (${upgradeTarget.price})` : ''}? Your card on file will be billed.
+              </p>
+              <button
+                onClick={() => handleUpgrade(upgradeTarget.serviceId, upgradeTarget.priceId)}
+                disabled={upgradeLoading}
+                style={{ background: 'var(--zule-gold, #c4a882)', color: '#111', border: 'none', padding: '8px 24px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: 600, marginRight: '8px', opacity: upgradeLoading ? 0.6 : 1 }}
+              >
+                {upgradeLoading ? 'Switching...' : 'Confirm'}
+              </button>
+              <button
+                onClick={() => setUpgradeTarget(null)}
+                style={{ background: 'none', border: '1px solid #444', color: '#888', padding: '8px 24px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
+              >
+                Never Mind
+              </button>
+            </div>
+          )}
 
           {service && service.id !== 'goals' && getActiveSubscription(service.id) && !cancelConfirm && (
             <div style={{ marginTop: '24px', textAlign: 'center' }}>
