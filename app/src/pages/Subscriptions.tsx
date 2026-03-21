@@ -58,7 +58,7 @@ const services: Service[] = [
   {
     id: 'conversations-with-xenon',
     name: 'Conversations with Xenon',
-    description: 'Relics, legacy, and lore',
+    description: '5th dimensional interactive novel',
     tiers: [
       { id: 'sage_relic', name: 'Sage Relic', metal: 'rose', price: null, stripe_price_id: null, features: [] },
       { id: 'founder_account', name: 'Founder Account', metal: 'rose', price: null, stripe_price_id: null, features: [] },
@@ -68,7 +68,7 @@ const services: Service[] = [
   {
     id: 'iterations',
     name: 'Iterations',
-    description: 'Keys, artifacts, and cosmic instruments',
+    description: 'The game that evolves when you do',
     tiers: [
       { id: 'secret_door_key', name: 'Secret Door Key', metal: 'rose', price: '$5', stripe_price_id: 'price_1Sui0sDRpCHsf7Inh8xp45BV', product_id: 'secret_door_key', mode: 'payment', limit: 33, features: ['Secret Door Key 3-Pack'] },
       { id: 'need_more_data', name: 'Need More Data', metal: 'rose', price: '$10', stripe_price_id: 'price_1Sui3qDRpCHsf7Inqw16CsUk', product_id: 'need_more_data', mode: 'payment', limit: 5, features: ['Replay Iterations phases 1-4'] },
@@ -78,7 +78,7 @@ const services: Service[] = [
   {
     id: 'aca',
     name: 'Advanced Cognitive Assistant',
-    description: 'Harness 4 frontier AI models to power your daily life',
+    description: 'A chorus of 4 frontier AI models arguing over your daily life',
     tiers: [
       { id: 'standard', name: 'Standard', metal: 'rose', price: '$65/mo', stripe_price_id: 'price_1SuhgaDRpCHsf7InZqtoYRA3', features: [] },
       { id: 'enthusiast', name: 'Enthusiast', metal: 'titanium', price: '$125/mo', stripe_price_id: 'price_1SuhqgDRpCHsf7InpPL2w5d9', features: [] },
@@ -88,7 +88,7 @@ const services: Service[] = [
   {
     id: 'hardware',
     name: 'Hardware',
-    description: 'Physical devices and peripherals',
+    description: 'Custom crafted devices to help you manage your life',
     tiers: [
       { id: 'axe_s', name: 'AXE S', metal: 'rose', price: null, stripe_price_id: null, features: [] },
       { id: 'torch', name: 'TORCH', metal: 'rose', price: null, stripe_price_id: null, features: [] },
@@ -97,7 +97,7 @@ const services: Service[] = [
   {
     id: 'goals',
     name: 'Goals',
-    description: 'Rewards platform — XP, gear, quests, brand engagement',
+    description: 'Goal Oriented Adventure Living System',
     tiers: [
       { id: 'standard', name: 'Standard', metal: 'rose', price: null, stripe_price_id: null, features: ['Basic XP tracking', '5 gear slots', 'Community quests'] },
       { id: 'premium', name: 'Premium', metal: 'titanium', price: null, stripe_price_id: null, features: ['Full XP tracking', 'All 20 gear slots', 'Loadouts', 'Sponsor pools', 'Priority quest matching'] },
