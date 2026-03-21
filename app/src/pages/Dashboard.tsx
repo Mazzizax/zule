@@ -45,6 +45,9 @@ export default function Dashboard() {
   const [analyzeLoading, setAnalyzeLoading] = useState(false);
   const [analyzeResult, setAnalyzeResult] = useState<string | null>(null);
   const [gameCards, setGameCards] = useState<any[] | null>(null);
+  const [shredLoading, setShredLoading] = useState(false);
+  const [shredResult, setShredResult] = useState<string | null>(null);
+  const [lastAttestation, setLastAttestation] = useState<string | null>(null);
   const [removeLoadingId, setRemoveLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -226,6 +229,43 @@ export default function Dashboard() {
     }
   };
 
+  const shredAndSend = async () => {
+    if (!lastAttestation) return;
+
+    const token = await getFreshToken();
+    if (!token) return;
+
+    setShredLoading(true);
+    setShredResult(null);
+    try {
+      // Shred raw transactions
+      const shredRes = await fetch(
+        `${import.meta.env.ZULE_URL}/functions/v1/shred-minted-transactions`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
+          },
+        }
+      );
+
+      const shredData = shredRes.ok ? await shredRes.json() : null;
+
+      // Send to Vinzrik via deep link
+      const attestationEncoded = encodeURIComponent(lastAttestation);
+      const deepLink = `vinzrik://receive-cards?attestation=${attestationEncoded}`;
+
+      setShredResult(`Shredded ${shredData?.shredded || 0} raw transactions. Cards sent to Vinzrik.`);
+      window.location.href = deepLink;
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setShredLoading(false);
+    }
+  };
+
   const analyzeAndSend = async () => {
     const token = await getFreshToken();
     if (!token) return;
@@ -264,11 +304,14 @@ export default function Dashboard() {
         while (padded.length % 4 !== 0) padded += '=';
         const payload = JSON.parse(atob(padded));
         setGameCards(payload.cards || []);
+        setLastAttestation(data.card_attestation);
       } catch {
         setGameCards(null);
+        setLastAttestation(null);
       }
 
-      setAnalyzeResult(`Enriched ${data.card_count} transactions into game event cards`);
+      setAnalyzeResult(`Minted ${data.card_count} game event cards`);
+      setShredResult(null);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -378,11 +421,26 @@ export default function Dashboard() {
                 disabled={analyzeLoading}
                 style={{ marginTop: '8px' }}
               >
-                {analyzeLoading ? 'Analyzing...' : 'Analyze & Send to Vinzrik'}
+                {analyzeLoading ? 'Analyzing...' : 'Analyze & Mint Cards'}
               </button>
               {analyzeResult && (
                 <div className="success-message" style={{ marginTop: '12px' }}>
                   {analyzeResult}
+                </div>
+              )}
+              {gameCards && gameCards.length > 0 && (
+                <button
+                  className="btn-primary"
+                  onClick={shredAndSend}
+                  disabled={shredLoading}
+                  style={{ marginTop: '8px' }}
+                >
+                  {shredLoading ? 'Shredding...' : 'Shred & Send'}
+                </button>
+              )}
+              {shredResult && (
+                <div className="success-message" style={{ marginTop: '12px' }}>
+                  {shredResult}
                 </div>
               )}
             </div>
