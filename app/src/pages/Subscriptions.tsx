@@ -80,7 +80,7 @@ const services: Service[] = [
     name: 'Iterations',
     description: 'Keys, artifacts, and cosmic instruments',
     tiers: [
-      { id: 'secret_door_key', name: 'Secret Door Key', metal: 'rose', price: '$5', stripe_price_id: 'price_1Sui0sDRpCHsf7Inh8xp45BV', product_id: 'secret_door_key', mode: 'payment', limit: 33, features: ['Set of 3 keys', 'Up to 33 sets per account'] },
+      { id: 'secret_door_key', name: 'Secret Door Key', metal: 'rose', price: '$5', stripe_price_id: 'price_1Sui0sDRpCHsf7Inh8xp45BV', product_id: 'secret_door_key', mode: 'payment', limit: 33, features: ['Secret Door Key 3-Pack'] },
       { id: 'need_more_data', name: 'Need More Data', metal: 'rose', price: '$10', stripe_price_id: 'price_1Sui3qDRpCHsf7Inqw16CsUk', product_id: 'need_more_data', mode: 'payment', features: [] },
       { id: 'dragon_eye', name: 'Dragon Eye', metal: 'rose', price: '$500', stripe_price_id: 'price_1Sui7tDRpCHsf7InSpqU9Bu7', product_id: 'dragon_eye', mode: 'payment', limit: 1, features: ['One per account'] },
     ],
@@ -293,6 +293,14 @@ export default function Subscriptions() {
                         {f}
                       </li>
                     ))}
+                    {tier.limit !== undefined && tier.limit > 1 && (() => {
+                      const count = tier.product_id ? purchases.filter(p => p.product_id === tier.product_id).length : 0;
+                      return (
+                        <li style={{ fontSize: '12px', padding: '4px 0', opacity: 0.7 }}>
+                          {tier.limit - count}/{tier.limit} packs available
+                        </li>
+                      );
+                    })()}
                   </ul>
                 </div>
                 {(() => {
@@ -313,7 +321,6 @@ export default function Subscriptions() {
                   if (isGoals) label = 'Purchased';
                   else if (isOneTime && atLimit && tier.limit === 1) label = 'Owned';
                   else if (isOneTime && atLimit) label = `${purchaseCount}/${tier.limit} Owned`;
-                  else if (isOneTime && remaining !== undefined && tier.limit! > 1) label = `Purchase · ${remaining}/${tier.limit} Available`;
                   else if (isOneTime) label = 'Purchase';
                   else if (isActive) label = 'Active';
                   else if (hasExisting && canChange) label = 'Switch';
