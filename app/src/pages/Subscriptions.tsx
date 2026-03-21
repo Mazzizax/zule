@@ -49,7 +49,7 @@ export default function Subscriptions() {
             Back
           </button>
 
-          <h2 className="metal-text" style={{ fontFamily: g, fontSize: '24px', fontWeight: 400, letterSpacing: '0.12em', textTransform: 'uppercase', display: 'inline-block', marginBottom: '16px' }}>{service?.name}</h2>
+          <h2 className="metal-text" style={{ fontFamily: g, fontSize: '24px', fontWeight: 400, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '16px' }}>{service?.name}</h2>
 
           <div className="card-grid">
             {service?.tiers.map(tier => (
