@@ -211,6 +211,12 @@ Deno.serve(async (req) => {
         return errorResponse('Failed to fetch profile', 500, origin);
       }
 
+      // Fetch user subscriptions
+      const { data: subscriptions } = await supabase
+        .from('user_subscriptions')
+        .select('service_id, tier, status, stripe_subscription_id, expires_at')
+        .eq('user_id', user.id);
+
       // Fetch linked Plaid accounts
       const { data: plaidAccounts } = await supabase
         .from('plaid_accounts')
@@ -234,6 +240,7 @@ Deno.serve(async (req) => {
         {
           email: user.email,
           ...profile,
+          subscriptions: subscriptions || [],
           plaid_accounts: plaidAccounts || [],
         },
         200,

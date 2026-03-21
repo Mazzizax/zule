@@ -25,15 +25,20 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const STRIPE_WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
 
-// Map Stripe price IDs to tiers
+// Map Stripe price IDs to { service, tier }
 // Update these with your actual Stripe price IDs
-const PRICE_TO_TIER: Record<string, string> = {
-  'price_standard_monthly': 'standard',
-  'price_standard_yearly': 'standard',
-  'price_premium_monthly': 'premium',
-  'price_premium_yearly': 'premium',
-  'price_enterprise_monthly': 'enterprise',
-  'price_enterprise_yearly': 'enterprise',
+const PRICE_TO_SERVICE_TIER: Record<string, { service: string; tier: string }> = {
+  // Goals tiers (one-time purchases, but keep mapping for reference)
+  'price_standard_monthly': { service: 'goals', tier: 'standard' },
+  'price_standard_yearly': { service: 'goals', tier: 'standard' },
+  'price_premium_monthly': { service: 'goals', tier: 'premium' },
+  'price_premium_yearly': { service: 'goals', tier: 'premium' },
+  'price_enterprise_monthly': { service: 'goals', tier: 'enterprise' },
+  'price_enterprise_yearly': { service: 'goals', tier: 'enterprise' },
+  // ACA tiers
+  'price_1SuhgaDRpCHsf7InZqtoYRA3': { service: 'aca', tier: 'standard' },
+  'price_1SuhqgDRpCHsf7InpPL2w5d9': { service: 'aca', tier: 'enthusiast' },
+  'price_1SuhvuDRpCHsf7In7c52Ovn1': { service: 'aca', tier: 'padawan' },
 };
 
 // Tier feature configurations
@@ -213,8 +218,10 @@ serve(async (req) => {
         const priceId = subscription.items?.data?.[0]?.price?.id;
         const status = subscription.status || 'canceled';
 
-        // Map price to tier (default to standard if unknown)
-        const tier = priceId ? (PRICE_TO_TIER[priceId] || 'standard') : 'standard';
+        // Map price to service + tier
+        const serviceTier = priceId ? PRICE_TO_SERVICE_TIER[priceId] : null;
+        const serviceId = serviceTier?.service || subscription.metadata?.service_id || 'goals';
+        const tier = serviceTier?.tier || 'standard';
         const features = TIER_FEATURES[tier] || TIER_FEATURES.free;
 
         // Map Stripe status to our status
@@ -226,7 +233,36 @@ serve(async (req) => {
           expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
         }
 
-        // Update user profile
+        // Look up user_id from stripe_customer_id
+        const { data: profileRow } = await supabase
+          .from('user_profiles')
+          .select('id')
+          .eq('stripe_customer_id', customerId)
+          .single();
+
+        const userId = profileRow?.id;
+
+        // Upsert into user_subscriptions
+        if (userId) {
+          const { error: upsertError } = await supabase
+            .from('user_subscriptions')
+            .upsert({
+              user_id: userId,
+              service_id: serviceId,
+              tier: tier,
+              status: subscriptionStatus,
+              stripe_subscription_id: subscription.id,
+              stripe_price_id: priceId || null,
+              expires_at: expiresAt,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id,service_id' });
+
+          if (upsertError) {
+            console.error('[STRIPE] user_subscriptions upsert error:', upsertError);
+          }
+        }
+
+        // Legacy: also update user_profiles for backward compat
         const { error } = await supabase
           .from('user_profiles')
           .update({
@@ -241,17 +277,18 @@ serve(async (req) => {
         if (error) {
           console.error('[STRIPE] Update error:', error);
         } else {
-          console.log(`[STRIPE] Updated customer ${customerId} to tier ${tier} (status: ${subscriptionStatus})`);
+          console.log(`[STRIPE] Updated customer ${customerId} to ${serviceId}/${tier} (status: ${subscriptionStatus})`);
 
           // Log audit event
           await supabase.rpc('log_audit_event', {
-            p_user_id: null,  // We don't have user_id here, just customer_id
+            p_user_id: userId || null,
             p_action: 'subscription_updated',
             p_category: 'subscription',
             p_ip_address: null,
             p_user_agent: null,
             p_metadata: {
               customer_id: customerId,
+              service_id: serviceId,
               tier,
               status: subscriptionStatus,
               subscription_id: subscription.id,
@@ -274,7 +311,20 @@ serve(async (req) => {
           break;
         }
 
-        // Downgrade to free tier
+        // Update user_subscriptions by stripe_subscription_id
+        const { error: subDeleteError } = await supabase
+          .from('user_subscriptions')
+          .update({
+            status: 'canceled',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('stripe_subscription_id', subscription.id);
+
+        if (subDeleteError) {
+          console.error('[STRIPE] user_subscriptions cancel error:', subDeleteError);
+        }
+
+        // Legacy: downgrade user_profiles to free tier
         const { error } = await supabase
           .from('user_profiles')
           .update({
@@ -289,7 +339,7 @@ serve(async (req) => {
         if (error) {
           console.error('[STRIPE] Downgrade error:', error);
         } else {
-          console.log(`[STRIPE] Downgraded customer ${customerId} to free`);
+          console.log(`[STRIPE] Canceled subscription ${subscription.id} for customer ${customerId}`);
 
           // Log audit event
           await supabase.rpc('log_audit_event', {
@@ -320,7 +370,15 @@ serve(async (req) => {
           break;
         }
 
-        // Mark as past due
+        // Mark user_subscriptions as past_due by stripe_subscription_id
+        if (invoice.subscription) {
+          await supabase
+            .from('user_subscriptions')
+            .update({ status: 'past_due', updated_at: new Date().toISOString() })
+            .eq('stripe_subscription_id', invoice.subscription);
+        }
+
+        // Legacy: mark user_profiles as past due
         const { error } = await supabase
           .from('user_profiles')
           .update({ subscription_status: 'past_due' })

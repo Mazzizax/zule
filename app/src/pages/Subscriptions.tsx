@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 const g = "'Cormorant Garamond', serif";
 
@@ -28,15 +29,21 @@ const metals: Record<string, { gradient: string, border: string, shadow: string,
   },
 };
 
+interface Subscription {
+  service_id: string;
+  tier: string;
+  status: string;
+}
+
 const services = [
   {
     id: 'goals',
     name: 'Goals',
     description: 'Rewards platform — XP, gear, quests, brand engagement',
     tiers: [
-      { id: 'standard', name: 'Standard', metal: 'rose', price: null, features: ['Basic XP tracking', '5 gear slots', 'Community quests'] },
-      { id: 'premium', name: 'Premium', metal: 'titanium', price: null, features: ['Full XP tracking', 'All 20 gear slots', 'Loadouts', 'Sponsor pools', 'Priority quest matching'] },
-      { id: 'citizen', name: 'Citizen', metal: 'gunmetal', price: null, features: ['Everything in Premium', 'Advanced analytics', 'Custom loadout themes', 'Early access features', 'Direct brand engagement'] },
+      { id: 'standard', name: 'Standard', metal: 'rose', price: null, stripe_price_id: null, features: ['Basic XP tracking', '5 gear slots', 'Community quests'] },
+      { id: 'premium', name: 'Premium', metal: 'titanium', price: null, stripe_price_id: null, features: ['Full XP tracking', 'All 20 gear slots', 'Loadouts', 'Sponsor pools', 'Priority quest matching'] },
+      { id: 'citizen', name: 'Citizen', metal: 'gunmetal', price: null, stripe_price_id: null, features: ['Everything in Premium', 'Advanced analytics', 'Custom loadout themes', 'Early access features', 'Direct brand engagement'] },
     ],
   },
   {
@@ -44,9 +51,9 @@ const services = [
     name: 'Advanced Cognitive Assistant',
     description: 'Harness 4 frontier AI models to power your daily life',
     tiers: [
-      { id: 'standard', name: 'Standard', metal: 'rose', price: '$65/mo', features: [] },
-      { id: 'enthusiast', name: 'Enthusiast', metal: 'titanium', price: '$125/mo', features: [] },
-      { id: 'padawan', name: 'Padawan', metal: 'gunmetal', price: '$215/mo', features: [] },
+      { id: 'standard', name: 'Standard', metal: 'rose', price: '$65/mo', stripe_price_id: 'price_1SuhgaDRpCHsf7InZqtoYRA3', features: [] },
+      { id: 'enthusiast', name: 'Enthusiast', metal: 'titanium', price: '$125/mo', stripe_price_id: 'price_1SuhqgDRpCHsf7InpPL2w5d9', features: [] },
+      { id: 'padawan', name: 'Padawan', metal: 'gunmetal', price: '$215/mo', stripe_price_id: 'price_1SuhvuDRpCHsf7In7c52Ovn1', features: [] },
     ],
   },
 ];
@@ -55,6 +62,83 @@ export default function Subscriptions() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [selectedService, setSelectedService] = useState<string | null>(searchParams.get('service'));
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchSubscriptions();
+  }, []);
+
+  const fetchSubscriptions = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return;
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.ZULE_URL}/functions/v1/user-profile`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
+          },
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setSubscriptions(data.subscriptions || []);
+      }
+    } catch {
+      // Silently fail — subscriptions just won't show active state
+    }
+  };
+
+  const handleSubscribe = async (serviceId: string, stripePriceId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return;
+
+    setCheckoutLoading(`${serviceId}-${stripePriceId}`);
+    try {
+      const res = await fetch(
+        `${import.meta.env.ZULE_URL}/functions/v1/create-checkout`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            price_id: stripePriceId,
+            service_id: serviceId,
+            success_url: `${window.location.origin}/subscriptions?success=true&service=${serviceId}`,
+            cancel_url: `${window.location.origin}/subscriptions?service=${serviceId}`,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to create checkout session');
+      }
+
+      const { url } = await res.json();
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (err: any) {
+      console.error('Checkout error:', err.message);
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
+
+  const getActiveSubscription = (serviceId: string): Subscription | undefined => {
+    return subscriptions.find(s => s.service_id === serviceId && s.status === 'active');
+  };
 
   const service = services.find(s => s.id === selectedService);
 
@@ -105,23 +189,43 @@ export default function Subscriptions() {
                 </div>
                 {(() => {
                   const m = metals[tier.metal] || metals.rose;
+                  const activeSub = getActiveSubscription(service!.id);
+                  const isActive = activeSub?.tier === tier.id;
+                  const isGoals = service!.id === 'goals';
+                  const canSubscribe = tier.stripe_price_id && !isActive;
+                  const loadingKey = `${service!.id}-${tier.stripe_price_id}`;
+
+                  let label = 'Subscribe';
+                  if (isGoals) label = 'Purchased';
+                  else if (isActive) label = 'Active';
+
                   return (
-                    <div style={{
-                      marginTop: '16px', width: '100%', padding: '10px 12px',
-                      background: m.gradient,
-                      backgroundSize: '200% auto',
-                      borderRadius: '4px', textAlign: 'center',
-                      fontFamily: g, fontSize: '13px', fontWeight: 500,
-                      color: m.text, letterSpacing: '0.14em', textTransform: 'uppercase',
-                      fontWeight: 600, fontSize: '12px',
-                      boxShadow: m.shadow,
-                      borderTop: `1px solid ${m.border}`,
-                      borderBottom: '1px solid rgba(0,0,0,0.4)',
-                      textShadow: `0 1px 0 ${m.highlight}`,
-                      position: 'relative',
-                      overflow: 'hidden',
-                    }}>
-                      <span style={{ position: 'relative', zIndex: 1 }}>{tier.price ? 'Subscribe' : 'Purchased'}</span>
+                    <div
+                      onClick={() => {
+                        if (canSubscribe && tier.stripe_price_id) {
+                          handleSubscribe(service!.id, tier.stripe_price_id);
+                        }
+                      }}
+                      style={{
+                        marginTop: '16px', width: '100%', padding: '10px 12px',
+                        background: m.gradient,
+                        backgroundSize: '200% auto',
+                        borderRadius: '4px', textAlign: 'center',
+                        fontFamily: g,
+                        color: m.text, letterSpacing: '0.14em', textTransform: 'uppercase',
+                        fontWeight: 600, fontSize: '12px',
+                        boxShadow: m.shadow,
+                        borderTop: `1px solid ${m.border}`,
+                        borderBottom: '1px solid rgba(0,0,0,0.4)',
+                        textShadow: `0 1px 0 ${m.highlight}`,
+                        position: 'relative',
+                        overflow: 'hidden',
+                        cursor: canSubscribe ? 'pointer' : 'default',
+                        opacity: checkoutLoading === loadingKey ? 0.6 : 1,
+                      }}>
+                      <span style={{ position: 'relative', zIndex: 1 }}>
+                        {checkoutLoading === loadingKey ? 'Redirecting...' : label}
+                      </span>
                       <div style={{
                         position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
                         background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%)',

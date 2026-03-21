@@ -24,6 +24,14 @@ interface PlaidAccount {
   connected_at: string;
 }
 
+interface Subscription {
+  service_id: string;
+  tier: string;
+  status: string;
+  stripe_subscription_id: string | null;
+  expires_at: string | null;
+}
+
 interface ProfileSummary {
   subscription_tier: string;
   subscription_status: string;
@@ -33,7 +41,13 @@ interface ProfileSummary {
   plaid_institution_name: string | null;
   plaid_connected_at: string | null;
   plaid_accounts: PlaidAccount[];
+  subscriptions: Subscription[];
 }
+
+const SERVICE_DISPLAY_NAME: Record<string, string> = {
+  goals: 'Goals',
+  aca: 'ACA',
+};
 
 export default function Dashboard() {
   const { user, session } = useAuth();
@@ -357,16 +371,29 @@ export default function Dashboard() {
         {/* Subscriptions */}
         <div className="card">
           <h2>Subscriptions</h2>
-          <div className="info-row">
-            <span className="label">Goals</span>
-            <span className="value">
-              <span className="tier-badge" onClick={() => navigate('/subscriptions?service=goals')} style={{ cursor: 'pointer', fontFamily: "'Cormorant Garamond', serif" }}>citizen</span>
-              {' · '}
-              <span className={`status-${profile?.subscription_status || 'active'}`}>
-                {profile?.subscription_status || 'Active'}
+          {profile?.subscriptions && profile.subscriptions.length > 0 ? (
+            profile.subscriptions.map((sub) => (
+              <div className="info-row" key={sub.service_id}>
+                <span className="label">{SERVICE_DISPLAY_NAME[sub.service_id] || sub.service_id}</span>
+                <span className="value">
+                  <span className="tier-badge" onClick={() => navigate(`/subscriptions?service=${sub.service_id}`)} style={{ cursor: 'pointer', fontFamily: "'Cormorant Garamond', serif" }}>{sub.tier}</span>
+                  {' · '}
+                  <span className={`status-${sub.status}`}>
+                    {sub.status}
+                  </span>
+                </span>
+              </div>
+            ))
+          ) : (
+            <div className="info-row">
+              <span className="label">Goals</span>
+              <span className="value">
+                <span className="tier-badge" onClick={() => navigate('/subscriptions?service=goals')} style={{ cursor: 'pointer', fontFamily: "'Cormorant Garamond', serif" }}>citizen</span>
+                {' · '}
+                <span className={`status-active`}>active</span>
               </span>
-            </span>
-          </div>
+            </div>
+          )}
         </div>
       </div>
 

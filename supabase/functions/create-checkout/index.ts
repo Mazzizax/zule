@@ -36,6 +36,7 @@ const stripe = STRIPE_SECRET_KEY
 
 interface CheckoutRequest {
   price_id: string;
+  service_id: string;
   success_url: string;
   cancel_url: string;
 }
@@ -85,10 +86,13 @@ Deno.serve(async (req) => {
       return errorResponse('Invalid JSON body', 400, origin);
     }
 
-    const { price_id, success_url, cancel_url } = body;
+    const { price_id, service_id, success_url, cancel_url } = body;
 
     if (!price_id) {
       return errorResponse('price_id is required', 400, origin);
+    }
+    if (!service_id) {
+      return errorResponse('service_id is required', 400, origin);
     }
     if (!success_url) {
       return errorResponse('success_url is required', 400, origin);
@@ -123,6 +127,7 @@ Deno.serve(async (req) => {
       client_reference_id: user.id, // Links customer to our user on completion
       metadata: {
         user_id: user.id,
+        service_id: service_id,
       },
     };
 
