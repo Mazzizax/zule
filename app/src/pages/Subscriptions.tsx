@@ -77,7 +77,10 @@ export default function Subscriptions() {
 
           <div className="card-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
             {service?.tiers.map(tier => (
-              <div key={tier.id} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '16px' }}>
+              <div key={tier.id} className="card" style={{
+                display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '16px',
+                borderRadius: tier.id === 'standard' ? '12px' : tier.id === 'premium' ? '4px' : '0px',
+              }}>
                 <div>
                   <h3 className="metal-text" style={{ fontFamily: g, fontSize: '20px', fontWeight: 400, letterSpacing: '0.08em', marginBottom: '12px', display: 'inline-block' }}>{tier.name}</h3>
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
