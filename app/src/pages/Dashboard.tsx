@@ -428,31 +428,26 @@ export default function Dashboard() {
               );
             })
           ) : (
-            {(() => {
-              const m = metals.gunmetal;
-              return (
-                <div className="info-row">
-                  <span className="label">Goals</span>
-                  <span className="value">
-                    <div onClick={() => navigate('/subscriptions?service=goals')} style={{
-                      cursor: 'pointer', display: 'inline-block', minWidth: '120px', textAlign: 'center',
-                      padding: '8px 12px', borderRadius: '4px',
-                      fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, fontSize: '12px',
-                      letterSpacing: '0.14em', textTransform: 'uppercase',
-                      background: m.gradient, backgroundSize: '200% auto',
-                      color: m.text, boxShadow: m.shadow,
-                      borderTop: `1px solid ${m.border}`,
-                      borderBottom: '1px solid rgba(0,0,0,0.4)',
-                      textShadow: `0 1px 0 ${m.highlight}`,
-                      position: 'relative', overflow: 'hidden',
-                    }}>
-                      <span style={{ position: 'relative', zIndex: 1 }}>citizen</span>
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%)', pointerEvents: 'none' }} />
-                    </div>
-                  </span>
+            <div className="info-row">
+              <span className="label">Goals</span>
+              <span className="value">
+                <div onClick={() => navigate('/subscriptions?service=goals')} style={{
+                  cursor: 'pointer', display: 'inline-block', minWidth: '120px', textAlign: 'center',
+                  padding: '8px 12px', borderRadius: '4px',
+                  fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, fontSize: '12px',
+                  letterSpacing: '0.14em', textTransform: 'uppercase',
+                  background: metals.gunmetal.gradient, backgroundSize: '200% auto',
+                  color: metals.gunmetal.text, boxShadow: metals.gunmetal.shadow,
+                  borderTop: `1px solid ${metals.gunmetal.border}`,
+                  borderBottom: '1px solid rgba(0,0,0,0.4)',
+                  textShadow: `0 1px 0 ${metals.gunmetal.highlight}`,
+                  position: 'relative', overflow: 'hidden',
+                }}>
+                  <span style={{ position: 'relative', zIndex: 1 }}>citizen</span>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%)', pointerEvents: 'none' }} />
                 </div>
-              );
-            })()}
+              </span>
+            </div>
           )}
         </div>
       </div>
