@@ -253,12 +253,11 @@ export default function Dashboard() {
 
       const shredData = shredRes.ok ? await shredRes.json() : null;
 
-      // Send to Vinzrik via deep link
-      const attestationEncoded = encodeURIComponent(lastAttestation);
-      const deepLink = `vinzrik://receive-cards?attestation=${attestationEncoded}`;
-
-      setShredResult(`Shredded ${shredData?.shredded || 0} raw transactions. Cards sent to Vinzrik.`);
-      window.location.href = deepLink;
+      // Cards handed off — clear from Zule's state
+      setShredResult(`Shredded ${shredData?.shredded || 0} raw transactions. Cards dispatched.`);
+      setGameCards(null);
+      setLastAttestation(null);
+      setAnalyzeResult(null);
     } catch (err: any) {
       setError(err.message);
     } finally {
