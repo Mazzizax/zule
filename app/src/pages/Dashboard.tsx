@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -36,6 +37,7 @@ interface ProfileSummary {
 
 export default function Dashboard() {
   const { user, session } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -362,7 +364,7 @@ export default function Dashboard() {
           <div className="info-row">
             <span className="label">Goals</span>
             <span className="value">
-              <span className="tier-badge">{profile?.subscription_tier || 'free'}</span>
+              <span className="tier-badge" onClick={() => navigate('/subscriptions')} style={{ cursor: 'pointer', textDecoration: 'underline' }}>{profile?.subscription_tier || 'free'}</span>
               {' · '}
               <span className={`status-${profile?.subscription_status || 'active'}`}>
                 {profile?.subscription_status || 'Active'}
