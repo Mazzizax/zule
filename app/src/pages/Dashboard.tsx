@@ -377,10 +377,6 @@ export default function Dashboard() {
                 <span className="label">{SERVICE_DISPLAY_NAME[sub.service_id] || sub.service_id}</span>
                 <span className="value">
                   <span className="tier-badge" onClick={() => navigate(`/subscriptions?service=${sub.service_id}`)} style={{ cursor: 'pointer', fontFamily: "'Cormorant Garamond', serif", display: 'inline-block', minWidth: '120px', textAlign: 'center' }}>{sub.tier}</span>
-                  {' · '}
-                  <span className={`status-${sub.status}`}>
-                    {sub.status}
-                  </span>
                 </span>
               </div>
             ))
@@ -389,8 +385,6 @@ export default function Dashboard() {
               <span className="label">Goals</span>
               <span className="value">
                 <span className="tier-badge" onClick={() => navigate('/subscriptions?service=goals')} style={{ cursor: 'pointer', fontFamily: "'Cormorant Garamond', serif", display: 'inline-block', minWidth: '120px', textAlign: 'center' }}>citizen</span>
-                {' · '}
-                <span className={`status-active`}>active</span>
               </span>
             </div>
           )}
