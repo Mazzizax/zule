@@ -76,6 +76,16 @@ const services: Service[] = [
     ],
   },
   {
+    id: 'conversations-with-xenon',
+    name: 'Conversations with Xenon',
+    description: 'Relics, legacy, and lore',
+    tiers: [
+      { id: 'sage_relic', name: 'Sage Relic', metal: 'rose', price: null, stripe_price_id: null, features: [] },
+      { id: 'founder_account', name: 'Founder Account', metal: 'rose', price: null, stripe_price_id: null, features: [] },
+      { id: 'novel_chapter', name: 'Novel Chapter', metal: 'rose', price: null, stripe_price_id: null, features: [] },
+    ],
+  },
+  {
     id: 'iterations',
     name: 'Iterations',
     description: 'Keys, artifacts, and cosmic instruments',
