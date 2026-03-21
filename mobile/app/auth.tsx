@@ -107,7 +107,7 @@ export default function AuthScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.card}>
-          <Text style={styles.title}>GATEKEEPER</Text>
+          <Text style={styles.title}>ZULE</Text>
           <Text style={styles.subtitle}>Authentication Error</Text>
           <View style={styles.errorBox}><Text style={styles.errorText}>Invalid callback URL.</Text></View>
         </View>
@@ -119,7 +119,7 @@ export default function AuthScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.card}>
-          <Text style={styles.title}>GATEKEEPER</Text>
+          <Text style={styles.title}>ZULE</Text>
           <Text style={styles.subtitle}>Redirecting to Vinzrik...</Text>
           <ActivityIndicator size="large" color="#4CAF50" style={styles.spinner} />
         </View>
@@ -130,7 +130,7 @@ export default function AuthScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.card}>
-        <Text style={styles.title}>GATEKEEPER</Text>
+        <Text style={styles.title}>ZULE</Text>
         <Text style={styles.subtitle}>Continue to your app</Text>
 
         {error && (

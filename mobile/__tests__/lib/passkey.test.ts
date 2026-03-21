@@ -50,7 +50,7 @@ describe('passkey.ts', () => {
         return mockFetchResponse({
           options: {
             challenge: 'dGVzdC1jaGFsbGVuZ2U',
-            rp: { name: 'Zule', id: 'gatekeeper.app' },
+            rp: { name: 'Zule', id: 'zule.mazzizax.net' },
             user: { id: 'dXNlci0xMjM', name: 'test@example.com', displayName: 'Test User' },
             pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
             authenticatorSelection: { userVerification: 'required' },
@@ -71,7 +71,7 @@ describe('passkey.ts', () => {
         return mockFetchResponse({
           challenge: 'dGVzdC1jaGFsbGVuZ2U',
           challenge_key: 'challenge-key-123',
-          rp_id: 'gatekeeper.app',
+          rp_id: 'zule.mazzizax.net',
         });
       }
       if (url.includes('mint-session')) {
@@ -209,7 +209,7 @@ describe('passkey.ts', () => {
         return mockFetchResponse({
           options: {
             challenge: 'dGVzdC1jaGFsbGVuZ2U',
-            rp: { name: 'Zule', id: 'gatekeeper.app' },
+            rp: { name: 'Zule', id: 'zule.mazzizax.net' },
             user: { id: 'dXNlci0xMjM', name: 'test@example.com', displayName: 'Test User' },
             pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
             authenticatorSelection: { userVerification: 'required' },
@@ -267,7 +267,7 @@ describe('passkey.ts', () => {
           return mockFetchResponse({
             options: {
               challenge: 'dGVzdC1jaGFsbGVuZ2U',
-              rp: { name: 'Zule', id: 'gatekeeper.app' },
+              rp: { name: 'Zule', id: 'zule.mazzizax.net' },
               user: { id: 'dXNlci0xMjM', name: 'test@example.com', displayName: 'Test User' },
               pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
               authenticatorSelection: { userVerification: 'required' },
@@ -320,7 +320,7 @@ describe('passkey.ts', () => {
           return mockFetchResponse({
             challenge: 'dGVzdC1jaGFsbGVuZ2U',
             challenge_key: 'key-123',
-            rp_id: 'gatekeeper.app',
+            rp_id: 'zule.mazzizax.net',
           });
         }
         if (url.includes('passkey-auth')) {
@@ -377,7 +377,7 @@ describe('passkey.ts', () => {
           return mockFetchResponse({
             challenge: 'dGVzdC1jaGFsbGVuZ2U',
             challenge_key: 'key-123',
-            rp_id: 'gatekeeper.app',
+            rp_id: 'zule.mazzizax.net',
           });
         }
         if (url.includes('passkey-auth')) {
@@ -434,7 +434,7 @@ describe('passkey.ts', () => {
           return mockFetchResponse({
             challenge: 'dGVzdC1jaGFsbGVuZ2U',
             challenge_key: 'key-123',
-            rp_id: 'gatekeeper.app',
+            rp_id: 'zule.mazzizax.net',
           });
         }
         return mockFetchResponse({});
@@ -485,7 +485,7 @@ describe('passkey.ts', () => {
           return mockFetchResponse({
             challenge: 'dGVzdC1jaGFsbGVuZ2U',
             challenge_key: 'key-123',
-            rp_id: 'gatekeeper.app',
+            rp_id: 'zule.mazzizax.net',
           });
         }
         if (url.includes('passkey-auth')) {
@@ -525,7 +525,7 @@ describe('passkey.ts', () => {
           return mockFetchResponse({
             challenge: 'dGVzdC1jaGFsbGVuZ2U',
             challenge_key: 'key-123',
-            rp_id: 'gatekeeper.app',
+            rp_id: 'zule.mazzizax.net',
           });
         }
         if (url.includes('passkey-auth')) {

@@ -1,13 +1,13 @@
 # Login Flow E2E Test
 # Tests the complete login journey
 
-appId: com.gatekeeper.mobile
+appId: com.mazzizax.zule
 name: "Login Flow"
 
 ---
 
 # App should start on login screen (or redirect there if not authenticated)
-- assertVisible: "GATEKEEPER"
+- assertVisible: "ZULE"
 - assertVisible: "Sign in to your account"
 
 # Verify login form elements are present

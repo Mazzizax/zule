@@ -1,7 +1,7 @@
 # Maestro E2E Test Configuration
 # Run with: maestro test .maestro/
 
-appId: com.gatekeeper.mobile
+appId: com.mazzizax.zule
 
 # Environment variables for tests
 env:

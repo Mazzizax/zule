@@ -11,7 +11,7 @@ import { Platform } from 'react-native';
 
 // Zule project credentials
 const zuleUrl = process.env.EXPO_PUBLIC_ZULE_URL || '';
-const gatekeeperPublishableKey = process.env.EXPO_PUBLIC_ZULE_PUBLISHABLE_KEY || '';
+const zulePublishableKey = process.env.EXPO_PUBLIC_ZULE_PUBLISHABLE_KEY || '';
 
 /**
  * Zule Supabase client
@@ -19,7 +19,7 @@ const gatekeeperPublishableKey = process.env.EXPO_PUBLIC_ZULE_PUBLISHABLE_KEY ||
  */
 export const supabase: SupabaseClient = createClient(
   zuleUrl,
-  gatekeeperPublishableKey,
+  zulePublishableKey,
   {
     auth: {
       storage: AsyncStorage,

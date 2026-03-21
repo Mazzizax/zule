@@ -1,7 +1,7 @@
 # Sign Out Flow E2E Test
 # Tests the complete sign out process
 
-appId: com.gatekeeper.mobile
+appId: com.mazzizax.zule
 name: "Sign Out Flow"
 
 ---
@@ -30,7 +30,7 @@ name: "Sign Out Flow"
 
 # Verify redirected to login screen
 - assertVisible: "Sign in to your account"
-- assertVisible: "GATEKEEPER"
+- assertVisible: "ZULE"
 
 # Verify no longer on dashboard
 - assertNotVisible: "Account Overview"

@@ -1,7 +1,7 @@
 # Profile Update Flow E2E Test
 # Tests profile editing functionality
 
-appId: com.gatekeeper.mobile
+appId: com.mazzizax.zule
 name: "Profile Update Flow"
 
 ---

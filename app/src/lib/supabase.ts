@@ -9,9 +9,9 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Zule project credentials (from environment)
 const zuleUrl = import.meta.env.ZULE_URL;
-const gatekeeperPublishableKey = import.meta.env.ZULE_PUBLISHABLE_KEY;
+const zulePublishableKey = import.meta.env.ZULE_PUBLISHABLE_KEY;
 
-if (!zuleUrl || !gatekeeperPublishableKey) {
+if (!zuleUrl || !zulePublishableKey) {
   console.warn(
     'Zule configuration missing. Create .env file with ZULE_URL and ZULE_PUBLISHABLE_KEY'
   );
@@ -23,7 +23,7 @@ if (!zuleUrl || !gatekeeperPublishableKey) {
  */
 export const supabase: SupabaseClient = createClient(
   zuleUrl || '',
-  gatekeeperPublishableKey || '',
+  zulePublishableKey || '',
   {
     auth: {
       autoRefreshToken: true,

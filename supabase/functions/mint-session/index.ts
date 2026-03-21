@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     // ------------------------------------------------------------------
     // 2. Load the JWT signing key
     // ------------------------------------------------------------------
-    const privateKeyJson = Deno.env.get('ZULE_JWT_PRIVATE_KEY') || Deno.env.get('GATEKEEPER_JWT_PRIVATE_KEY')
+    const privateKeyJson = Deno.env.get('ZULE_JWT_PRIVATE_KEY')
     if (!privateKeyJson) {
       console.error('[MINT-SESSION] ZULE_JWT_PRIVATE_KEY not configured')
       return errorResponse('Server configuration error', 500, origin)

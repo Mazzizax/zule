@@ -186,7 +186,7 @@ Deno.serve(async (req) => {
     // ------------------------------------------------------------------
     // Issue Admin JWT
     // ------------------------------------------------------------------
-    const privateKeyJson = Deno.env.get('ZULE_JWT_PRIVATE_KEY') || Deno.env.get('GATEKEEPER_JWT_PRIVATE_KEY')
+    const privateKeyJson = Deno.env.get('ZULE_JWT_PRIVATE_KEY')
     if (!privateKeyJson) {
       console.error('[ADMIN-AUTH] ZULE_JWT_PRIVATE_KEY not configured')
       return errorResponse('Server configuration error', 500, origin)

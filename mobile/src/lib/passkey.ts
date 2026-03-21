@@ -5,7 +5,7 @@ import { supabase } from './supabase';
 
 const CREDENTIAL_ID_KEY = 'zule_passkey_credential_id';
 const ZULE_URL = process.env.EXPO_PUBLIC_ZULE_URL;
-const GATEKEEPER_KEY = process.env.EXPO_PUBLIC_ZULE_PUBLISHABLE_KEY || '';
+const ZULE_KEY = process.env.EXPO_PUBLIC_ZULE_PUBLISHABLE_KEY || '';
 
 /**
  * Convert standard base64 to base64url
@@ -44,7 +44,7 @@ export async function registerPasskey(email: string): Promise<{ success: boolean
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
-        'apikey': GATEKEEPER_KEY,
+        'apikey': ZULE_KEY,
       },
     });
 
@@ -83,7 +83,7 @@ export async function registerPasskey(email: string): Promise<{ success: boolean
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
-        'apikey': GATEKEEPER_KEY,
+        'apikey': ZULE_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -139,7 +139,7 @@ export async function authenticateWithPasskey(): Promise<{ success: boolean; err
     const challengeResponse = await fetch(challengeUrl, {
       method: 'GET',
       headers: {
-        'apikey': GATEKEEPER_KEY,
+        'apikey': ZULE_KEY,
       },
     });
 
@@ -168,7 +168,7 @@ export async function authenticateWithPasskey(): Promise<{ success: boolean; err
     const verifyResponse = await fetch(verifyUrl, {
       method: 'POST',
       headers: {
-        'apikey': GATEKEEPER_KEY,
+        'apikey': ZULE_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -206,7 +206,7 @@ export async function authenticateWithPasskey(): Promise<{ success: boolean; err
     const mintResponse = await fetch(mintUrl, {
       method: 'POST',
       headers: {
-        'apikey': GATEKEEPER_KEY,
+        'apikey': ZULE_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

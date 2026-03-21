@@ -1,13 +1,13 @@
 {
   "expo": {
     "name": "Zule",
-    "slug": "gatekeeper",
+    "slug": "zule",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "scheme": "gatekeeper",
+    "scheme": "zule",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.xenon.gatekeeper",
+      "bundleIdentifier": "com.mazzizax.zule",
       "associatedDomains": [
         "applinks:zule.mazzizax.net",
         "applinks:sgjulzvgcyotebbexfue.supabase.co"
@@ -27,7 +27,7 @@
         "backgroundColor": "#1a1a2e"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.xenon.gatekeeper",
+      "package": "com.mazzizax.zule",
       "intentFilters": [
         {
           "action": "VIEW",

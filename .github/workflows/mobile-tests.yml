@@ -37,8 +37,8 @@ jobs:
       - name: Run tests
         run: npm run test:ci
         env:
-          EXPO_PUBLIC_GATEKEEPER_URL: https://test.supabase.co
-          EXPO_PUBLIC_GATEKEEPER_PUBLISHABLE_KEY: test-key
+          EXPO_PUBLIC_ZULE_URL: https://test.supabase.co
+          EXPO_PUBLIC_ZULE_PUBLISHABLE_KEY: test-key
 
       - name: Upload coverage report
         uses: codecov/codecov-action@v4

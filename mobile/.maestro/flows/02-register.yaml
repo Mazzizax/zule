@@ -1,13 +1,13 @@
 # Registration Flow E2E Test
 # Tests the account creation journey
 
-appId: com.gatekeeper.mobile
+appId: com.mazzizax.zule
 name: "Registration Flow"
 
 ---
 
 # Navigate to registration from login screen
-- assertVisible: "GATEKEEPER"
+- assertVisible: "ZULE"
 - tapOn: "Sign up"
 
 # Verify registration screen

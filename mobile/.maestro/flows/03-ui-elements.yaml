@@ -1,18 +1,18 @@
 # UI Elements Smoke Test
 # Verifies key UI elements are rendered correctly
 
-appId: com.gatekeeper.mobile
+appId: com.mazzizax.zule
 name: "UI Elements Smoke Test"
 
 ---
 
 # Login Screen UI
-- assertVisible: "GATEKEEPER"
+- assertVisible: "ZULE"
 - assertVisible: "Sign in to your account"
 
 # Check branding is consistent
 - assertVisible:
-    text: "GATEKEEPER"
+    text: "ZULE"
 
 # Verify input fields have proper placeholders
 - assertVisible:
@@ -31,7 +31,7 @@ name: "UI Elements Smoke Test"
 - tapOn: "Sign up"
 
 # Verify registration screen branding
-- assertVisible: "GATEKEEPER"
+- assertVisible: "ZULE"
 - assertVisible: "Create your account"
 
 # Verify registration form

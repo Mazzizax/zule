@@ -53,7 +53,7 @@ jest.mock('expo-linking', () => ({
   }),
   canOpenURL: jest.fn().mockResolvedValue(true),
   openURL: jest.fn().mockResolvedValue(undefined),
-  createURL: jest.fn((path) => `gatekeeper://${path}`),
+  createURL: jest.fn((path) => `zule://${path}`),
 }));
 
 // Mock expo-router - use jest.fn() for all to allow mockReturnValue in tests

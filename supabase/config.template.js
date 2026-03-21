@@ -2,7 +2,7 @@
  * XENON CONFIGURATION - DUAL PROJECT ARCHITECTURE
  *
  * This configuration file supports the privacy-preserving split architecture:
- * - GATEKEEPER: Handles authentication, knows user_id, issues blind tokens
+ * - ZULE: Handles authentication, knows user_id, issues blind tokens
  * - ENGINE: Handles data processing, only knows ghost_id + blind tokens
  *
  * Copy this file to config.js and fill in the actual values.
@@ -10,7 +10,7 @@
 
 const CONFIG = {
   // ============================================================================
-  // GATEKEEPER PROJECT (Authentication & Identity)
+  // ZULE PROJECT (Authentication & Identity)
   // ============================================================================
   // This is the NEW Supabase project that handles:
   // - User authentication (login, signup, password reset)
@@ -18,8 +18,8 @@ const CONFIG = {
   // - User profiles and billing
   // - Passkey/WebAuthn credentials
 
-  ZULE_URL: 'https://YOUR_GATEKEEPER_PROJECT_REF.supabase.co',
-  GATEKEEPER_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.YOUR_GATEKEEPER_ANON_KEY...',
+  ZULE_URL: 'https://YOUR_ZULE_PROJECT_REF.supabase.co',
+  ZULE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.YOUR_ZULE_ANON_KEY...',
 
   // ============================================================================
   // ENGINE PROJECT (Data Processing)

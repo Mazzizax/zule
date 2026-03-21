@@ -62,9 +62,9 @@ describe('Register Screen', () => {
       expect(screen.getByText('Create Account')).toBeTruthy();
     });
 
-    it('shows title GATEKEEPER', () => {
+    it('shows title ZULE', () => {
       render(<RegisterScreen />);
-      expect(screen.getByText('GATEKEEPER')).toBeTruthy();
+      expect(screen.getByText('ZULE')).toBeTruthy();
     });
 
     it('shows subtitle "Create your account"', () => {

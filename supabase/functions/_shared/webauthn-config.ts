@@ -1,5 +1,5 @@
 /**
- * Shared WebAuthn Configuration for Zule (formerly Gatekeeper)
+ * Shared WebAuthn Configuration for Zule
  *
  * Centralized configuration for passkey registration and authentication.
  * Both passkey-register and passkey-auth should import from here.
@@ -31,7 +31,7 @@ export const EXPECTED_ORIGINS = [
   'https://xenon-engine-web.vercel.app',
   // Android - Vinzrik (com.xenon.vinzrik, debug keystore)
   'android:apk-key-hash:-sYXRdwJA3hvue3mKpYrOZ9zSPC7b4mbgzJmdZEDO5w',
-  // Android - Legacy gatekeeper (com.xenon.gatekeeper, remove after May 8, 2026)
+  // Android - Legacy (com.xenon.gatekeeper, remove after May 8, 2026)
   'android:apk-key-hash:Uoi_lyYD2kQgh8Q-hPG3jyij0Bn5n9e8yKnxbdc8zfk',
 ]
 

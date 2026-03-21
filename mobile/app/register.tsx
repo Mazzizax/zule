@@ -68,7 +68,7 @@ export default function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.card}>
-        <Text style={styles.title}>GATEKEEPER</Text>
+        <Text style={styles.title}>ZULE</Text>
         <Text style={styles.subtitle}>Create your account</Text>
 
         {error && (

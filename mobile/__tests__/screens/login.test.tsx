@@ -109,11 +109,11 @@ describe('Login Screen', () => {
       expect(screen.queryByText('Login with Fingerprint')).toBeNull();
     });
 
-    it('shows title GATEKEEPER', async () => {
+    it('shows title ZULE', async () => {
       render(<LoginScreen />);
 
       await waitFor(() => {
-        expect(screen.getByText('GATEKEEPER')).toBeTruthy();
+        expect(screen.getByText('ZULE')).toBeTruthy();
       });
     });
 

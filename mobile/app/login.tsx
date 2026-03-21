@@ -86,7 +86,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.card}>
-        <Text style={styles.title}>GATEKEEPER</Text>
+        <Text style={styles.title}>ZULE</Text>
         <Text style={styles.subtitle}>Sign in to your account</Text>
 
         {error && (

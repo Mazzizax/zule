@@ -1,5 +1,5 @@
 /**
- * CORS Configuration for Zule (formerly Gatekeeper)
+ * CORS Configuration for Zule
  *
  * Centralized CORS handling for all Zule Edge Functions.
  * Only allows requests from approved origins.
@@ -17,7 +17,7 @@ const ALLOWED_ORIGINS = [
   'https://auth.mazzizax.dev',             // Ghozerauth production
 
   // Production - Legacy (keep until May 8, 2026)
-  'https://gatekeeper-nine.vercel.app',    // Zule legacy Vercel URL
+  'https://gatekeeper-nine.vercel.app',    // Legacy Vercel URL (keep until May 2026)
   'https://xenon-engine-web.vercel.app',   // Goals legacy Vercel URL
 
   // Vinzrik Mobile (Expo)

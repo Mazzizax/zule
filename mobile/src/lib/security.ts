@@ -1,8 +1,8 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 
-const BIOMETRIC_ENABLED_KEY = 'gatekeeper_biometric_enabled';
-const USER_CREDENTIALS_KEY = 'gatekeeper_user_credentials';
+const BIOMETRIC_ENABLED_KEY = 'zule_biometric_enabled';
+const USER_CREDENTIALS_KEY = 'zule_user_credentials';
 
 export interface BiometricStatus {
   hasHardware: boolean;

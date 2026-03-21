@@ -1,7 +1,7 @@
 # Security & Passkey Flow E2E Test
 # Tests security screen and password change validation
 
-appId: com.gatekeeper.mobile
+appId: com.mazzizax.zule
 name: "Security Flow"
 
 ---

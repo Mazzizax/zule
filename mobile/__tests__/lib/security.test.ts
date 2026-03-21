@@ -59,7 +59,7 @@ describe('security.ts', () => {
       const result = await isBiometricEnabled();
 
       expect(result).toBe(true);
-      expect(SecureStore.getItemAsync).toHaveBeenCalledWith('gatekeeper_biometric_enabled');
+      expect(SecureStore.getItemAsync).toHaveBeenCalledWith('zule_biometric_enabled');
     });
 
     it('returns false when enabled flag is "false"', async () => {
@@ -92,7 +92,7 @@ describe('security.ts', () => {
       await setBiometricEnabled(true);
 
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
-        'gatekeeper_biometric_enabled',
+        'zule_biometric_enabled',
         'true'
       );
     });
@@ -101,7 +101,7 @@ describe('security.ts', () => {
       await setBiometricEnabled(false);
 
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
-        'gatekeeper_biometric_enabled',
+        'zule_biometric_enabled',
         'false'
       );
     });
@@ -109,7 +109,7 @@ describe('security.ts', () => {
     it('deletes stored credentials when disabling biometrics', async () => {
       await setBiometricEnabled(false);
 
-      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('gatekeeper_user_credentials');
+      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('zule_user_credentials');
     });
 
     it('does not delete credentials when enabling biometrics', async () => {
@@ -124,7 +124,7 @@ describe('security.ts', () => {
       await saveCredentials('test@example.com', 'mypassword');
 
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
-        'gatekeeper_user_credentials',
+        'zule_user_credentials',
         JSON.stringify({ email: 'test@example.com', password: 'mypassword' }),
         { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY }
       );

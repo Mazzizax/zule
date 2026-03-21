@@ -65,7 +65,7 @@ export async function openUrl(url: string): Promise<void> {
  */
 export const linkingConfig = {
   prefixes: [
-    'gatekeeper://',                           // Custom scheme (fallback)
+    'zule://',                                 // Custom scheme (fallback)
     'https://zule.mazzizax.net',      // Android App Links / Universal Links
   ],
 };

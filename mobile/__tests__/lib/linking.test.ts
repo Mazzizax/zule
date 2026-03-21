@@ -142,7 +142,7 @@ describe('linking.ts', () => {
     });
 
     it('handles custom scheme URLs as input', () => {
-      const url = 'gatekeeper://auth?callback=vinzrik://success';
+      const url = 'zule://auth?callback=vinzrik://success';
 
       const result = parseAuthDeepLink(url);
 
@@ -194,7 +194,7 @@ describe('linking.ts', () => {
 
   describe('linkingConfig', () => {
     it('includes custom scheme prefix', () => {
-      expect(linkingConfig.prefixes).toContain('gatekeeper://');
+      expect(linkingConfig.prefixes).toContain('zule://');
     });
 
     it('includes production domain for universal links', () => {
