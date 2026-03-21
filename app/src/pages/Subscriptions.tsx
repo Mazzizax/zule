@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const g = "'Cormorant Garamond', serif";
@@ -42,7 +43,8 @@ const services = [
 
 export default function Subscriptions() {
   const { user } = useAuth();
-  const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const [selectedService, setSelectedService] = useState<string | null>(searchParams.get('service'));
 
   const service = services.find(s => s.id === selectedService);
 
