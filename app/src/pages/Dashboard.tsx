@@ -356,25 +356,19 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Subscription Info */}
+        {/* Subscriptions */}
         <div className="card">
-          <h2>Subscription</h2>
+          <h2>Subscriptions</h2>
           <div className="info-row">
-            <span className="label">Tier:</span>
-            <span className="value tier-badge">{profile?.subscription_tier || 'free'}</span>
-          </div>
-          <div className="info-row">
-            <span className="label">Status:</span>
-            <span className={`value status-${profile?.subscription_status || 'active'}`}>
-              {profile?.subscription_status || 'Active'}
+            <span className="label">Goals</span>
+            <span className="value">
+              <span className="tier-badge">{profile?.subscription_tier || 'free'}</span>
+              {' · '}
+              <span className={`status-${profile?.subscription_status || 'active'}`}>
+                {profile?.subscription_status || 'Active'}
+              </span>
             </span>
           </div>
-          {profile?.subscription_expires_at && (
-            <div className="info-row">
-              <span className="label">Renews:</span>
-              <span className="value">{formatDate(profile.subscription_expires_at)}</span>
-            </div>
-          )}
         </div>
       </div>
 
