@@ -98,11 +98,11 @@ export default function Subscriptions() {
                       borderRadius: '4px', textAlign: 'center',
                       fontFamily: g, fontSize: '13px', fontWeight: 500,
                       color: m.text, letterSpacing: '0.14em', textTransform: 'uppercase',
+                      fontWeight: 600, fontSize: '12px',
                       boxShadow: m.shadow,
                       borderTop: `1px solid ${m.border}`,
                       borderBottom: '1px solid rgba(0,0,0,0.4)',
-                      textShadow: `0 -1px 0 rgba(0,0,0,0.4), 0 1px 0 ${m.highlight}, 0 0 1px rgba(0,0,0,0.2)`,
-                      WebkitTextStroke: '0.2px rgba(0,0,0,0.15)',
+                      textShadow: `0 1px 0 ${m.highlight}`,
                       position: 'relative',
                       overflow: 'hidden',
                     }}>
