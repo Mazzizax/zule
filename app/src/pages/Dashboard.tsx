@@ -593,6 +593,21 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      {/* Loyalty Programs */}
+      <div className="card">
+        <h2>Loyalty Programs</h2>
+        <div className="info-note">
+          <p>
+            Enter your loyalty member numbers for automated rewards tracking. Scan barcodes from your phone for quick entry.
+          </p>
+        </div>
+        <div style={{ marginTop: '16px' }}>
+          <button className="btn-primary" onClick={() => navigate('/loyalty')}>
+            Manage Loyalty Cards
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
