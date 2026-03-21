@@ -445,6 +445,7 @@ serve(async (req) => {
         const userId = session.client_reference_id; // Pass user_id when creating checkout
 
         if (userId && customerId) {
+          // Link Stripe customer to user profile
           const { error } = await supabase
             .from('user_profiles')
             .update({ stripe_customer_id: customerId })
@@ -454,17 +455,47 @@ serve(async (req) => {
             console.error('[STRIPE] Customer link error:', error);
           } else {
             console.log(`[STRIPE] Linked customer ${customerId} to user ${userId}`);
-
-            // Log audit event
-            await supabase.rpc('log_audit_event', {
-              p_user_id: userId,
-              p_action: 'stripe_customer_linked',
-              p_category: 'subscription',
-              p_ip_address: null,
-              p_user_agent: null,
-              p_metadata: { customer_id: customerId },
-            });
           }
+
+          // Create subscription row from checkout metadata
+          // This is the reliable path — subscription events may arrive before
+          // the customer_id is linked, so we create the row here where we have user_id directly
+          const sessionServiceId = session.metadata?.service_id;
+          const sessionSubscriptionId = session.subscription;
+          if (sessionServiceId && sessionSubscriptionId) {
+            // Get price/tier from metadata (set by create-checkout)
+            const priceId = session.metadata?.price_id;
+            const serviceTier = priceId ? PRICE_TO_SERVICE_TIER[priceId] : null;
+            const tier = serviceTier?.tier || 'standard';
+
+            const { error: subError } = await supabase
+              .from('user_subscriptions')
+              .upsert({
+                user_id: userId,
+                service_id: sessionServiceId,
+                tier: tier,
+                status: 'active',
+                stripe_subscription_id: sessionSubscriptionId,
+                stripe_price_id: priceId || null,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'user_id,service_id' });
+
+            if (subError) {
+              console.error('[STRIPE] Checkout subscription upsert error:', subError);
+            } else {
+              console.log(`[STRIPE] Created subscription ${sessionServiceId}/${tier} for user ${userId}`);
+            }
+          }
+
+          // Log audit event
+          await supabase.rpc('log_audit_event', {
+            p_user_id: userId,
+            p_action: 'stripe_customer_linked',
+            p_category: 'subscription',
+            p_ip_address: null,
+            p_user_agent: null,
+            p_metadata: { customer_id: customerId, service_id: sessionServiceId },
+          });
         } else {
           console.log('[STRIPE] Checkout completed but missing user_id or customer_id for linking');
         }

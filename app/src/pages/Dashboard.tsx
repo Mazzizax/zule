@@ -46,7 +46,7 @@ interface ProfileSummary {
 
 const SERVICE_DISPLAY_NAME: Record<string, string> = {
   goals: 'Goals',
-  aca: 'ACA',
+  aca: 'Advanced Cognitive Assistant',
 };
 
 export default function Dashboard() {

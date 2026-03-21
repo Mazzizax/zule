@@ -128,6 +128,7 @@ Deno.serve(async (req) => {
       metadata: {
         user_id: user.id,
         service_id: service_id,
+        price_id: price_id,
       },
     };
 
