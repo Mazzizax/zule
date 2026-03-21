@@ -565,7 +565,7 @@ export default function Dashboard() {
           </>
         ) : (
           <div className="info-note">
-            <p>Link your card to track purchases for your quests and gear. Transaction data stays in Zule — only game events reach Goals.</p>
+            <p>Link your accounts for automated challenge verification and deeper integration into the ecosystem. See our <a href="/privacy" style={{ color: 'var(--zule-gold)', textDecoration: 'none' }}>privacy policy</a> and <a href="/terms" style={{ color: 'var(--zule-gold)', textDecoration: 'none' }}>terms</a> for full details.</p>
           </div>
         )}
         <div style={{ marginTop: '16px' }}>
