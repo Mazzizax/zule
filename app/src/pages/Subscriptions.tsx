@@ -42,7 +42,7 @@ const services = [
   {
     id: 'aca',
     name: 'Advanced Cognitive Assistant',
-    description: 'AI-powered personal intelligence layer',
+    description: 'Harness 4 frontier AI models to power your daily life',
     tiers: [
       { id: 'standard', name: 'Standard', metal: 'rose', price: '$65/mo', features: [] },
       { id: 'enthusiast', name: 'Enthusiast', metal: 'titanium', price: '$125/mo', features: [] },
