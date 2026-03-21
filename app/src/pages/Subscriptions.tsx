@@ -86,6 +86,15 @@ const services: Service[] = [
     ],
   },
   {
+    id: 'hardware',
+    name: 'Hardware',
+    description: 'Physical devices and peripherals',
+    tiers: [
+      { id: 'axe_s', name: 'AXE S', metal: 'rose', price: null, stripe_price_id: null, features: [] },
+      { id: 'torch', name: 'TORCH', metal: 'rose', price: null, stripe_price_id: null, features: [] },
+    ],
+  },
+  {
     id: 'iterations',
     name: 'Iterations',
     description: 'Keys, artifacts, and cosmic instruments',
