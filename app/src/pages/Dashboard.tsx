@@ -333,9 +333,13 @@ export default function Dashboard() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <h1>Dashboard</h1>
-        <p>Your Zule account overview</p>
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{ fontSize: '14px', fontFamily: 'var(--font-mono)', fontWeight: 400, letterSpacing: '0.15em', color: 'var(--text-secondary)' }}>
+          <span className="metal-text" style={{ fontWeight: 700, fontSize: '16px' }}>Z</span>ero-knowledge{' '}
+          <span className="metal-text" style={{ fontWeight: 700, fontSize: '16px' }}>U</span>ser{' '}
+          <span className="metal-text" style={{ fontWeight: 700, fontSize: '16px' }}>L</span>icense{' '}
+          <span className="metal-text" style={{ fontWeight: 700, fontSize: '16px' }}>E</span>nclave
+        </h1>
       </div>
 
       {error && <div className="error-message">{error}</div>}
