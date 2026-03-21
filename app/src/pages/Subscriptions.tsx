@@ -34,9 +34,19 @@ const services = [
     name: 'Goals',
     description: 'Rewards platform — XP, gear, quests, brand engagement',
     tiers: [
-      { id: 'standard', name: 'Standard', metal: 'rose', features: ['Basic XP tracking', '5 gear slots', 'Community quests'] },
-      { id: 'premium', name: 'Premium', metal: 'titanium', features: ['Full XP tracking', 'All 20 gear slots', 'Loadouts', 'Sponsor pools', 'Priority quest matching'] },
-      { id: 'citizen', name: 'Citizen', metal: 'gunmetal', features: ['Everything in Premium', 'Advanced analytics', 'Custom loadout themes', 'Early access features', 'Direct brand engagement'] },
+      { id: 'standard', name: 'Standard', metal: 'rose', price: null, features: ['Basic XP tracking', '5 gear slots', 'Community quests'] },
+      { id: 'premium', name: 'Premium', metal: 'titanium', price: null, features: ['Full XP tracking', 'All 20 gear slots', 'Loadouts', 'Sponsor pools', 'Priority quest matching'] },
+      { id: 'citizen', name: 'Citizen', metal: 'gunmetal', price: null, features: ['Everything in Premium', 'Advanced analytics', 'Custom loadout themes', 'Early access features', 'Direct brand engagement'] },
+    ],
+  },
+  {
+    id: 'aca',
+    name: 'Advanced Cognitive Assistant',
+    description: 'AI-powered personal intelligence layer',
+    tiers: [
+      { id: 'standard', name: 'Standard', metal: 'rose', price: '$65/mo', features: [] },
+      { id: 'enthusiast', name: 'Enthusiast', metal: 'titanium', price: '$125/mo', features: [] },
+      { id: 'padawan', name: 'Padawan', metal: 'gunmetal', price: '$215/mo', features: [] },
     ],
   },
 ];
@@ -81,7 +91,10 @@ export default function Subscriptions() {
             {service?.tiers.map(tier => (
               <div key={tier.id} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '16px' }}>
                 <div>
-                  <h3 className="metal-text" style={{ fontFamily: g, fontSize: '20px', fontWeight: 400, letterSpacing: '0.08em', marginBottom: '12px', display: 'inline-block' }}>{tier.name}</h3>
+                  <h3 className="metal-text" style={{ fontFamily: g, fontSize: '20px', fontWeight: 400, letterSpacing: '0.08em', marginBottom: '4px', display: 'inline-block' }}>{tier.name}</h3>
+                  {tier.price && (
+                    <p style={{ fontFamily: g, fontSize: '18px', fontWeight: 500, color: 'var(--zule-gold)', marginBottom: '8px' }}>{tier.price}</p>
+                  )}
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                     {tier.features.map((f, i) => (
                       <li key={i} style={{ fontSize: '12px', padding: '4px 0', opacity: 0.7 }}>
@@ -108,7 +121,7 @@ export default function Subscriptions() {
                       position: 'relative',
                       overflow: 'hidden',
                     }}>
-                      <span style={{ position: 'relative', zIndex: 1 }}>Purchased</span>
+                      <span style={{ position: 'relative', zIndex: 1 }}>{tier.price ? 'Subscribe' : 'Purchased'}</span>
                       <div style={{
                         position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
                         background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%)',
