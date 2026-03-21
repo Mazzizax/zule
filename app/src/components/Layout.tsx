@@ -117,8 +117,8 @@ export default function Layout() {
       <main className="main-content">
         <div style={{
           position: 'sticky', top: 0, zIndex: 10,
-          background: 'linear-gradient(180deg, var(--bg-deep) 60%, transparent)',
-          paddingTop: '32px', paddingBottom: '20px', marginTop: '-32px',
+          background: 'linear-gradient(180deg, var(--bg-deep) 70%, transparent)',
+          paddingTop: '32px', paddingBottom: '32px', marginTop: '-32px',
         }}>
           <h1 style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', fontWeight: 300, letterSpacing: '0.18em', color: 'var(--zule-gold-dim)' }}>
             <span className="metal-text" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, fontSize: '28px', letterSpacing: '0.04em', display: 'inline-block' }}>Z</span>ero-knowledge{' '}
