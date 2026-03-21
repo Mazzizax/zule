@@ -58,7 +58,7 @@ const services: Service[] = [
   {
     id: 'conversations-with-xenon',
     name: 'Conversations with Xenon',
-    description: '5th dimensional interactive novel',
+    description: 'A novel novel',
     tiers: [
       { id: 'sage_relic', name: 'Sage Relic', metal: 'rose', price: null, stripe_price_id: null, features: [] },
       { id: 'founder_account', name: 'Founder Account', metal: 'rose', price: null, stripe_price_id: null, features: [] },
