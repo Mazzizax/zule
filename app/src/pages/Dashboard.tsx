@@ -373,10 +373,10 @@ export default function Dashboard() {
           <h2>Subscriptions</h2>
           {profile?.subscriptions && profile.subscriptions.length > 0 ? (
             profile.subscriptions.map((sub) => (
-              <div className="info-row" key={sub.service_id} onClick={() => navigate(`/subscriptions?service=${sub.service_id}`)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', border: '1px solid #222', borderRadius: '4px', marginBottom: '8px' }}>
-                <span className="label" style={{ flex: '1 1 0', minWidth: 0 }}>{SERVICE_DISPLAY_NAME[sub.service_id] || sub.service_id}</span>
-                <span className="value" style={{ flex: '0 0 auto', textAlign: 'right' }}>
-                  <span className="tier-badge" style={{ fontFamily: "'Cormorant Garamond', serif" }}>{sub.tier}</span>
+              <div className="info-row" key={sub.service_id}>
+                <span className="label">{SERVICE_DISPLAY_NAME[sub.service_id] || sub.service_id}</span>
+                <span className="value">
+                  <span className="tier-badge" onClick={() => navigate(`/subscriptions?service=${sub.service_id}`)} style={{ cursor: 'pointer', fontFamily: "'Cormorant Garamond', serif", display: 'inline-block', minWidth: '120px', textAlign: 'center' }}>{sub.tier}</span>
                   {' · '}
                   <span className={`status-${sub.status}`}>
                     {sub.status}
@@ -385,10 +385,10 @@ export default function Dashboard() {
               </div>
             ))
           ) : (
-            <div className="info-row" onClick={() => navigate('/subscriptions?service=goals')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', border: '1px solid #222', borderRadius: '4px' }}>
-              <span className="label" style={{ flex: '1 1 0', minWidth: 0 }}>Goals</span>
-              <span className="value" style={{ flex: '0 0 auto', textAlign: 'right' }}>
-                <span className="tier-badge" style={{ fontFamily: "'Cormorant Garamond', serif" }}>citizen</span>
+            <div className="info-row">
+              <span className="label">Goals</span>
+              <span className="value">
+                <span className="tier-badge" onClick={() => navigate('/subscriptions?service=goals')} style={{ cursor: 'pointer', fontFamily: "'Cormorant Garamond', serif", display: 'inline-block', minWidth: '120px', textAlign: 'center' }}>citizen</span>
                 {' · '}
                 <span className={`status-active`}>active</span>
               </span>
