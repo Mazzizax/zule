@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
+const g = "'Cormorant Garamond', serif";
+
 const services = [
   {
     id: 'goals',
@@ -22,10 +24,6 @@ export default function Subscriptions() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <h1>Subscriptions</h1>
-        <p>Manage your service plans</p>
-      </div>
 
       {!selectedService ? (
         <div>
@@ -36,7 +34,7 @@ export default function Subscriptions() {
               onClick={() => setSelectedService(svc.id)}
               style={{ cursor: 'pointer' }}
             >
-              <h2>{svc.name}</h2>
+              <h2 style={{ fontFamily: g, fontSize: '22px', fontWeight: 400, letterSpacing: '0.06em' }}>{svc.name}</h2>
               <p style={{ opacity: 0.6, fontSize: '13px' }}>{svc.description}</p>
             </div>
           ))}
@@ -46,19 +44,19 @@ export default function Subscriptions() {
           <button
             className="btn-secondary"
             onClick={() => setSelectedService(null)}
-            style={{ marginBottom: '16px', fontSize: '12px' }}
+            style={{ marginBottom: '16px', width: 'auto' }}
           >
-            Back to services
+            Back
           </button>
 
-          <h2 style={{ marginBottom: '16px' }}>{service?.name}</h2>
+          <h2 style={{ fontFamily: g, fontSize: '24px', fontWeight: 400, letterSpacing: '0.06em', marginBottom: '16px' }}>{service?.name}</h2>
 
           <div className="card-grid">
             {service?.tiers.map(tier => (
               <div key={tier.id} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <h3 style={{ marginBottom: '4px' }}>{tier.name}</h3>
-                  <p style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '12px' }}>
+                  <h3 style={{ fontFamily: g, fontSize: '20px', fontWeight: 400, letterSpacing: '0.04em', marginBottom: '4px' }}>{tier.name}</h3>
+                  <p style={{ fontFamily: g, fontSize: '22px', fontWeight: 500, marginBottom: '12px' }}>
                     {tier.price || 'Free'}
                   </p>
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
