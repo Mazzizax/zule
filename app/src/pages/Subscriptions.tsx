@@ -60,9 +60,9 @@ const services: Service[] = [
     name: 'Conversations with Xenon',
     description: 'A novel novel',
     tiers: [
-      { id: 'sage_relic', name: 'Sage Relic', metal: 'rose', price: null, stripe_price_id: null, features: [] },
-      { id: 'founder_account', name: 'Founder Account', metal: 'rose', price: null, stripe_price_id: null, features: [] },
-      { id: 'novel_chapter', name: 'Novel Chapter', metal: 'rose', price: null, stripe_price_id: null, features: [] },
+      { id: 'sage_relic', name: 'Sage Relic', metal: 'rose', price: null, stripe_price_id: null, mode: 'payment', features: [] },
+      { id: 'founder_account', name: 'Founder Account', metal: 'rose', price: null, stripe_price_id: null, mode: 'payment', features: [] },
+      { id: 'novel_chapter', name: 'Novel Chapter', metal: 'rose', price: null, stripe_price_id: null, mode: 'payment', features: [] },
     ],
   },
   {
@@ -90,8 +90,8 @@ const services: Service[] = [
     name: 'Hardware',
     description: 'Custom crafted equipment to elevate your game',
     tiers: [
-      { id: 'axe_s', name: 'AXE S', metal: 'rose', price: null, stripe_price_id: null, features: [] },
-      { id: 'torch', name: 'TORCH', metal: 'rose', price: null, stripe_price_id: null, features: [] },
+      { id: 'axe_s', name: 'AXE S', metal: 'rose', price: null, stripe_price_id: null, mode: 'payment', features: [] },
+      { id: 'torch', name: 'TORCH', metal: 'rose', price: null, stripe_price_id: null, mode: 'payment', features: [] },
     ],
   },
   {
