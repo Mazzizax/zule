@@ -37,6 +37,9 @@ const stripe = STRIPE_SECRET_KEY
 interface CheckoutRequest {
   price_id: string;
   service_id: string;
+  product_id?: string;
+  mode?: 'subscription' | 'payment';
+  quantity?: number;
   success_url: string;
   cancel_url: string;
 }
@@ -86,7 +89,7 @@ Deno.serve(async (req) => {
       return errorResponse('Invalid JSON body', 400, origin);
     }
 
-    const { price_id, service_id, success_url, cancel_url } = body;
+    const { price_id, service_id, product_id, mode = 'subscription', quantity = 1, success_url, cancel_url } = body;
 
     if (!price_id) {
       return errorResponse('price_id is required', 400, origin);
@@ -113,24 +116,59 @@ Deno.serve(async (req) => {
       return errorResponse('Failed to fetch user profile', 500, origin);
     }
 
-    // 4. CREATE CHECKOUT SESSION
+    // 4. CHECK PURCHASE LIMITS (for one-time purchases)
+    if (mode === 'payment' && product_id) {
+      const adminClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+
+      const { data: count } = await adminClient.rpc('get_purchase_count', {
+        p_user_id: user.id,
+        p_product_id: product_id,
+      });
+
+      const purchaseCount = count || 0;
+
+      // Product-specific limits
+      const PURCHASE_LIMITS: Record<string, number> = {
+        'dragon_eye': 1,
+        'secret_door_key': 33,
+      };
+
+      const limit = PURCHASE_LIMITS[product_id];
+      if (limit !== undefined && purchaseCount >= limit) {
+        return errorResponse(
+          limit === 1 ? 'You already own this item' : `Purchase limit reached (${limit})`,
+          400,
+          origin
+        );
+      }
+    }
+
+    // 5. CREATE CHECKOUT SESSION
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      mode: 'subscription',
+      mode: mode,
       line_items: [
         {
           price: price_id,
-          quantity: 1,
+          quantity: quantity,
         },
       ],
       success_url: `${success_url}${success_url.includes('?') ? '&' : '?'}session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancel_url,
-      client_reference_id: user.id, // Links customer to our user on completion
+      client_reference_id: user.id,
       metadata: {
         user_id: user.id,
         service_id: service_id,
         price_id: price_id,
+        product_id: product_id || '',
       },
     };
+
+    // Payment mode needs invoice for receipts
+    if (mode === 'payment') {
+      sessionParams.invoice_creation = { enabled: true };
+    }
 
     // If user already has a Stripe customer, use it
     if (profile?.stripe_customer_id) {

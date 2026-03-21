@@ -35,7 +35,26 @@ interface Subscription {
   status: string;
 }
 
-const services = [
+interface ServiceItem {
+  id: string;
+  name: string;
+  metal: string;
+  price: string | null;
+  stripe_price_id: string | null;
+  product_id?: string;
+  mode?: 'subscription' | 'payment';
+  limit?: number;
+  features: string[];
+}
+
+interface Service {
+  id: string;
+  name: string;
+  description: string;
+  tiers: ServiceItem[];
+}
+
+const services: Service[] = [
   {
     id: 'goals',
     name: 'Goals',
@@ -54,6 +73,16 @@ const services = [
       { id: 'standard', name: 'Standard', metal: 'rose', price: '$65/mo', stripe_price_id: 'price_1SuhgaDRpCHsf7InZqtoYRA3', features: [] },
       { id: 'enthusiast', name: 'Enthusiast', metal: 'titanium', price: '$125/mo', stripe_price_id: 'price_1SuhqgDRpCHsf7InpPL2w5d9', features: [] },
       { id: 'padawan', name: 'Padawan', metal: 'gunmetal', price: '$215/mo', stripe_price_id: 'price_1SuhvuDRpCHsf7In7c52Ovn1', features: [] },
+    ],
+  },
+  {
+    id: 'iterations',
+    name: 'Iterations',
+    description: 'Keys, artifacts, and cosmic instruments',
+    tiers: [
+      { id: 'secret_door_key', name: 'Secret Door Key', metal: 'rose', price: '$5', stripe_price_id: 'price_1Sui0sDRpCHsf7Inh8xp45BV', product_id: 'secret_door_key', mode: 'payment', limit: 33, features: ['Set of 3 keys', 'Up to 33 sets per account'] },
+      { id: 'need_more_data', name: 'Need More Data', metal: 'rose', price: '$10', stripe_price_id: 'price_1Sui3qDRpCHsf7Inqw16CsUk', product_id: 'need_more_data', mode: 'payment', features: [] },
+      { id: 'dragon_eye', name: 'Dragon Eye', metal: 'rose', price: '$500', stripe_price_id: 'price_1Sui7tDRpCHsf7InSpqU9Bu7', product_id: 'dragon_eye', mode: 'payment', limit: 1, features: ['One per account'] },
     ],
   },
 ];
@@ -99,7 +128,7 @@ export default function Subscriptions() {
     }
   };
 
-  const handleSubscribe = async (serviceId: string, stripePriceId: string) => {
+  const handleSubscribe = async (serviceId: string, stripePriceId: string, productId?: string, mode: 'subscription' | 'payment' = 'subscription') => {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
     if (!token) return;
@@ -118,6 +147,8 @@ export default function Subscriptions() {
           body: JSON.stringify({
             price_id: stripePriceId,
             service_id: serviceId,
+            product_id: productId,
+            mode: mode,
             success_url: `${window.location.origin}/subscriptions?success=true&service=${serviceId}`,
             cancel_url: `${window.location.origin}/subscriptions?service=${serviceId}`,
           }),
@@ -135,6 +166,7 @@ export default function Subscriptions() {
       }
     } catch (err: any) {
       console.error('Checkout error:', err.message);
+      alert(err.message);
     } finally {
       setCheckoutLoading(null);
     }
@@ -266,12 +298,14 @@ export default function Subscriptions() {
                   const activeSub = getActiveSubscription(service!.id);
                   const isActive = activeSub?.tier === tier.id;
                   const isGoals = service!.id === 'goals';
+                  const isOneTime = tier.mode === 'payment';
                   const hasExisting = !!activeSub;
                   const canChange = tier.stripe_price_id && !isActive;
                   const loadingKey = `${service!.id}-${tier.stripe_price_id}`;
 
                   let label = 'Subscribe';
                   if (isGoals) label = 'Purchased';
+                  else if (isOneTime) label = 'Purchase';
                   else if (isActive) label = 'Active';
                   else if (hasExisting && canChange) label = 'Switch';
 
@@ -279,7 +313,10 @@ export default function Subscriptions() {
                     <div
                       className="metal-btn"
                       onClick={() => {
-                        if (canChange && tier.stripe_price_id) {
+                        if (!tier.stripe_price_id) return;
+                        if (isOneTime) {
+                          handleSubscribe(service!.id, tier.stripe_price_id, tier.product_id, 'payment');
+                        } else if (canChange) {
                           if (hasExisting) {
                             setUpgradeTarget({ serviceId: service!.id, tierId: tier.id, tierName: tier.name, priceId: tier.stripe_price_id, price: tier.price || '' });
                           } else {
@@ -301,7 +338,7 @@ export default function Subscriptions() {
                         textShadow: `0 1px 0 ${m.highlight}`,
                         position: 'relative',
                         overflow: 'hidden',
-                        cursor: canChange ? 'pointer' : 'default',
+                        cursor: (canChange || isOneTime) ? 'pointer' : 'default',
                         opacity: checkoutLoading === loadingKey ? 0.6 : 1,
                       }}>
                       <span style={{ position: 'relative', zIndex: 1 }}>
