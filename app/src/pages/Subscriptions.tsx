@@ -88,7 +88,7 @@ const services: Service[] = [
   {
     id: 'hardware',
     name: 'Hardware',
-    description: 'Custom crafted equipment to elevate your game',
+    description: 'Custom crafted equipment to elevate your daily life',
     tiers: [
       { id: 'axe_s', name: 'AXE S', metal: 'rose', price: null, stripe_price_id: null, mode: 'payment', features: [] },
       { id: 'torch', name: 'TORCH', metal: 'rose', price: null, stripe_price_id: null, mode: 'payment', features: [] },
