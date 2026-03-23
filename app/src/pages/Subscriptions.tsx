@@ -373,7 +373,7 @@ export default function Subscriptions() {
 
                   let label = 'Subscribe';
                   if (isGoals) label = 'Purchased';
-                  else if (isOneTime && atLimit) label = 'Purchased';
+                  else if (isOneTime && atLimit) label = 'Owned';
                   else if (isOneTime) label = 'Purchase';
                   else if (isActive) label = 'Active';
                   else if (hasExisting && canChange) label = 'Switch';
