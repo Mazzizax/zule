@@ -36,11 +36,35 @@ const stripe = STRIPE_SECRET_KEY
     })
   : null;
 
+/**
+ * Server-side price → product mapping. Single source of truth.
+ * The client CANNOT specify product_id — it is derived from price_id.
+ * This prevents purchase limit bypass (e.g. sending a cheap price_id
+ * with dragon_eye product_id to skip the 1-per-account limit).
+ */
+const PRICE_TO_PRODUCT: Record<string, { product_id: string; service_id: string; mode: 'subscription' | 'payment' }> = {
+  // ACA subscriptions
+  'price_1SuhgaDRpCHsf7InZqtoYRA3': { product_id: 'aca_standard', service_id: 'aca', mode: 'subscription' },
+  'price_1SuhqgDRpCHsf7InpPL2w5d9': { product_id: 'aca_enthusiast', service_id: 'aca', mode: 'subscription' },
+  'price_1SuhvuDRpCHsf7In7c52Ovn1': { product_id: 'aca_padawan', service_id: 'aca', mode: 'subscription' },
+  // One-time purchases (add real Stripe price IDs when created in live mode)
+  // 'price_xxx': { product_id: 'dragon_eye', service_id: 'goals', mode: 'payment' },
+  // 'price_yyy': { product_id: 'secret_door_key', service_id: 'goals', mode: 'payment' },
+  // 'price_zzz': { product_id: 'need_more_data', service_id: 'goals', mode: 'payment' },
+};
+
+// Purchase limits per product (for one-time purchases)
+const PURCHASE_LIMITS: Record<string, number> = {
+  'dragon_eye': 1,
+  'secret_door_key': 33,
+  'need_more_data': 5,
+};
+
 interface CheckoutRequest {
   price_id: string;
-  service_id: string;
-  product_id?: string;
-  mode?: 'subscription' | 'payment';
+  service_id?: string;  // Optional — server derives from price_id for known prices
+  product_id?: string;  // IGNORED — server derives from price_id
+  mode?: 'subscription' | 'payment'; // Optional — server derives from price_id for known prices
   quantity?: number;
   success_url: string;
   cancel_url: string;
@@ -99,19 +123,27 @@ Deno.serve(async (req) => {
       return errorResponse('Invalid JSON body', 400, origin);
     }
 
-    const { price_id, service_id, product_id, mode = 'subscription', quantity = 1, success_url, cancel_url } = body;
+    const { price_id, quantity = 1, success_url, cancel_url } = body;
 
     if (!price_id) {
       return errorResponse('price_id is required', 400, origin);
-    }
-    if (!service_id) {
-      return errorResponse('service_id is required', 400, origin);
     }
     if (!success_url) {
       return errorResponse('success_url is required', 400, origin);
     }
     if (!cancel_url) {
       return errorResponse('cancel_url is required', 400, origin);
+    }
+
+    // Resolve product/service/mode from server-side map
+    // Client-supplied product_id and service_id are IGNORED for mapped prices
+    const mapped = PRICE_TO_PRODUCT[price_id];
+    const product_id = mapped?.product_id || null;
+    const service_id = mapped?.service_id || body.service_id;
+    const mode = mapped?.mode || body.mode || 'subscription';
+
+    if (!service_id) {
+      return errorResponse('Unknown price_id and no service_id provided', 400, origin);
     }
 
     // 3. GET USER PROFILE (check for existing Stripe customer)
@@ -127,6 +159,7 @@ Deno.serve(async (req) => {
     }
 
     // 4. CHECK PURCHASE LIMITS (for one-time purchases)
+    // product_id comes from server-side map only — cannot be spoofed
     if (mode === 'payment' && product_id) {
       const adminClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
         auth: { autoRefreshToken: false, persistSession: false },
@@ -138,14 +171,6 @@ Deno.serve(async (req) => {
       });
 
       const purchaseCount = count || 0;
-
-      // Product-specific limits
-      const PURCHASE_LIMITS: Record<string, number> = {
-        'dragon_eye': 1,
-        'secret_door_key': 33,
-        'need_more_data': 5,
-      };
-
       const limit = PURCHASE_LIMITS[product_id];
       if (limit !== undefined && purchaseCount >= limit) {
         return errorResponse(
