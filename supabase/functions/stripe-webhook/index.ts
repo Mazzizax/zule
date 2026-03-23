@@ -202,7 +202,31 @@ serve(async (req) => {
       return new Response('Invalid payload', { status: 400 });
     }
 
-    console.log(`[STRIPE] Event: ${event.type}`);
+    console.log(`[STRIPE] Event: ${event.type}, ID: ${event.id}`);
+
+    // Idempotency check — skip if we've already processed this exact event
+    const { count: existingCount } = await supabase
+      .from('audit_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('action', 'stripe_webhook_processed')
+      .filter('metadata->>stripe_event_id', 'eq', event.id);
+
+    if (existingCount && existingCount > 0) {
+      console.log(`[STRIPE] Event ${event.id} already processed, skipping`);
+      return new Response(JSON.stringify({ received: true, duplicate: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Mark this event as processed BEFORE handling — prevents race conditions
+    // on concurrent retries
+    await supabase.from('audit_logs').insert({
+      action: 'stripe_webhook_processed',
+      action_category: 'subscription',
+      metadata: { stripe_event_id: event.id, event_type: event.type },
+      success: true,
+    });
 
     // Handle different event types
     switch (event.type) {
@@ -510,7 +534,12 @@ serve(async (req) => {
             });
 
             if (purchaseError) {
-              console.error('[STRIPE] Purchase log error:', purchaseError);
+              // Unique constraint on payment_intent_id means this is a duplicate — not an error
+              if (purchaseError.code === '23505' || purchaseError.message?.includes('unique') || purchaseError.message?.includes('duplicate')) {
+                console.log(`[STRIPE] Purchase already logged for payment intent ${session.payment_intent} (idempotent)`);
+              } else {
+                console.error('[STRIPE] Purchase log error:', purchaseError);
+              }
             } else {
               console.log(`[STRIPE] Logged purchase ${sessionProductId} for user ${userId}`);
             }
