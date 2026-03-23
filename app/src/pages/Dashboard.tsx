@@ -97,19 +97,17 @@ export default function Dashboard() {
   const [removeLoadingId, setRemoveLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (session?.access_token) {
-      fetchProfile();
-    }
-  }, [session]);
+    fetchProfile();
+  }, []);
 
   const fetchProfile = async () => {
-    // Always get the latest token — session in closure may be stale
-    const { data: { session: current } } = await supabase.auth.getSession();
-    const token = current?.access_token;
-    if (!token) return;
+    const token = await getFreshToken();
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
     try {
-      setLoading(true);
       const response = await fetch(
         `${import.meta.env.ZULE_URL}/functions/v1/user-profile`,
         {
