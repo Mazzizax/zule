@@ -194,14 +194,38 @@ export default function Subscriptions() {
 
       const { url } = await res.json();
       if (url) {
-        window.location.href = url;
+        // Open Stripe checkout in a popup window — keeps user in the app
+        const w = 500;
+        const h = 700;
+        const left = window.screenX + (window.outerWidth - w) / 2;
+        const top = window.screenY + (window.outerHeight - h) / 2;
+        const popup = window.open(
+          url,
+          'stripe_checkout',
+          `width=${w},height=${h},left=${left},top=${top},scrollbars=yes,resizable=yes`
+        );
+
+        // Poll for popup close — refresh data when it closes
+        if (popup) {
+          const pollTimer = setInterval(() => {
+            if (popup.closed) {
+              clearInterval(pollTimer);
+              setCheckoutLoading(null);
+              // Refresh subscriptions/purchases after checkout
+              fetchSubscriptions();
+            }
+          }, 500);
+        } else {
+          // Popup blocked — fall back to redirect
+          window.location.href = url;
+        }
+        return; // Don't clear checkoutLoading yet — poll handles it
       }
     } catch (err: any) {
       console.error('Checkout error:', err.message);
       alert(err.message);
-    } finally {
-      setCheckoutLoading(null);
     }
+    setCheckoutLoading(null);
   };
 
   const handleUpgrade = async (serviceId: string, newPriceId: string) => {
