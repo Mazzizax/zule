@@ -22,6 +22,12 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+# Secrets — never commit keys or certificates
+*.pem
+*.key
+*.p12
+*.pfx
+
 # Supabase
 supabase/.temp/
 
