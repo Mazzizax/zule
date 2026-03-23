@@ -27,6 +27,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { SignJWT, importJWK } from 'https://deno.land/x/jose@v5.2.0/index.ts'
 import { handleCors, jsonResponse, errorResponse } from '../_shared/cors.ts'
+import { checkRateLimit } from '../_shared/rate-limit.ts'
 import {
   RP_ID,
   EXPECTED_ORIGINS,
@@ -128,6 +129,10 @@ Deno.serve(async (req) => {
 
   // Get client IP for rate limiting
   const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+
+  // Centralized rate limiting (by IP — no user ID available yet)
+  const rateLimited = await checkRateLimit(supabase, req, 'passkey-auth')
+  if (rateLimited) return rateLimited
 
   try {
     if (req.method === 'GET') {

@@ -22,6 +22,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { handleCors, jsonResponse, errorResponse } from '../_shared/cors.ts'
+import { checkRateLimit } from '../_shared/rate-limit.ts'
 import {
   RP_ID,
   RP_NAME,
@@ -64,6 +65,10 @@ Deno.serve(async (req) => {
       return errorResponse('Invalid or expired session', 401, origin)
     }
     console.log(`[PASSKEY-REGISTER] Authenticated user: ${user.id}`)
+
+    // Rate limiting
+    const rateLimited = await checkRateLimit(supabaseAuth, req, 'passkey-register', user.id)
+    if (rateLimited) return rateLimited
 
     // Initialize Admin Client for DB
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)

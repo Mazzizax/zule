@@ -18,6 +18,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { handleCors, jsonResponse, errorResponse } from '../_shared/cors.ts'
+import { checkRateLimit } from '../_shared/rate-limit.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -48,6 +49,10 @@ Deno.serve(async (req) => {
     if (authError || !user) {
       return errorResponse('Invalid or expired token', 401, origin)
     }
+
+    // Rate limiting
+    const rateLimited = await checkRateLimit(supabase, req, 'shred-minted-transactions', user.id)
+    if (rateLimited) return rateLimited
 
     // Use admin client for the delete operation
     const adminClient = createClient(SUPABASE_URL, SUPABASE_KEY, {

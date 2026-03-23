@@ -30,13 +30,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { SignJWT, importJWK } from 'https://deno.land/x/jose@v5.2.0/index.ts'
 import { handleCors, jsonResponse, errorResponse, getCorsHeaders } from '../_shared/cors.ts'
+import { checkRateLimit } from '../_shared/rate-limit.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-
-// Rate limit configuration
-const MAX_ATTEMPTS_PER_MINUTE = 5
-const MAX_ATTEMPTS_PER_HOUR = 20
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -57,51 +54,12 @@ Deno.serve(async (req) => {
       return errorResponse('Email and password are required', 400, origin)
     }
 
-    // Get client IP for rate limiting
-    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-                     req.headers.get('x-real-ip') ||
-                     'unknown'
-
-    // Create service client for rate limiting checks
+    // Create service client
     const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
-    // Check rate limits
-    const rateLimitKey = `auth:${clientIp}:${email.toLowerCase()}`
-    const { data: rateLimit } = await serviceClient
-      .from('rate_limits')
-      .select('count, window_start')
-      .eq('identifier', rateLimitKey)
-      .eq('action', 'auth_validate')
-      .gte('window_start', new Date(Date.now() - 60000).toISOString()) // Last minute
-      .single()
-
-    if (rateLimit && rateLimit.count >= MAX_ATTEMPTS_PER_MINUTE) {
-      // Log rate limit hit
-      await serviceClient.from('audit_logs').insert({
-        action: 'auth_rate_limited',
-        action_category: 'security',
-        ip_address: clientIp,
-        metadata: { email: email.toLowerCase(), reason: 'minute_limit' },
-        success: false,
-        error_message: 'Rate limit exceeded'
-      })
-
-      return errorResponse('Too many attempts. Please wait a moment.', 429, origin)
-    }
-
-    // Increment rate limit counter
-    await serviceClient.rpc('increment_rate_limit', {
-      p_identifier: rateLimitKey,
-      p_action: 'auth_validate'
-    }).catch(() => {
-      // If RPC doesn't exist, insert/update manually
-      return serviceClient.from('rate_limits').upsert({
-        identifier: rateLimitKey,
-        action: 'auth_validate',
-        count: (rateLimit?.count || 0) + 1,
-        window_start: rateLimit?.window_start || new Date().toISOString()
-      }, { onConflict: 'identifier,action,window_start' })
-    })
+    // Centralized rate limiting (by IP — no user ID available yet)
+    const rateLimited = await checkRateLimit(serviceClient, req, 'auth-validate')
+    if (rateLimited) return rateLimited
 
     // Create anonymous client for authentication
     const anonClient = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_ANON_KEY')!)

@@ -12,6 +12,7 @@ import {
   jsonResponse,
   errorResponse,
 } from '../_shared/cors.ts';
+import { checkRateLimit } from '../_shared/rate-limit.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -36,6 +37,10 @@ Deno.serve(async (req) => {
     if (authError || !user) {
       return errorResponse('Invalid or expired token', 401, origin);
     }
+
+    // Rate limiting
+    const rateLimited = await checkRateLimit(supabase, req, 'loyalty-cards', user.id);
+    if (rateLimited) return rateLimited;
 
     const adminClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },

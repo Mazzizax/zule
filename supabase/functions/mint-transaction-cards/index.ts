@@ -18,6 +18,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { handleCors, jsonResponse, errorResponse } from '../_shared/cors.ts'
+import { checkRateLimit } from '../_shared/rate-limit.ts'
 import { toCosmicTicks, nowCosmicTicksNumber } from '../_shared/cosmic-clock.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -398,6 +399,10 @@ Deno.serve(async (req) => {
       console.error('[ENRICH] Auth error:', authError?.message)
       return errorResponse('Invalid or expired token', 401, origin)
     }
+
+    // Rate limiting
+    const rateLimited = await checkRateLimit(supabase, req, 'mint-transaction-cards', user.id)
+    if (rateLimited) return rateLimited
 
     // 2. FETCH UNMINTED TRANSACTIONS
     const adminClient = createClient(SUPABASE_URL, SUPABASE_KEY, {

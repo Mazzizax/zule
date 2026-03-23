@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { SignJWT, importJWK, jwtVerify, createRemoteJWKSet } from "https://deno.land/x/jose@v5.2.0/index.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { checkRateLimit } from '../_shared/rate-limit.ts';
 
 /**
  * Issue Attestation Endpoint
@@ -39,6 +41,11 @@ serve(async (req) => {
   }
 
   try {
+    // Rate limiting (by IP)
+    const rlClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const rateLimited = await checkRateLimit(rlClient, req, 'issue-attestation');
+    if (rateLimited) return rateLimited;
+
     // Get the authorization header (Supabase JWT from authenticated user)
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {

@@ -17,6 +17,7 @@ import {
   jsonResponse,
   errorResponse,
 } from '../_shared/cors.ts';
+import { checkRateLimit } from '../_shared/rate-limit.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -63,6 +64,10 @@ Deno.serve(async (req) => {
       console.error('[PLAID-PULL] Auth error:', authError?.message);
       return errorResponse('Invalid or expired token', 401, origin);
     }
+
+    // Rate limiting
+    const rateLimited = await checkRateLimit(supabase, req, 'plaid-pull-transactions', user.id);
+    if (rateLimited) return rateLimited;
 
     // 2. GET PLAID ACCOUNT(S)
     let body: { account_id?: string } = {};

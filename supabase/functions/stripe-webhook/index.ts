@@ -20,6 +20,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { timingSafeHmacEqual } from '../_shared/security.ts';
+import { checkRateLimit } from '../_shared/rate-limit.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -168,6 +169,11 @@ serve(async (req) => {
 
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Rate limiting (by IP — server-to-server, generous limit)
+    const rateLimited = await checkRateLimit(supabase, req, 'stripe-webhook');
+    if (rateLimited) return rateLimited;
+
     const payload = await req.text();
     const signature = req.headers.get('stripe-signature');
 

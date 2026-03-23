@@ -18,6 +18,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { handleCors, jsonResponse, errorResponse } from '../_shared/cors.ts'
+import { checkRateLimit } from '../_shared/rate-limit.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -76,6 +77,10 @@ Deno.serve(async (req) => {
     }
 
     const userId = user.id
+
+    // Rate limiting
+    const rateLimited = await checkRateLimit(supabase, req, 'app-register', userId)
+    if (rateLimited) return rateLimited
 
     // Route based on method
     switch (req.method) {
