@@ -46,6 +46,12 @@ export default function Login() {
       return;
     }
 
+    // Confirm session displacement
+    const proceed = window.confirm(
+      'Signing in will log you out of all other active sessions. Continue?'
+    );
+    if (!proceed) return;
+
     setLoading(true);
     setError(null);
 

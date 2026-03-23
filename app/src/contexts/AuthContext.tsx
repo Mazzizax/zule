@@ -53,7 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     hardTimeoutRef.current = null;
     loginTimeRef.current = null;
 
-    await supabase.auth.signOut();
+    // Local-only signout — don't broadcast to other tabs/server
+    // This prevents the displaced tab from killing the new session
+    await supabase.auth.signOut({ scope: 'local' });
+    setSession(null);
+    setUser(null);
     alert(reason);
   }, []);
 
@@ -156,15 +160,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    // Broadcast kill signal BEFORE signing in — other tabs logout first
+    localStorage.setItem(KILL_SIGNAL_KEY, crypto.randomUUID());
+
+    // Small delay to let other tabs process the kill signal
+    await new Promise((r) => setTimeout(r, 100));
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) throw error;
-
-    // Broadcast kill signal to other tabs — they will force logout
-    localStorage.setItem(KILL_SIGNAL_KEY, crypto.randomUUID());
   };
 
   const signUp = async (email: string, password: string) => {
