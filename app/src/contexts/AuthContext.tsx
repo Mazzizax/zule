@@ -96,12 +96,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, [resetInactivityTimer]);
 
+  // Stable refs for use inside the effect without causing re-runs
+  const startTimersRef = useRef(startSessionTimers);
+  const stopTimersRef = useRef(stopSessionTimers);
+  startTimersRef.current = startSessionTimers;
+  stopTimersRef.current = stopSessionTimers;
+
   useEffect(() => {
     // Check for existing session (within this tab's sessionStorage only)
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session) startSessionTimers();
+      if (session) startTimersRef.current();
       setLoading(false);
     });
 
@@ -112,18 +118,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (session) {
         if (!loginTimeRef.current) {
-          startSessionTimers();
+          startTimersRef.current();
         }
       } else {
-        stopSessionTimers();
+        stopTimersRef.current();
       }
     });
 
     return () => {
       subscription.unsubscribe();
-      stopSessionTimers();
+      stopTimersRef.current();
     };
-  }, [startSessionTimers, stopSessionTimers]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
