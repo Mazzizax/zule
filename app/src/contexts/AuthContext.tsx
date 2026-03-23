@@ -112,7 +112,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session) {
+        // Verify session actually exists in THIS tab's sessionStorage.
+        // Supabase BroadcastChannel can propagate sessions from other tabs —
+        // accept only sessions that are locally stored.
+        const { data: { session: localSession } } = await supabase.auth.getSession();
+        if (!localSession) return; // Cross-tab broadcast, ignore
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
 
