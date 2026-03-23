@@ -4,19 +4,27 @@ import { useNavigate } from 'react-router-dom';
 export default function Privacy() {
   const navigate = useNavigate();
 
+  const goBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/login');
+    }
+  };
+
   return (
     <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.85)', zIndex: 9999,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '20px',
-    }} onClick={() => navigate(-1)}>
+      minHeight: '100vh',
+      background: '#0a0a0a',
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+      padding: '40px 20px',
+    }}>
       <div style={{
         background: '#111', border: '1px solid #333', borderRadius: '8px',
-        maxWidth: '680px', width: '100%', maxHeight: '85vh', overflowY: 'auto',
+        maxWidth: '680px', width: '100%',
         padding: '32px', position: 'relative',
-      }} onClick={e => e.stopPropagation()}>
-        <button onClick={() => navigate(-1)} style={{
+      }}>
+        <button onClick={goBack} style={{
           position: 'absolute', top: '12px', right: '16px',
           background: 'none', border: 'none', color: '#666', fontSize: '20px', cursor: 'pointer',
         }}>&times;</button>
