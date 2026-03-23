@@ -46,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginTimeRef = useRef<number | null>(null);
   const sessionIdRef = useRef<string | null>(null);
   const isLoggingOutRef = useRef(false);
+  const didInitiateLoginRef = useRef(false);
 
   const forceLogout = useCallback(async (reason: string) => {
     if (isLoggingOutRef.current) return; // Prevent re-entrant logout
@@ -81,15 +82,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, INACTIVITY_TIMEOUT);
   }, [forceLogout]);
 
-  const startSessionTimers = useCallback(() => {
+  const startSessionTimers = useCallback((claimLock: boolean) => {
     loginTimeRef.current = Date.now();
 
-    // Generate a unique ID for this session instance
-    const thisSessionId = crypto.randomUUID();
-    sessionIdRef.current = thisSessionId;
-
-    // Claim the session lock — any other tab sees this and knows it's been displaced
-    localStorage.setItem(SESSION_LOCK_KEY, thisSessionId);
+    if (claimLock) {
+      // This tab initiated the login — generate a new lock and displace others
+      const thisSessionId = crypto.randomUUID();
+      sessionIdRef.current = thisSessionId;
+      localStorage.setItem(SESSION_LOCK_KEY, thisSessionId);
+    } else {
+      // This tab is passively picking up a session (e.g. from another tab's login)
+      // Adopt the existing lock — do NOT write a new one
+      sessionIdRef.current = localStorage.getItem(SESSION_LOCK_KEY);
+    }
 
     // Start inactivity tracking
     resetInactivityTimer();
@@ -144,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session) startSessionTimers();
+      if (session) startSessionTimers(false); // Passive pickup on page load
       setLoading(false);
     });
 
@@ -156,7 +161,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session) {
         // New sign-in or token refresh — only start timers if not already running
         if (!loginTimeRef.current) {
-          startSessionTimers();
+          // Only claim the lock if this tab initiated the login
+          const shouldClaim = didInitiateLoginRef.current;
+          didInitiateLoginRef.current = false;
+          startSessionTimers(shouldClaim);
         }
       } else {
         // Signed out
@@ -172,12 +180,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [startSessionTimers, stopSessionTimers, forceLogout]);
 
   const signIn = async (email: string, password: string) => {
+    didInitiateLoginRef.current = true;
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) throw error;
+    if (error) {
+      didInitiateLoginRef.current = false;
+      throw error;
+    }
   };
 
   const signUp = async (email: string, password: string) => {
