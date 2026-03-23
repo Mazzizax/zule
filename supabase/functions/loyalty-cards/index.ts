@@ -13,6 +13,7 @@ import {
   errorResponse,
 } from '../_shared/cors.ts';
 import { checkRateLimit } from '../_shared/rate-limit.ts';
+import { requireVerifiedEmail } from '../_shared/security.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -61,6 +62,9 @@ Deno.serve(async (req) => {
       return jsonResponse(data || [], 200, origin);
 
     } else if (req.method === 'POST') {
+      // Email verification required for write operations
+      const unverified = requireVerifiedEmail(user, origin);
+      if (unverified) return unverified;
       let body: { program_name: string; member_number: string; barcode_format?: string };
       try {
         body = await req.json();
@@ -91,6 +95,9 @@ Deno.serve(async (req) => {
       return jsonResponse(data, 201, origin);
 
     } else if (req.method === 'DELETE') {
+      // Email verification required for write operations
+      const unverifiedDel = requireVerifiedEmail(user, origin);
+      if (unverifiedDel) return unverifiedDel;
       let body: { id: string };
       try {
         body = await req.json();

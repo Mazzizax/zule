@@ -19,6 +19,7 @@ import {
   errorResponse,
 } from '../_shared/cors.ts';
 import { checkRateLimit } from '../_shared/rate-limit.ts';
+import { requireVerifiedEmail } from '../_shared/security.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -69,6 +70,10 @@ Deno.serve(async (req) => {
     // Rate limiting
     const rateLimited = await checkRateLimit(supabase, req, 'plaid-exchange-token', user.id);
     if (rateLimited) return rateLimited;
+
+    // Email verification required for financial operations
+    const unverified = requireVerifiedEmail(user, origin);
+    if (unverified) return unverified;
 
     // 2. PARSE REQUEST
     let body: { public_token: string };

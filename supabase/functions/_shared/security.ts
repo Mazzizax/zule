@@ -208,6 +208,31 @@ export function sanitizeForLogging(value: string, maxLength = 100): string {
 }
 
 /**
+ * Verify that the user's email is confirmed.
+ * Returns null if confirmed, or a 403 error Response if not.
+ *
+ * Usage:
+ *   import { requireVerifiedEmail } from '../_shared/security.ts'
+ *   ...
+ *   const unverified = requireVerifiedEmail(user, origin)
+ *   if (unverified) return unverified
+ */
+export function requireVerifiedEmail(
+  user: { email_confirmed_at?: string | null },
+  origin?: string | null,
+): Response | null {
+  if (user.email_confirmed_at) return null
+
+  return new Response(
+    JSON.stringify({ error: 'Email verification required. Please check your inbox and verify your email before continuing.' }),
+    {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    },
+  )
+}
+
+/**
  * Rate limiting helper - extract identifier from request
  */
 export function getRateLimitIdentifier(req: Request, userId?: string): string {

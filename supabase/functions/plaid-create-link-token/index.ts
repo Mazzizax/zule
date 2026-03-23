@@ -15,6 +15,7 @@ import {
   errorResponse,
 } from '../_shared/cors.ts';
 import { checkRateLimit } from '../_shared/rate-limit.ts';
+import { requireVerifiedEmail } from '../_shared/security.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -68,6 +69,10 @@ Deno.serve(async (req) => {
     // Rate limiting
     const rateLimited = await checkRateLimit(supabase, req, 'plaid-create-link-token', user.id);
     if (rateLimited) return rateLimited;
+
+    // Email verification required for financial operations
+    const unverified = requireVerifiedEmail(user, origin);
+    if (unverified) return unverified;
 
     // 2. CREATE LINK TOKEN via Plaid API
     const baseUrl = PLAID_BASE_URL[PLAID_ENV] || PLAID_BASE_URL.sandbox;

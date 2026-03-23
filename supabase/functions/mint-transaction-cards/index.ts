@@ -19,6 +19,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { handleCors, jsonResponse, errorResponse } from '../_shared/cors.ts'
 import { checkRateLimit } from '../_shared/rate-limit.ts'
+import { requireVerifiedEmail } from '../_shared/security.ts'
 import { toCosmicTicks, nowCosmicTicksNumber } from '../_shared/cosmic-clock.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -403,6 +404,10 @@ Deno.serve(async (req) => {
     // Rate limiting
     const rateLimited = await checkRateLimit(supabase, req, 'mint-transaction-cards', user.id)
     if (rateLimited) return rateLimited
+
+    // Email verification required
+    const unverified = requireVerifiedEmail(user, origin)
+    if (unverified) return unverified
 
     // 2. FETCH UNMINTED TRANSACTIONS
     const adminClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
