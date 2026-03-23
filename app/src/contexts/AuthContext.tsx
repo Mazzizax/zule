@@ -20,6 +20,9 @@ const INACTIVITY_TIMEOUT = 8 * 60 * 1000; // 8 minutes
 const HARD_TIMEOUT = 25 * 60 * 1000; // 25 minutes
 const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'scroll', 'touchstart'] as const;
 
+// Kill signal key — localStorage is cross-tab, used ONLY to signal displacement
+const KILL_SIGNAL_KEY = 'zule_login_event';
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
@@ -102,7 +105,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   startTimersRef.current = startSessionTimers;
   stopTimersRef.current = stopSessionTimers;
 
+  const forceLogoutRef = useRef(forceLogout);
+  forceLogoutRef.current = forceLogout;
+
   useEffect(() => {
+    // Listen for kill signal from other tabs (new login displaces this one)
+    const handleKillSignal = (e: StorageEvent) => {
+      if (e.key === KILL_SIGNAL_KEY && e.newValue && loginTimeRef.current) {
+        forceLogoutRef.current('Session ended: you logged in from another location');
+      }
+    };
+    window.addEventListener('storage', handleKillSignal);
+
     // Check for existing session (within this tab's sessionStorage only)
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -136,6 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
       stopTimersRef.current();
+      window.removeEventListener('storage', handleKillSignal);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -147,6 +162,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (error) throw error;
+
+    // Broadcast kill signal to other tabs — they will force logout
+    localStorage.setItem(KILL_SIGNAL_KEY, crypto.randomUUID());
   };
 
   const signUp = async (email: string, password: string) => {
