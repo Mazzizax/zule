@@ -412,7 +412,7 @@ export default function Subscriptions() {
                         opacity: checkoutLoading === loadingKey ? 0.6 : 1,
                       }}>
                       <span style={{ position: 'relative', zIndex: 1 }}>
-                        {checkoutLoading === loadingKey ? 'Redirecting...' : label}
+                        {checkoutLoading === loadingKey ? 'Processing...' : label}
                       </span>
                       <div style={{
                         position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
