@@ -373,8 +373,7 @@ export default function Subscriptions() {
 
                   let label = 'Subscribe';
                   if (isGoals) label = 'Purchased';
-                  else if (isOneTime && atLimit && tier.limit === 1) label = 'Owned';
-                  else if (isOneTime && atLimit) label = `${purchaseCount}/${tier.limit} Owned`;
+                  else if (isOneTime && atLimit) label = 'Purchased';
                   else if (isOneTime) label = 'Purchase';
                   else if (isActive) label = 'Active';
                   else if (hasExisting && canChange) label = 'Switch';
@@ -384,6 +383,7 @@ export default function Subscriptions() {
                       className="metal-btn"
                       onClick={() => {
                         if (!tier.stripe_price_id) return;
+                        if (isOneTime && atLimit) return;
                         if (isOneTime && !atLimit) {
                           handleSubscribe(service!.id, tier.stripe_price_id, tier.product_id, 'payment');
                         } else if (canChange) {
