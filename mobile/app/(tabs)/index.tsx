@@ -150,6 +150,57 @@ export default function DashboardScreen() {
 
   const UPDATE_STATUSES = ['login_required', 'pending_expiration', 'pending_disconnect'];
 
+  const openPlaidUpdateAccounts = useCallback(async (accountId: string) => {
+    const token = await getFreshToken();
+    if (!token) return;
+
+    setPlaidLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${ZULE_URL}/functions/v1/plaid-update-link-token`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'apikey': ZULE_KEY,
+        },
+        body: JSON.stringify({ account_id: accountId, account_selection: true }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to create update link token');
+      }
+
+      const { link_token } = await res.json();
+
+      create({ token: link_token });
+      open({
+        onSuccess: async () => {
+          try {
+            const freshToken = await getFreshToken();
+            await fetch(`${ZULE_URL}/rest/v1/plaid_accounts?id=eq.${accountId}`, {
+              method: 'PATCH',
+              headers: {
+                'Authorization': `Bearer ${freshToken}`,
+                'Content-Type': 'application/json',
+                'apikey': ZULE_KEY,
+              },
+              body: JSON.stringify({ status: 'active' }),
+            });
+          } catch { /* webhook fallback */ }
+          await fetchProfile();
+          setPlaidLoading(false);
+        },
+        onExit: () => {
+          setPlaidLoading(false);
+        },
+      });
+    } catch (err: any) {
+      setError(err.message);
+      setPlaidLoading(false);
+    }
+  }, []);
+
   const openPlaidUpdate = useCallback(async (accountId: string) => {
     const token = await getFreshToken();
     if (!token) return;
@@ -408,7 +459,16 @@ export default function DashboardScreen() {
                   <Text style={styles.connectedDate}>{formatDate(acct.connected_at)}</Text>
                 </View>
                 {acct.status === 'new_accounts_available' && (
-                  <Text style={styles.statusNote}>New accounts available at this institution</Text>
+                  <View style={styles.newAccountsBanner}>
+                    <Text style={styles.newAccountsText}>New accounts available at this institution</Text>
+                    <TouchableOpacity
+                      style={styles.btnNewAccounts}
+                      onPress={() => openPlaidUpdateAccounts(acct.id)}
+                      disabled={plaidLoading}
+                    >
+                      <Text style={styles.btnNewAccountsText}>Add Accounts</Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
                 {acct.status && UPDATE_STATUSES.includes(acct.status) && (
                   <View style={styles.updateBanner}>
@@ -610,6 +670,24 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   btnUpdateText: { color: '#f59e0b', fontSize: 12, fontWeight: '600' },
+  newAccountsBanner: {
+    backgroundColor: '#3b82f620',
+    borderWidth: 1,
+    borderColor: '#3b82f640',
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 8,
+  },
+  newAccountsText: { color: '#3b82f6', fontSize: 12, marginBottom: 6 },
+  btnNewAccounts: {
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+    borderRadius: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 14,
+    alignSelf: 'flex-start',
+  },
+  btnNewAccountsText: { color: '#3b82f6', fontSize: 12, fontWeight: '600' },
   accountActions: {
     flexDirection: 'row',
     gap: 8,

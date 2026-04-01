@@ -213,6 +213,70 @@ export default function Dashboard() {
 
   const UPDATE_STATUSES = ['login_required', 'pending_expiration', 'pending_disconnect'];
 
+  const openPlaidUpdateAccounts = async (accountId: string) => {
+    const token = await getFreshToken();
+    if (!token) return;
+
+    setPlaidLoading(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.ZULE_URL}/functions/v1/plaid-update-link-token`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ account_id: accountId, account_selection: true }),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to create update link token');
+      }
+
+      const { link_token } = await res.json();
+
+      const Plaid = (window as any).Plaid;
+      if (!Plaid) {
+        throw new Error('Plaid Link not loaded. Please refresh the page.');
+      }
+
+      const handler = Plaid.create({
+        token: link_token,
+        onSuccess: async () => {
+          try {
+            const freshToken = await getFreshToken();
+            await fetch(
+              `${import.meta.env.ZULE_URL}/rest/v1/plaid_accounts?id=eq.${accountId}`,
+              {
+                method: 'PATCH',
+                headers: {
+                  'Authorization': `Bearer ${freshToken}`,
+                  'Content-Type': 'application/json',
+                  'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
+                },
+                body: JSON.stringify({ status: 'active' }),
+              }
+            );
+          } catch { /* webhook fallback */ }
+          await fetchProfile();
+          setPlaidLoading(false);
+        },
+        onExit: () => {
+          setPlaidLoading(false);
+        },
+      });
+
+      handler.open();
+    } catch (err: any) {
+      setError(err.message);
+      setPlaidLoading(false);
+    }
+  };
+
   const openPlaidUpdate = async (accountId: string) => {
     const token = await getFreshToken();
     if (!token) return;
@@ -530,6 +594,21 @@ export default function Dashboard() {
                   <span className="label">{acct.institution_name}</span>
                   <span className="value" style={{ fontSize: '11px', opacity: 0.5 }}>{formatDate(acct.connected_at)}</span>
                 </div>
+                {acct.status === 'new_accounts_available' && (
+                  <div style={{ marginTop: '4px', marginBottom: '6px', padding: '6px 8px', background: '#3b82f620', border: '1px solid #3b82f640', borderRadius: '4px' }}>
+                    <span style={{ fontSize: '11px', color: '#3b82f6' }}>
+                      New accounts available at this institution
+                    </span>
+                    <button
+                      className="btn-secondary"
+                      onClick={() => openPlaidUpdateAccounts(acct.id)}
+                      disabled={plaidLoading}
+                      style={{ fontSize: '11px', padding: '3px 10px', marginLeft: '8px', borderColor: '#3b82f6', color: '#3b82f6' }}
+                    >
+                      Add Accounts
+                    </button>
+                  </div>
+                )}
                 {acct.status && UPDATE_STATUSES.includes(acct.status) && (
                   <div style={{ marginTop: '4px', marginBottom: '6px', padding: '6px 8px', background: '#f59e0b20', border: '1px solid #f59e0b40', borderRadius: '4px' }}>
                     <span style={{ fontSize: '11px', color: '#f59e0b' }}>

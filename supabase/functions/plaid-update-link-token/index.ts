@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
     if (unverified) return unverified;
 
     // 2. PARSE REQUEST
-    let body: { account_id: string };
+    let body: { account_id: string; account_selection?: boolean };
     try {
       body = await req.json();
     } catch {
@@ -100,19 +100,25 @@ Deno.serve(async (req) => {
     const baseUrl = PLAID_BASE_URL[PLAID_ENV] || PLAID_BASE_URL.sandbox;
     const webhookUrl = `${SUPABASE_URL}/functions/v1/plaid-webhook`;
 
+    const linkBody: Record<string, unknown> = {
+      client_id: PLAID_CLIENT_ID,
+      secret: PLAID_SECRET,
+      user: { client_user_id: user.id },
+      client_name: 'Mazzizax',
+      access_token: account.plaid_access_token,
+      country_codes: ['US'],
+      language: 'en',
+      webhook: webhookUrl,
+    };
+
+    if (body.account_selection) {
+      linkBody.update = { account_selection_enabled: true };
+    }
+
     const plaidResponse = await fetch(`${baseUrl}/link/token/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client_id: PLAID_CLIENT_ID,
-        secret: PLAID_SECRET,
-        user: { client_user_id: user.id },
-        client_name: 'Mazzizax',
-        access_token: account.plaid_access_token,
-        country_codes: ['US'],
-        language: 'en',
-        webhook: webhookUrl,
-      }),
+      body: JSON.stringify(linkBody),
     });
 
     if (!plaidResponse.ok) {
