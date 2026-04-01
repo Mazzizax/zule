@@ -22,6 +22,7 @@ interface PlaidAccount {
   id: string;
   institution_name: string;
   connected_at: string;
+  status: string | null;
 }
 
 interface Subscription {
@@ -197,6 +198,58 @@ export default function Dashboard() {
           } finally {
             setPlaidLoading(false);
           }
+        },
+        onExit: () => {
+          setPlaidLoading(false);
+        },
+      });
+
+      handler.open();
+    } catch (err: any) {
+      setError(err.message);
+      setPlaidLoading(false);
+    }
+  };
+
+  const UPDATE_STATUSES = ['login_required', 'pending_expiration', 'pending_disconnect'];
+
+  const openPlaidUpdate = async (accountId: string) => {
+    const token = await getFreshToken();
+    if (!token) return;
+
+    setPlaidLoading(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.ZULE_URL}/functions/v1/plaid-update-link-token`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.ZULE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ account_id: accountId }),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to create update link token');
+      }
+
+      const { link_token } = await res.json();
+
+      const Plaid = (window as any).Plaid;
+      if (!Plaid) {
+        throw new Error('Plaid Link not loaded. Please refresh the page.');
+      }
+
+      const handler = Plaid.create({
+        token: link_token,
+        onSuccess: async () => {
+          // No token exchange needed — access_token unchanged in update mode
+          await fetchProfile();
+          setPlaidLoading(false);
         },
         onExit: () => {
           setPlaidLoading(false);
@@ -461,6 +514,23 @@ export default function Dashboard() {
                   <span className="label">{acct.institution_name}</span>
                   <span className="value" style={{ fontSize: '11px', opacity: 0.5 }}>{formatDate(acct.connected_at)}</span>
                 </div>
+                {acct.status && UPDATE_STATUSES.includes(acct.status) && (
+                  <div style={{ marginTop: '4px', marginBottom: '6px', padding: '6px 8px', background: '#f59e0b20', border: '1px solid #f59e0b40', borderRadius: '4px' }}>
+                    <span style={{ fontSize: '11px', color: '#f59e0b' }}>
+                      {acct.status === 'login_required' ? 'Login required — re-authenticate to continue' :
+                       acct.status === 'pending_expiration' ? 'Access expiring — re-authenticate to renew' :
+                       'Pending disconnect — re-authenticate to maintain access'}
+                    </span>
+                    <button
+                      className="btn-secondary"
+                      onClick={() => openPlaidUpdate(acct.id)}
+                      disabled={plaidLoading}
+                      style={{ fontSize: '11px', padding: '3px 10px', marginLeft: '8px', borderColor: '#f59e0b', color: '#f59e0b' }}
+                    >
+                      Update
+                    </button>
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
                   <button
                     className="btn-secondary"

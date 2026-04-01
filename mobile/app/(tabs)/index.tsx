@@ -148,6 +148,48 @@ export default function DashboardScreen() {
     }
   }, []);
 
+  const UPDATE_STATUSES = ['login_required', 'pending_expiration', 'pending_disconnect'];
+
+  const openPlaidUpdate = useCallback(async (accountId: string) => {
+    const token = await getFreshToken();
+    if (!token) return;
+
+    setPlaidLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${ZULE_URL}/functions/v1/plaid-update-link-token`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'apikey': ZULE_KEY,
+        },
+        body: JSON.stringify({ account_id: accountId }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to create update link token');
+      }
+
+      const { link_token } = await res.json();
+
+      create({ token: link_token });
+      open({
+        onSuccess: async () => {
+          // No token exchange needed in update mode
+          await fetchProfile();
+          setPlaidLoading(false);
+        },
+        onExit: () => {
+          setPlaidLoading(false);
+        },
+      });
+    } catch (err: any) {
+      setError(err.message);
+      setPlaidLoading(false);
+    }
+  }, []);
+
   const pullTransactions = async (accountId: string) => {
     const token = await getFreshToken();
     if (!token) return;
@@ -355,6 +397,22 @@ export default function DashboardScreen() {
                 {acct.status === 'new_accounts_available' && (
                   <Text style={styles.statusNote}>New accounts available at this institution</Text>
                 )}
+                {acct.status && UPDATE_STATUSES.includes(acct.status) && (
+                  <View style={styles.updateBanner}>
+                    <Text style={styles.updateText}>
+                      {acct.status === 'login_required' ? 'Login required — re-authenticate to continue' :
+                       acct.status === 'pending_expiration' ? 'Access expiring — re-authenticate to renew' :
+                       'Pending disconnect — re-authenticate to maintain access'}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.btnUpdate}
+                      onPress={() => openPlaidUpdate(acct.id)}
+                      disabled={plaidLoading}
+                    >
+                      <Text style={styles.btnUpdateText}>Update</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
                 <View style={styles.accountActions}>
                   <TouchableOpacity
                     style={styles.btnSecondary}
@@ -521,6 +579,24 @@ const styles = StyleSheet.create({
   institutionName: { color: '#fff', fontSize: 14, fontWeight: '600' },
   connectedDate: { color: '#666', fontSize: 11 },
   statusNote: { color: '#f59e0b', fontSize: 12, marginBottom: 8 },
+  updateBanner: {
+    backgroundColor: '#f59e0b20',
+    borderWidth: 1,
+    borderColor: '#f59e0b40',
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 8,
+  },
+  updateText: { color: '#f59e0b', fontSize: 12, marginBottom: 6 },
+  btnUpdate: {
+    borderWidth: 1,
+    borderColor: '#f59e0b',
+    borderRadius: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 14,
+    alignSelf: 'flex-start',
+  },
+  btnUpdateText: { color: '#f59e0b', fontSize: 12, fontWeight: '600' },
   accountActions: {
     flexDirection: 'row',
     gap: 8,

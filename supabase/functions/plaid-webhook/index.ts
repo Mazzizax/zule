@@ -275,11 +275,15 @@ Deno.serve(async (req) => {
             const plaidError = event.error;
             console.error(`[PLAID-WEBHOOK] Item error for ${itemId}:`, plaidError);
 
-            // Update account status
+            // ITEM_LOGIN_REQUIRED specifically needs update mode
+            const errorStatus = plaidError?.error_code === 'ITEM_LOGIN_REQUIRED'
+              ? 'login_required'
+              : 'error';
+
             await supabase
               .from('plaid_accounts')
               .update({
-                status: 'error',
+                status: errorStatus,
                 error_code: plaidError?.error_code || 'UNKNOWN',
                 error_message: plaidError?.error_message || 'Unknown error',
               })
@@ -336,6 +340,15 @@ Deno.serve(async (req) => {
             await supabase
               .from('plaid_accounts')
               .update({ status: 'pending_expiration' })
+              .eq('plaid_item_id', itemId);
+            break;
+          }
+
+          case 'PENDING_DISCONNECT': {
+            console.log(`[PLAID-WEBHOOK] Item ${itemId} pending disconnect`);
+            await supabase
+              .from('plaid_accounts')
+              .update({ status: 'pending_disconnect' })
               .eq('plaid_item_id', itemId);
             break;
           }
