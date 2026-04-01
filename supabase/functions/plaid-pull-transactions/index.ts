@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
 
     let query = adminClient
       .from('plaid_accounts')
-      .select('id, plaid_access_token, plaid_item_id')
+      .select('id, plaid_access_token, plaid_item_id, sync_cursor')
       .eq('user_id', user.id);
 
     if (body.account_id) {
@@ -105,8 +105,7 @@ Deno.serve(async (req) => {
 
     for (const account of accounts) {
       let hasMore = true;
-      // Cursor stored per-account (not per-profile)
-      let cursor = '';
+      let cursor = account.sync_cursor || '';
 
       while (hasMore) {
         const syncBody: Record<string, unknown> = {
@@ -126,6 +125,12 @@ Deno.serve(async (req) => {
 
         if (!syncResponse.ok) {
           const err = await syncResponse.json().catch(() => ({}));
+          if (err.error_code === 'TRANSACTIONS_SYNC_MUTATION_DURING_PAGINATION') {
+            // Data changed mid-pagination — restart from the saved cursor
+            console.log(`[PLAID-PULL] Mutation during pagination for account ${account.id}, restarting`);
+            cursor = account.sync_cursor || '';
+            continue;
+          }
           console.error(`[PLAID-PULL] Sync error for account ${account.id}:`, err);
           break; // Skip this account, continue with others
         }
@@ -206,6 +211,14 @@ Deno.serve(async (req) => {
 
         cursor = syncData.next_cursor;
         hasMore = syncData.has_more;
+      }
+
+      // Persist cursor for next incremental sync
+      if (cursor) {
+        await adminClient
+          .from('plaid_accounts')
+          .update({ sync_cursor: cursor })
+          .eq('id', account.id);
       }
     }
 
