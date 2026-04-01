@@ -362,6 +362,15 @@ Deno.serve(async (req) => {
             break;
           }
 
+          case 'LOGIN_REPAIRED': {
+            console.log(`[PLAID-WEBHOOK] Login repaired for item ${itemId}`);
+            await supabase
+              .from('plaid_accounts')
+              .update({ status: 'active', error_code: null, error_message: null })
+              .eq('plaid_item_id', itemId);
+            break;
+          }
+
           case 'WEBHOOK_UPDATE_ACKNOWLEDGED': {
             console.log(`[PLAID-WEBHOOK] Webhook URL update acknowledged for item ${itemId}`);
             break;

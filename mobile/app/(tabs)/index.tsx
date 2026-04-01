@@ -177,6 +177,19 @@ export default function DashboardScreen() {
       open({
         onSuccess: async () => {
           // No token exchange needed in update mode
+          // Reset status immediately so banner dismisses without waiting for LOGIN_REPAIRED webhook
+          try {
+            const freshToken = await getFreshToken();
+            await fetch(`${ZULE_URL}/rest/v1/plaid_accounts?id=eq.${accountId}`, {
+              method: 'PATCH',
+              headers: {
+                'Authorization': `Bearer ${freshToken}`,
+                'Content-Type': 'application/json',
+                'apikey': ZULE_KEY,
+              },
+              body: JSON.stringify({ status: 'active', error_code: null, error_message: null }),
+            });
+          } catch { /* LOGIN_REPAIRED webhook is the fallback */ }
           await fetchProfile();
           setPlaidLoading(false);
         },
