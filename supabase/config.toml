@@ -37,6 +37,22 @@ verify_jwt = false
 # New sb_publishable_ keys not compatible with Edge JWT verification - verify inside function via JWKS
 verify_jwt = false
 
+[functions.plaid-create-link-token]
+# New sb_publishable_ keys not compatible with Edge JWT verification - verify inside function
+verify_jwt = false
+
+[functions.plaid-exchange-token]
+# New sb_publishable_ keys not compatible with Edge JWT verification - verify inside function
+verify_jwt = false
+
+[functions.plaid-pull-transactions]
+# New sb_publishable_ keys not compatible with Edge JWT verification - verify inside function
+verify_jwt = false
+
+[functions.plaid-webhook]
+# Plaid signs webhooks with its own JWT signature, not Supabase JWT
+verify_jwt = false
+
 [functions.stripe-webhook]
 # Stripe signs webhooks with its own signature, not JWT
 verify_jwt = false

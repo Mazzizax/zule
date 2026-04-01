@@ -38,6 +38,7 @@
     "react-dom": "19.0.0",
     "react-native": "0.79.6",
     "react-native-passkey": "^3.3.2",
+    "react-native-plaid-link-sdk": "^12.6.0",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1"
   },

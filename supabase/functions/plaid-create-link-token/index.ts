@@ -77,6 +77,8 @@ Deno.serve(async (req) => {
     // 2. CREATE LINK TOKEN via Plaid API
     const baseUrl = PLAID_BASE_URL[PLAID_ENV] || PLAID_BASE_URL.sandbox;
 
+    const webhookUrl = `${SUPABASE_URL}/functions/v1/plaid-webhook`;
+
     const plaidResponse = await fetch(`${baseUrl}/link/token/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -88,6 +90,7 @@ Deno.serve(async (req) => {
         products: ['transactions'],
         country_codes: ['US'],
         language: 'en',
+        webhook: webhookUrl,
       }),
     });
 
