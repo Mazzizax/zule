@@ -664,7 +664,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 3px;
   margin-bottom: 20px;
-  font-family: var(--font-mono);
+  font-family: 'Cormorant Garamond', serif;
 }
 
 .card h3 {
