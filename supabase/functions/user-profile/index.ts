@@ -233,7 +233,7 @@ Deno.serve(async (req) => {
       // Fetch linked Plaid accounts
       const { data: plaidAccounts } = await supabase
         .from('plaid_accounts')
-        .select('id, institution_name, connected_at')
+        .select('id, institution_name, connected_at, status, error_code, error_message')
         .eq('user_id', user.id);
 
       // Update last_seen (admin client — bypasses RLS)
