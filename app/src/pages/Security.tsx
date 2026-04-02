@@ -318,14 +318,16 @@ export default function Security() {
         <p className="info-note">
           If you suspect unauthorized access to your account, you can sign out of all devices.
         </p>
-        <button className="btn-secondary" onClick={handleSignOutAllDevices}>
+        <button
+          onClick={handleSignOutAllDevices}
+          style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '14px', fontWeight: 500, letterSpacing: '0.06em', color: 'var(--text-secondary)', background: 'none', border: '1px solid var(--border)', padding: '6px 14px', borderRadius: '4px', cursor: 'pointer' }}
+        >
           Sign Out All Devices
         </button>
         <button
-          className="btn-secondary"
           onClick={handleDeleteAccount}
           disabled={deleting}
-          style={{ marginTop: '12px', color: '#ef4444', borderColor: '#ef4444' }}
+          style={{ marginTop: '12px', fontFamily: "'Cormorant Garamond', serif", fontSize: '14px', fontWeight: 500, letterSpacing: '0.06em', color: 'var(--text-secondary)', background: 'none', border: '1px solid var(--border)', padding: '6px 14px', borderRadius: '4px', cursor: 'pointer' }}
         >
           {deleting ? 'Deleting...' : 'Delete Account'}
         </button>
