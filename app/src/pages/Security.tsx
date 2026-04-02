@@ -316,7 +316,7 @@ export default function Security() {
       <div className="card">
         <h2>Sessions</h2>
         <p className="info-note">
-          If you suspect unauthorized access to your account, you can sign out of all devices.
+          If you suspect unauthorized access to your account, sign out of all devices and change your password.
         </p>
         <button
           onClick={handleSignOutAllDevices}
@@ -324,13 +324,18 @@ export default function Security() {
         >
           Sign Out All Devices
         </button>
-        <button
-          onClick={handleDeleteAccount}
-          disabled={deleting}
-          style={{ marginTop: '12px', fontFamily: "'Cormorant Garamond', serif", fontSize: '14px', fontWeight: 500, letterSpacing: '0.06em', color: 'var(--text-secondary)', background: 'none', border: '1px solid var(--border)', padding: '6px 14px', borderRadius: '4px', cursor: 'pointer' }}
-        >
-          {deleting ? 'Deleting...' : 'Delete Account'}
-        </button>
+        <div style={{ borderTop: '1px solid var(--border)', marginTop: '20px', paddingTop: '16px' }}>
+          <p className="info-note" style={{ marginBottom: '12px' }}>
+            Warning: this will delete your account and all personal information.
+          </p>
+          <button
+            onClick={handleDeleteAccount}
+            disabled={deleting}
+            style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '14px', fontWeight: 500, letterSpacing: '0.06em', color: 'var(--text-secondary)', background: 'none', border: '1px solid var(--border)', padding: '6px 14px', borderRadius: '4px', cursor: 'pointer' }}
+          >
+            {deleting ? 'Deleting...' : 'Delete Account'}
+          </button>
+        </div>
       </div>
 
       {/* Account Info */}
