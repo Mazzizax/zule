@@ -628,14 +628,6 @@ export default function Dashboard() {
                 )}
                 <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
                   <button
-                    className="btn-secondary"
-                    onClick={() => pullTransactions(acct.id)}
-                    disabled={pullLoadingId === acct.id}
-                    style={{ fontSize: '11px', padding: '4px 10px' }}
-                  >
-                    {pullLoadingId === acct.id ? 'Pulling...' : 'Pull'}
-                  </button>
-                  <button
                     onClick={() => removeCard(acct.id)}
                     disabled={removeLoadingId === acct.id}
                     style={{ fontSize: '10px', color: '#ef4444', background: 'none', border: '1px solid #ef4444', padding: '3px 8px', borderRadius: '3px', cursor: 'pointer' }}
@@ -643,87 +635,10 @@ export default function Dashboard() {
                     {removeLoadingId === acct.id ? '...' : 'Remove'}
                   </button>
                 </div>
-                {pullResult && (
-                  <div className="success-message" style={{ marginTop: '6px', fontSize: '11px' }}>
-                    {pullResult}
-                  </div>
-                )}
               </div>
             ))}
-            <div style={{ marginTop: '16px' }}>
-              <button
-                className="btn-primary"
-                onClick={analyzeAndSend}
-                disabled={analyzeLoading}
-                style={{ marginTop: '8px' }}
-              >
-                {analyzeLoading ? 'Analyzing...' : 'Analyze & Mint Cards'}
-              </button>
-              {analyzeResult && (
-                <div className="success-message" style={{ marginTop: '12px' }}>
-                  {analyzeResult}
-                </div>
-              )}
-              {gameCards && gameCards.length > 0 && (
-                <button
-                  className="btn-primary"
-                  onClick={shredAndSend}
-                  disabled={shredLoading}
-                  style={{ marginTop: '8px' }}
-                >
-                  {shredLoading ? 'Shredding...' : 'Shred & Send'}
-                </button>
-              )}
-              {shredResult && (
-                <div className="success-message" style={{ marginTop: '12px' }}>
-                  {shredResult}
-                </div>
-              )}
-            </div>
-            {gameCards && gameCards.length > 0 && (
-              <div style={{ marginTop: '16px' }}>
-                <h3 style={{ fontSize: '12px', fontFamily: 'monospace', textTransform: 'uppercase', opacity: 0.5, marginBottom: '8px', letterSpacing: '0.1em' }}>
-                  Game Event Cards — This is what crosses the privacy boundary
-                </h3>
-                {gameCards.map((card: any, i: number) => (
-                  <div key={i} style={{
-                    border: '1px solid #333', borderRadius: '6px', padding: '12px',
-                    marginBottom: '8px', fontSize: '12px', fontFamily: 'monospace',
-                    background: '#0a0a0a',
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ color: '#fff', fontWeight: 'bold' }}>
-                        {card.merchant || 'Unknown'}
-                      </span>
-                      <span style={{ color: '#f59e0b' }}>
-                        {(card.xp_awards?.purchase_xp || 0) + (card.xp_awards?.sponsor_xp || 0) + (card.xp_awards?.quest_xp || 0)} XP
-                      </span>
-                    </div>
-                    {card.description && (
-                      <div style={{ color: '#aaa', fontSize: '11px', marginBottom: '4px' }}>
-                        {card.description}
-                      </div>
-                    )}
-                    {card.category && (
-                      <div style={{ color: '#666', fontSize: '10px', marginBottom: '4px' }}>
-                        {card.category}
-                      </div>
-                    )}
-                    <div style={{ color: '#666', fontSize: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      {card.xp_awards?.sponsor_xp > 0 && <span style={{ color: '#10b981' }}>sponsor:{card.xp_awards.sponsor_xp}</span>}
-                      {card.xp_awards?.quest_xp > 0 && <span style={{ color: '#a855f7' }}>quest:{card.xp_awards.quest_xp}</span>}
-                      {card.pool_hits?.length > 0 && <span style={{ color: '#10b981' }}>pools:{card.pool_hits.join(',')}</span>}
-                      {card.quest_template_hits?.length > 0 && <span style={{ color: '#a855f7' }}>quests:{card.quest_template_hits.join(',')}</span>}
-                      {card.activity_tag && <span style={{ color: '#06b6d4' }}>{card.activity_tag}</span>}
-                      {card.location_verified && <span style={{ color: '#22c55e' }}>LOC</span>}
-                      <span style={{ color: '#444' }}>tick:{card.cosmic_tick}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
             <div className="info-note" style={{ marginTop: '12px' }}>
-              <p>Pull transactions from Plaid, then analyze to see the enriched game event cards. Only game data reaches Goals — no financial details.</p>
+              <p>Transactions are processed automatically and delivered to Goals as game event cards.</p>
             </div>
           </>
         ) : (

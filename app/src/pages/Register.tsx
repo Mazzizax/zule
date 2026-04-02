@@ -66,8 +66,12 @@ export default function Register() {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <h1>CREATE ACCOUNT</h1>
-          <p>Join the fleet</p>
+          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400 }}>
+            <span className="metal-text" style={{ display: 'inline-block' }}>Z</span>
+            <span className="metal-text" style={{ display: 'inline-block' }}>U</span>
+            <span className="metal-text" style={{ display: 'inline-block' }}>L</span>
+            <span className="metal-text" style={{ display: 'inline-block' }}>E</span>
+          </h1>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
