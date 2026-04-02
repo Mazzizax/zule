@@ -120,22 +120,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener('storage', handleKillSignal);
 
-    // Check for existing session (within this tab's sessionStorage only)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session) startTimersRef.current();
-      setLoading(false);
-    });
+    let initialLoad = true;
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session) {
-        // Verify session actually exists in THIS tab's sessionStorage.
-        // Supabase BroadcastChannel can propagate sessions from other tabs —
-        // accept only sessions that are locally stored.
-        const { data: { session: localSession } } = await supabase.auth.getSession();
-        if (!localSession) return; // Cross-tab broadcast, ignore
+    // Listen for auth changes FIRST so we don't miss events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Skip cross-tab broadcasts: sessionStorage is per-tab,
+      // so if we have no session locally, ignore propagated ones.
+      // Check sessionStorage directly instead of calling getSession() to avoid deadlock.
+      if (session && !initialLoad) {
+        const storageKeys = Object.keys(sessionStorage);
+        const hasLocalSession = storageKeys.some(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+        if (!hasLocalSession) return;
       }
 
       setSession(session);
@@ -147,6 +142,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         stopTimersRef.current();
+      }
+
+      if (initialLoad) {
+        initialLoad = false;
+        setLoading(false);
+      }
+    });
+
+    // Trigger initial session check
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      // onAuthStateChange may have already fired — only set if still loading
+      if (initialLoad) {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session) startTimersRef.current();
+        initialLoad = false;
+        setLoading(false);
       }
     });
 
