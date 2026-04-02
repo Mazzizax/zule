@@ -110,11 +110,11 @@ export default function Register() {
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
 
-          <div className="auth-footer" style={{ position: 'relative', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+          <div className="auth-footer">
             <p>
               Already have an account? <Link to="/login">Sign In</Link>
             </p>
-            <p style={{ position: 'absolute', bottom: '-8px', left: '50%', transform: 'translateX(-50%)', fontSize: '11px', opacity: 0.5, background: 'var(--bg-card)', padding: '0 12px' }}>
+            <p style={{ marginTop: '16px', fontSize: '11px', opacity: 0.5, textAlign: 'center' }}>
               <a href="/privacy" onClick={(e) => { e.preventDefault(); window.open('/privacy', 'privacy', 'width=580,height=700,left=200,top=100'); }}>Privacy</a> · <a href="/terms" onClick={(e) => { e.preventDefault(); window.open('/terms', 'terms', 'width=580,height=700,left=200,top=100'); }}>Terms</a>
             </p>
           </div>

@@ -113,7 +113,7 @@ body {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 3px;
-  font-family: var(--font-mono);
+  font-family: 'Cormorant Garamond', serif;
 }
 
 .auth-form {
