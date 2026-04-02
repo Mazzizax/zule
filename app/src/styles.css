@@ -200,15 +200,17 @@ body {
 }
 
 .btn-signout {
-  background: var(--border);
+  background: none;
   color: var(--text-secondary);
-  border: none;
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 14px 20px;
+  font-family: 'Cormorant Garamond', serif;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
   width: 100%;
   margin-top: 20px;
 }

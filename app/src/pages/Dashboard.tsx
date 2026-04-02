@@ -630,7 +630,7 @@ export default function Dashboard() {
                   <button
                     onClick={() => removeCard(acct.id)}
                     disabled={removeLoadingId === acct.id}
-                    style={{ fontSize: '10px', color: '#ef4444', background: 'none', border: '1px solid #ef4444', padding: '3px 8px', borderRadius: '3px', cursor: 'pointer' }}
+                    style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '14px', fontWeight: 500, letterSpacing: '0.06em', color: 'var(--text-secondary)', background: 'none', border: '1px solid var(--border)', padding: '6px 14px', borderRadius: '4px', cursor: 'pointer' }}
                   >
                     {removeLoadingId === acct.id ? '...' : 'Remove'}
                   </button>
