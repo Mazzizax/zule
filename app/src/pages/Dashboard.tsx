@@ -728,7 +728,7 @@ export default function Dashboard() {
           </>
         ) : (
           <div className="info-note">
-            <p>Link your accounts for automated challenge verification and other features. See our <a href="/privacy" style={{ color: 'var(--zule-gold)', textDecoration: 'none' }}>privacy policy</a> and <a href="/terms" style={{ color: 'var(--zule-gold)', textDecoration: 'none' }}>terms</a> for full details.</p>
+            <p>Link your accounts for automated challenge verification and other features. See our <a href="/privacy" onClick={(e) => { e.preventDefault(); window.open('/privacy', 'privacy', 'width=580,height=700,left=200,top=100'); }} style={{ color: 'var(--zule-gold)', textDecoration: 'none' }}>privacy policy</a> and <a href="/terms" onClick={(e) => { e.preventDefault(); window.open('/terms', 'terms', 'width=580,height=700,left=200,top=100'); }} style={{ color: 'var(--zule-gold)', textDecoration: 'none' }}>terms</a> for full details.</p>
           </div>
         )}
         <div style={{ marginTop: '16px' }}>

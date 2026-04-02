@@ -115,7 +115,7 @@ export default function Register() {
               Already have an account? <Link to="/login">Sign In</Link>
             </p>
             <p style={{ position: 'absolute', bottom: '-8px', left: '50%', transform: 'translateX(-50%)', fontSize: '11px', opacity: 0.5, background: 'var(--bg-card)', padding: '0 12px' }}>
-              <Link to="/privacy">Privacy</Link> · <Link to="/terms">Terms</Link>
+              <a href="/privacy" onClick={(e) => { e.preventDefault(); window.open('/privacy', 'privacy', 'width=580,height=700,left=200,top=100'); }}>Privacy</a> · <a href="/terms" onClick={(e) => { e.preventDefault(); window.open('/terms', 'terms', 'width=580,height=700,left=200,top=100'); }}>Terms</a>
             </p>
           </div>
         </form>

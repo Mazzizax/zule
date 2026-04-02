@@ -108,7 +108,7 @@ export default function Layout() {
 
         <div className="sidebar-footer" style={{ position: 'relative' }}>
           <div style={{ position: 'absolute', top: '-18px', left: '50%', transform: 'translateX(-50%)', fontSize: '11px', opacity: 0.4, background: '#0c0b09', padding: '0 10px', whiteSpace: 'nowrap' }}>
-            <a href="/privacy" style={{ color: 'inherit', textDecoration: 'none' }}>Privacy</a> · <a href="/terms" style={{ color: 'inherit', textDecoration: 'none' }}>Terms</a>
+            <a href="/privacy" onClick={(e) => { e.preventDefault(); window.open('/privacy', 'privacy', 'width=580,height=700,left=200,top=100'); }} style={{ color: 'inherit', textDecoration: 'none' }}>Privacy</a> · <a href="/terms" onClick={(e) => { e.preventDefault(); window.open('/terms', 'terms', 'width=580,height=700,left=200,top=100'); }} style={{ color: 'inherit', textDecoration: 'none' }}>Terms</a>
           </div>
           <button className="btn-signout-sidebar" onClick={handleSignOut}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 512 512" className="nav-svg">
