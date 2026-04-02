@@ -637,9 +637,6 @@ export default function Dashboard() {
                 </div>
               </div>
             ))}
-            <div className="info-note" style={{ marginTop: '12px' }}>
-              <p>Transactions are processed automatically and delivered to Goals as game event cards.</p>
-            </div>
           </>
         ) : (
           <div className="info-note">
