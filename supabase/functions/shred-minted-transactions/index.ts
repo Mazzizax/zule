@@ -90,6 +90,16 @@ Deno.serve(async (req) => {
 
     console.log(`[SHRED] Shredded ${eligibleCount} minted transactions`)
 
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
+    await adminClient.rpc('log_audit_event', {
+      p_user_id: user.id,
+      p_action: 'transactions_shredded',
+      p_category: 'plaid',
+      p_ip_address: clientIp,
+      p_user_agent: req.headers.get('user-agent'),
+      p_metadata: { shredded_count: eligibleCount },
+    });
+
     return jsonResponse({
       shredded: eligibleCount,
     }, 200, origin)

@@ -522,6 +522,16 @@ async function handleVerifyAssertion(
     .update({ last_seen_at: new Date().toISOString() })
     .eq('id', credential.user_id)
 
+  // Audit log via RPC
+  await supabase.rpc('log_audit_event', {
+    p_user_id: credential.user_id,
+    p_action: 'passkey_auth_success',
+    p_category: 'auth',
+    p_ip_address: clientIp,
+    p_user_agent: req.headers.get('user-agent'),
+    p_metadata: { tier, credential_id: credentialId.substring(0, 16) },
+  });
+
   // Return tokens and user info
   return jsonResponse({
     user_id: credential.user_id,

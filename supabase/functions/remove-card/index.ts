@@ -158,6 +158,16 @@ Deno.serve(async (req) => {
       })
       .eq('id', user.id)
 
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
+    await adminClient.rpc('log_audit_event', {
+      p_user_id: user.id,
+      p_action: 'plaid_account_removed',
+      p_category: 'plaid',
+      p_ip_address: clientIp,
+      p_user_agent: req.headers.get('user-agent'),
+      p_metadata: { account_id: body.account_id || 'all' },
+    });
+
     return jsonResponse({ removed: true }, 200, origin)
 
   } catch (error) {

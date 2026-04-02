@@ -302,6 +302,16 @@ async function handleRegister(
     success: true,
   })
 
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
+  await supabase.rpc('log_audit_event', {
+    p_user_id: user.id,
+    p_action: 'passkey_registered',
+    p_category: 'auth',
+    p_ip_address: clientIp,
+    p_user_agent: req.headers.get('user-agent'),
+    p_metadata: { credential_id: credential.id.substring(0, 16), device_type: credentialDeviceType },
+  });
+
   console.log('[PASSKEY-REGISTER] Registration successful')
   return jsonResponse({ success: true, data }, 201, origin)
 }
@@ -349,6 +359,16 @@ async function handleDelete(
     metadata: { passkey_id },
     success: true,
   })
+
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
+  await supabase.rpc('log_audit_event', {
+    p_user_id: user.id,
+    p_action: 'passkey_deleted',
+    p_category: 'auth',
+    p_ip_address: clientIp,
+    p_user_agent: req.headers.get('user-agent'),
+    p_metadata: { passkey_id },
+  });
 
   return jsonResponse({ success: true }, 200, origin)
 }

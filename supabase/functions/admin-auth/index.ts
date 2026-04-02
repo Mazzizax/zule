@@ -241,6 +241,15 @@ Deno.serve(async (req) => {
       .update({ last_seen_at: new Date().toISOString() })
       .eq('id', authenticatedUserId)
 
+    await serviceClient.rpc('log_audit_event', {
+      p_user_id: authenticatedUserId,
+      p_action: 'admin_auth',
+      p_category: 'auth',
+      p_ip_address: clientIp,
+      p_user_agent: req.headers.get('user-agent'),
+      p_metadata: { admin_level: adminInfo.admin_level },
+    });
+
     return jsonResponse({
       admin_jwt: adminJwt,
       admin_level: adminInfo.admin_level,

@@ -195,7 +195,18 @@ Deno.serve(async (req) => {
       // Don't fail the request - payment can still be processed
     }
 
-    // 7. RETURN CLIENT SECRET
+    // 7. AUDIT LOG
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
+    await supabase.rpc('log_audit_event', {
+      p_user_id: user.id,
+      p_action: 'payment_created',
+      p_category: 'billing',
+      p_ip_address: clientIp,
+      p_user_agent: req.headers.get('user-agent'),
+      p_metadata: { product_id, product_type, amount_cents, payment_intent_id: paymentIntent.id },
+    });
+
+    // 8. RETURN CLIENT SECRET
     return jsonResponse(
       {
         client_secret: paymentIntent.client_secret,

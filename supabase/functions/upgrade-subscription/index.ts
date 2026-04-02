@@ -127,6 +127,16 @@ Deno.serve(async (req) => {
 
     // The webhook will handle updating user_subscriptions with the new tier
 
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
+    await adminClient.rpc('log_audit_event', {
+      p_user_id: user.id,
+      p_action: 'subscription_upgraded',
+      p_category: 'billing',
+      p_ip_address: clientIp,
+      p_user_agent: req.headers.get('user-agent'),
+      p_metadata: { service_id: body.service_id, new_price_id: body.new_price_id },
+    });
+
     return jsonResponse({ success: true }, 200, origin);
 
   } catch (error) {

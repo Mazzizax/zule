@@ -74,6 +74,16 @@ Deno.serve(async (req) => {
 
     console.log(`[DELETE-ACCOUNT] User ${userId.substring(0, 8)}... permanently deleted`)
 
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
+    await adminClient.rpc('log_audit_event', {
+      p_user_id: userId,
+      p_action: 'account_deleted',
+      p_category: 'account',
+      p_ip_address: clientIp,
+      p_user_agent: req.headers.get('user-agent'),
+      p_metadata: {},
+    });
+
     return jsonResponse({ deleted: true }, 200, origin)
 
   } catch (error) {
