@@ -52,14 +52,8 @@ export default function Login() {
     try {
       await signIn(email, password);
 
-      // If there's a callback URL, handle it
-      if (callbackUrl) {
-        // TODO: Generate token and redirect to callback
-        // For now, just navigate to dashboard
-        navigate('/');
-      } else {
-        navigate('/');
-      }
+      const returnTo = searchParams.get('return');
+      navigate(returnTo || '/');
     } catch (err: any) {
       setError(err.message || 'Invalid credentials');
     } finally {

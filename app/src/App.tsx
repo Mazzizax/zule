@@ -32,6 +32,7 @@ import './styles.css';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const location = window.location;
 
   if (loading) {
     return (
@@ -43,7 +44,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    const returnTo = location.pathname !== '/' ? `?return=${encodeURIComponent(location.pathname)}` : '';
+    return <Navigate to={`/login${returnTo}`} replace />;
   }
 
   return <>{children}</>;
