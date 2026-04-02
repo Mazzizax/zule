@@ -355,9 +355,35 @@ Deno.serve(async (req) => {
 
           case 'USER_PERMISSION_REVOKED': {
             console.log(`[PLAID-WEBHOOK] User revoked permission for item ${itemId}`);
+
+            // Fetch access token and call /item/remove to fully deactivate
+            const { data: revokedAccounts } = await supabase
+              .from('plaid_accounts')
+              .select('plaid_access_token')
+              .eq('plaid_item_id', itemId);
+
+            if (revokedAccounts && revokedAccounts.length > 0 && PLAID_CLIENT_ID && PLAID_SECRET) {
+              const revokeBaseUrl = PLAID_BASE_URL[PLAID_ENV] || PLAID_BASE_URL.sandbox;
+              await fetch(`${revokeBaseUrl}/item/remove`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  client_id: PLAID_CLIENT_ID,
+                  secret: PLAID_SECRET,
+                  access_token: revokedAccounts[0].plaid_access_token,
+                }),
+              });
+            }
+
+            // Clean up local data
+            await supabase
+              .from('user_transactions')
+              .delete()
+              .eq('plaid_account_id', itemId);
+
             await supabase
               .from('plaid_accounts')
-              .update({ status: 'revoked' })
+              .delete()
               .eq('plaid_item_id', itemId);
             break;
           }
