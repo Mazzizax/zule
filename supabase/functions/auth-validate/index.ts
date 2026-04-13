@@ -54,6 +54,11 @@ Deno.serve(async (req) => {
       return errorResponse('Email and password are required', 400, origin)
     }
 
+    // Extract client IP for audit logging
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || req.headers.get('x-real-ip')
+      || 'unknown'
+
     // Create service client
     const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
@@ -83,6 +88,20 @@ Deno.serve(async (req) => {
 
       // Return generic error (don't reveal if email exists)
       return errorResponse('Invalid credentials', 401, origin)
+    }
+
+    // Reject unverified email
+    if (!authData.user.email_confirmed_at) {
+      await serviceClient.from('audit_logs').insert({
+        action: 'auth_rejected_unverified',
+        action_category: 'auth',
+        ip_address: clientIp,
+        metadata: { email: email.toLowerCase() },
+        success: false,
+        error_message: 'Email not verified'
+      })
+
+      return errorResponse('Email not verified. Please check your inbox and verify your email.', 403, origin)
     }
 
     const userId = authData.user.id
