@@ -14,6 +14,7 @@ import Terms from './pages/Terms';
 import Subscriptions from './pages/Subscriptions';
 import Apps from './pages/Apps';
 import Loyalty from './pages/Loyalty';
+import VerifyEmail from './pages/VerifyEmail';
 import './styles.css';
 
 /**
@@ -31,7 +32,7 @@ import './styles.css';
  */
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, emailVerified } = useAuth();
   const location = window.location;
 
   if (loading) {
@@ -46,6 +47,33 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!user) {
     const returnTo = location.pathname !== '/' ? `?return=${encodeURIComponent(location.pathname)}` : '';
     return <Navigate to={`/login${returnTo}`} replace />;
+  }
+
+  if (!emailVerified) {
+    return <Navigate to="/verify-email" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function VerifyEmailGuard({ children }: { children: React.ReactNode }) {
+  const { user, loading, emailVerified } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner" />
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (emailVerified) {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
@@ -90,6 +118,13 @@ function AppRoutes() {
           </PublicRoute>
         }
       />
+
+      {/* Email verification gate */}
+      <Route path="/verify-email" element={
+        <VerifyEmailGuard>
+          <VerifyEmail />
+        </VerifyEmailGuard>
+      } />
 
       {/* Auth route for Vinzrik (no session required, uses passkey) */}
       <Route path="/auth" element={<Auth />} />

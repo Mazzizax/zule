@@ -27,9 +27,11 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  emailVerified: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resendVerification: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -200,13 +202,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   };
 
+  const resendVerification = async () => {
+    if (!user?.email) throw new Error('No email available');
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: user.email,
+    });
+    if (error) throw error;
+  };
+
+  const emailVerified = !!user?.email_confirmed_at;
+
   const value = {
     session,
     user,
     loading,
+    emailVerified,
     signIn,
     signUp,
     signOut,
+    resendVerification,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
