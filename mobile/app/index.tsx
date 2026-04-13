@@ -10,18 +10,22 @@ import { useAuth } from '../src/contexts/AuthContext';
  * If not authenticated: go to login
  */
 export default function Index() {
-  const { session, loading } = useAuth();
+  const { session, loading, emailVerified } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading) {
       if (session) {
-        router.replace('/(tabs)');
+        if (emailVerified) {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/verify-email');
+        }
       } else {
         router.replace('/login');
       }
     }
-  }, [session, loading]);
+  }, [session, loading, emailVerified]);
 
   return (
     <View style={styles.container}>

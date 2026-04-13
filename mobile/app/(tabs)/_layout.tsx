@@ -9,15 +9,19 @@ import { useRouter } from 'expo-router';
  * Dashboard | Profile | Security
  */
 export default function TabsLayout() {
-  const { session, loading } = useAuth();
+  const { session, loading, emailVerified } = useAuth();
   const router = useRouter();
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated, or verify-email if unverified
   useEffect(() => {
-    if (!loading && !session) {
-      router.replace('/login');
+    if (!loading) {
+      if (!session) {
+        router.replace('/login');
+      } else if (!emailVerified) {
+        router.replace('/verify-email');
+      }
     }
-  }, [session, loading]);
+  }, [session, loading, emailVerified]);
 
   return (
     <Tabs
