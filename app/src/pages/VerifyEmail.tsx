@@ -1,18 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function VerifyEmail() {
-  const { user, resendVerification, signOut } = useAuth();
+  const { user, resendVerification, signOut, refreshUser, emailVerified } = useAuth();
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
+  const [checking, setChecking] = useState(false);
+
+  // When tab regains focus, refresh user to pick up verification
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        refreshUser();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [refreshUser]);
+
+  // Auto-redirect when verified
+  useEffect(() => {
+    if (emailVerified) {
+      window.location.href = '/';
+    }
+  }, [emailVerified]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
     const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
     return () => clearTimeout(timer);
   }, [cooldown]);
+
+  const handleCheckVerification = useCallback(async () => {
+    setChecking(true);
+    setError(null);
+    try {
+      await refreshUser();
+      // If still not verified after refresh, show message
+      // (emailVerified effect above handles the redirect if verified)
+      setTimeout(() => {
+        setChecking(false);
+        setError('Email not verified yet. Check your inbox.');
+      }, 500);
+    } catch (err: any) {
+      setError(err.message || 'Failed to check verification status');
+      setChecking(false);
+    }
+  }, [refreshUser]);
 
   const handleResend = async () => {
     setSending(true);
@@ -74,6 +110,15 @@ export default function VerifyEmail() {
               : cooldown > 0
                 ? `Resend in ${cooldown}s`
                 : 'Resend Verification Email'}
+          </button>
+
+          <button
+            className="btn-primary"
+            onClick={handleCheckVerification}
+            disabled={checking}
+            style={{ background: '#2a5a8a' }}
+          >
+            {checking ? 'Checking...' : "I've Verified My Email"}
           </button>
 
           <button

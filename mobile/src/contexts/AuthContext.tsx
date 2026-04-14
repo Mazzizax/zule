@@ -11,6 +11,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   emailVerified: boolean;
+  refreshUser: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ session: Session }>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -79,6 +80,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshUser = async () => {
+    const { data: { user: freshUser } } = await supabase.auth.getUser();
+    if (freshUser) setUser(freshUser);
+  };
+
   const resendVerification = async () => {
     if (!user?.email) throw new Error('No email available');
     const { error } = await supabase.auth.resend({
@@ -95,6 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     loading,
     emailVerified,
+    refreshUser,
     signIn,
     signUp,
     signOut,

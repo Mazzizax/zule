@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  AppState,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/contexts/AuthContext';
@@ -17,12 +18,24 @@ import { useAuth } from '../src/contexts/AuthContext';
  */
 export default function VerifyEmailScreen() {
   const router = useRouter();
-  const { user, resendVerification, signOut, emailVerified } = useAuth();
+  const { user, resendVerification, signOut, emailVerified, refreshUser } = useAuth();
 
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
+
+  const [checking, setChecking] = useState(false);
+
+  // When app returns to foreground, refresh user to pick up verification
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        refreshUser();
+      }
+    });
+    return () => subscription.remove();
+  }, [refreshUser]);
 
   useEffect(() => {
     if (emailVerified) {
@@ -35,6 +48,23 @@ export default function VerifyEmailScreen() {
     const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
     return () => clearTimeout(timer);
   }, [cooldown]);
+
+  const handleCheckVerification = useCallback(async () => {
+    setChecking(true);
+    setError(null);
+    try {
+      await refreshUser();
+      // If still not verified after refresh, show message
+      // (emailVerified effect above handles the redirect if verified)
+      setTimeout(() => {
+        setChecking(false);
+        setError('Email not verified yet. Check your inbox.');
+      }, 500);
+    } catch (err: any) {
+      setError(err.message || 'Failed to check verification status');
+      setChecking(false);
+    }
+  }, [refreshUser]);
 
   const handleResend = async () => {
     setSending(true);
@@ -93,6 +123,18 @@ export default function VerifyEmailScreen() {
             <Text style={styles.buttonText}>
               {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend Verification Email'}
             </Text>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.checkButton, checking && styles.buttonDisabled]}
+          onPress={handleCheckVerification}
+          disabled={checking}
+        >
+          {checking ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>I've Verified My Email</Text>
           )}
         </TouchableOpacity>
 
@@ -185,6 +227,9 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: '#4CAF50',
+  },
+  checkButton: {
+    backgroundColor: '#2a5a8a',
   },
   secondaryButton: {
     backgroundColor: 'transparent',
