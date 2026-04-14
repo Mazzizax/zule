@@ -25,19 +25,6 @@ export default function Login() {
   const callbackUrl = searchParams.get('callback');
   const appId = searchParams.get('app_id');
 
-  // Check for expired/invalid verification link
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash) {
-      const params = new URLSearchParams(hash.substring(1));
-      const errorDesc = params.get('error_description') || params.get('error');
-      if (errorDesc) {
-        setError('This verification link has expired or has already been used. Please sign in or request a new one.');
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
-      }
-    }
-  }, []);
-
   // Check WebAuthn support on mount
   useEffect(() => {
     const checkWebAuthn = async () => {
