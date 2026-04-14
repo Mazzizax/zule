@@ -22,6 +22,7 @@ export const supabase: SupabaseClient = createClient(
   zulePublishableKey,
   {
     auth: {
+      flowType: 'pkce',
       storage: AsyncStorage,
       autoRefreshToken: true,
       persistSession: true,
