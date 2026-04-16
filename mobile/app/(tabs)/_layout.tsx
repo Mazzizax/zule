@@ -1,67 +1,37 @@
-import { Tabs } from 'expo-router';
-import { useAuth } from '../../src/contexts/AuthContext';
-import { useEffect } from 'react';
-import { useRouter } from 'expo-router';
+import { Tabs } from 'expo-router'
 
-/**
- * Tabs Layout for authenticated screens
- *
- * Dashboard | Profile | Security
- */
-export default function TabsLayout() {
-  const { session, loading, emailVerified } = useAuth();
-  const router = useRouter();
-
-  // Redirect to login if not authenticated, or verify-email if unverified
-  useEffect(() => {
-    if (!loading) {
-      if (!session) {
-        router.replace('/login');
-      } else if (!emailVerified) {
-        router.replace('/verify-email');
-      }
-    }
-  }, [session, loading, emailVerified]);
-
+export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarStyle: {
-          backgroundColor: '#252542',
-          borderTopColor: '#333',
-        },
-        tabBarActiveTintColor: '#4CAF50',
-        tabBarInactiveTintColor: '#888',
-        headerStyle: {
-          backgroundColor: '#1a1a2e',
-        },
+        tabBarStyle: { backgroundColor: '#1a1a2e', borderTopColor: '#333' },
+        tabBarActiveTintColor: '#4fc3f7',
+        tabBarInactiveTintColor: '#666',
+        headerStyle: { backgroundColor: '#1a1a2e' },
         headerTintColor: '#fff',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
-          tabBarLabel: 'Home',
+          title: 'Auth Requests',
+          tabBarLabel: 'Requests',
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="machines"
         options={{
-          title: 'Profile',
-          tabBarLabel: 'Profile',
+          title: 'Machines',
+          tabBarLabel: 'Machines',
         }}
       />
       <Tabs.Screen
-        name="security"
+        name="settings"
         options={{
-          title: 'Security',
-          tabBarLabel: 'Security',
+          title: 'Settings',
+          tabBarLabel: 'Settings',
         }}
       />
     </Tabs>
-  );
+  )
 }

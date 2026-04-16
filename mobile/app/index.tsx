@@ -1,44 +1,21 @@
-import { useEffect } from 'react';
-import { useRouter } from 'expo-router';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { useAuth } from '../src/contexts/AuthContext';
+import { Redirect } from 'expo-router'
+import { useAuth } from '../src/contexts/AuthContext'
+import { ActivityIndicator, View } from 'react-native'
 
-/**
- * Index Route - Redirect based on auth state
- *
- * If authenticated: go to dashboard (tabs)
- * If not authenticated: go to login
- */
 export default function Index() {
-  const { session, loading, emailVerified } = useAuth();
-  const router = useRouter();
+  const { session, loading } = useAuth()
 
-  useEffect(() => {
-    if (!loading) {
-      if (session) {
-        if (emailVerified) {
-          router.replace('/(tabs)');
-        } else {
-          router.replace('/verify-email');
-        }
-      } else {
-        router.replace('/login');
-      }
-    }
-  }, [session, loading, emailVerified]);
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f0f23' }}>
+        <ActivityIndicator size="large" color="#4fc3f7" />
+      </View>
+    )
+  }
 
-  return (
-    <View style={styles.container}>
-      <ActivityIndicator size="large" color="#4CAF50" />
-    </View>
-  );
+  if (session) {
+    return <Redirect href="/(tabs)" />
+  }
+
+  return <Redirect href="/login" />
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#1a1a2e',
-  },
-});

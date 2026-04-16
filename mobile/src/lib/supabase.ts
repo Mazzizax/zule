@@ -1,33 +1,16 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
+import { createClient } from '@supabase/supabase-js'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
-/**
- * Supabase Client Configuration for Zule Mobile App
- *
- * Uses AsyncStorage for session persistence on mobile.
- * Note: ghost_secret is stored separately in SecureStore for maximum security.
- */
+const SUPABASE_URL = 'https://sgjulzvgcyotebbexfue.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnanVsenZnY3lvdGViYmV4ZnVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY1MzM4NDIsImV4cCI6MjA1MjEwOTg0Mn0.jH2E3v8GWRZ29MXX_nwQV4JhRPcXq0G-DF6UkTLYenM'
 
-// Zule project credentials
-const zuleUrl = process.env.EXPO_PUBLIC_ZULE_URL || '';
-const zulePublishableKey = process.env.EXPO_PUBLIC_ZULE_PUBLISHABLE_KEY || '';
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    storage: AsyncStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  },
+})
 
-/**
- * Zule Supabase client
- * Uses AsyncStorage for token persistence on mobile.
- */
-export const supabase: SupabaseClient = createClient(
-  zuleUrl,
-  zulePublishableKey,
-  {
-    auth: {
-      storage: AsyncStorage,
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: false, // Disabled for mobile - we handle deep links manually
-    },
-  }
-);
-
-export default supabase;
+export { SUPABASE_URL }
