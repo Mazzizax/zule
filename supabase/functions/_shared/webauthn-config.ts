@@ -33,6 +33,8 @@ export const EXPECTED_ORIGINS = [
   'android:apk-key-hash:-sYXRdwJA3hvue3mKpYrOZ9zSPC7b4mbgzJmdZEDO5w',
   // Android - Legacy (com.xenon.gatekeeper, remove after May 8, 2026)
   'android:apk-key-hash:Uoi_lyYD2kQgh8Q-hPG3jyij0Bn5n9e8yKnxbdc8zfk',
+  // Android - Zule Mobile (com.mazzizax.zule, debug keystore)
+  'android:apk-key-hash:7XrT7DwGTOXZgUhB78XwgBc-sQatZaRGvJvEEDhDvPU',
 ]
 
 // Challenge expiry time (5 minutes)
