@@ -127,6 +127,25 @@ const ENDPOINT_LIMITS: Record<string, RateLimitRule[]> = {
   'pair-client': [
     { suffix: 'min', maxRequests: 10, windowSeconds: 60 },
   ],
+
+  // ── Machine auth ────────────────────────────────────
+  'machine-register': [
+    { suffix: 'min', maxRequests: 5, windowSeconds: 60 },
+    { suffix: 'hr', maxRequests: 15, windowSeconds: 3600 },
+  ],
+  'machine-auth-request': [
+    { suffix: 'min', maxRequests: 10, windowSeconds: 60 },
+  ],
+  'machine-auth-status': [
+    { suffix: 'min', maxRequests: 60, windowSeconds: 60 },  // high — polling
+  ],
+  'machine-auth-pending': [
+    { suffix: 'min', maxRequests: 30, windowSeconds: 60 },
+  ],
+  'machine-auth-approve': [
+    { suffix: 'min', maxRequests: 10, windowSeconds: 60 },
+    { suffix: 'hr', maxRequests: 60, windowSeconds: 3600 },
+  ],
 }
 
 /** Fallback limits for any endpoint not explicitly configured */
