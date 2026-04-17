@@ -143,36 +143,30 @@ fun DashboardScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        // ── Two-column card grid: Account + Subscriptions ──
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            // Account Card
-            ZuleCard(modifier = Modifier.weight(1f)) {
-                CardSectionTitle("Account")
-                InfoRow(label = "Email:", value = state.email ?: "")
-                InfoRow(label = "Member Since:", value = formatDate(state.memberSince))
-                InfoRow(label = "Last Active:", value = formatDate(state.lastActive), showDivider = false)
-            }
+        // ── Account + Subscriptions cards — stacked on mobile ──
+        ZuleCard(modifier = Modifier.fillMaxWidth()) {
+            CardSectionTitle("Account")
+            InfoRow(label = "Email:", value = state.email ?: "")
+            InfoRow(label = "Member Since:", value = formatDate(state.memberSince))
+            InfoRow(label = "Last Active:", value = formatDate(state.lastActive), showDivider = false)
+        }
 
-            // Subscriptions Card
-            ZuleCard(modifier = Modifier.weight(1f)) {
-                CardSectionTitle("Subscriptions")
-                val activeSubs = state.subscriptions.filter { it.status == "active" }
-                if (activeSubs.isNotEmpty()) {
-                    activeSubs.forEach { sub ->
-                        SubscriptionRow(
-                            subscription = sub,
-                            onClick = { onNavigateToSubscriptions?.invoke(sub.serviceId) },
-                        )
-                    }
-                } else {
-                    // Default citizen tier badge for Goals
-                    SubscriptionDefaultRow(
-                        onClick = { onNavigateToSubscriptions?.invoke("goals") },
+        Spacer(modifier = Modifier.height(16.dp))
+
+        ZuleCard(modifier = Modifier.fillMaxWidth()) {
+            CardSectionTitle("Subscriptions")
+            val activeSubs = state.subscriptions.filter { it.status == "active" }
+            if (activeSubs.isNotEmpty()) {
+                activeSubs.forEach { sub ->
+                    SubscriptionRow(
+                        subscription = sub,
+                        onClick = { onNavigateToSubscriptions?.invoke(sub.serviceId) },
                     )
                 }
+            } else {
+                SubscriptionDefaultRow(
+                    onClick = { onNavigateToSubscriptions?.invoke("goals") },
+                )
             }
         }
 

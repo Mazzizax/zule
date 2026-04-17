@@ -7,6 +7,10 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -109,8 +113,9 @@ fun MainNavigation(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
                     .background(Color(0xFF0F0E0C))
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .height(56.dp)
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -199,7 +204,8 @@ fun MainNavigation(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 20.dp)
+                    .windowInsetsPadding(WindowInsets.navigationBars),
             ) {
                 NavHost(
                     navController = navController,
@@ -354,6 +360,7 @@ fun MainNavigation(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .windowInsetsPadding(WindowInsets.navigationBars)
                                 .clickable {
                                     menuOpen = false
                                     onSignOut()

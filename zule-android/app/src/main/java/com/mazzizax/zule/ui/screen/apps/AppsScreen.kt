@@ -95,21 +95,17 @@ fun AppsScreen() {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 2-column grid
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            apps.forEach { app ->
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(ZuleColors.Surface)
-                        .border(1.dp, ZuleColors.Border, RoundedCornerShape(4.dp))
-                        .padding(20.dp),
-                ) {
+        // App cards — stacked on mobile
+        apps.forEach { app ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(ZuleColors.Surface)
+                    .border(1.dp, ZuleColors.Border, RoundedCornerShape(4.dp))
+                    .padding(20.dp),
+            ) {
                     // Icon + name row
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -154,7 +150,6 @@ fun AppsScreen() {
                             textAlign = TextAlign.Center,
                         )
                     }
-                }
             }
         }
 

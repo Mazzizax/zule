@@ -302,22 +302,17 @@ private fun TierDetail(
         modifier = Modifier.padding(bottom = 16.dp),
     )
 
-    // Tier cards in a grid — web uses CSS grid 3 columns; on Android use FlowRow
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        service.tiers.forEach { tier ->
-            TierCard(
-                service = service,
-                tier = tier,
-                state = state,
-                viewModel = viewModel,
-                context = context,
-                modifier = Modifier.weight(1f),
-            )
-        }
+    // Tier cards — stacked vertically on mobile
+    service.tiers.forEach { tier ->
+        TierCard(
+            service = service,
+            tier = tier,
+            state = state,
+            viewModel = viewModel,
+            context = context,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(12.dp))
     }
 
     // ── Upgrade confirmation inline ──
