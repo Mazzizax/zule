@@ -3,6 +3,9 @@ package com.mazzizax.zule.data.repository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.functions
 import io.ktor.client.call.body
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -42,7 +45,8 @@ class SubscriptionRepository(private val supabase: SupabaseClient) {
     ): Result<String> {
         return try {
             val response = supabase.functions.invoke("create-checkout") {
-                body = buildJsonObject {
+                contentType(ContentType.Application.Json)
+                setBody(buildJsonObject {
                     put("price_id", priceId)
                     put("service_id", serviceId)
                     productId?.let { put("product_id", it) }
@@ -50,7 +54,7 @@ class SubscriptionRepository(private val supabase: SupabaseClient) {
                     // Deep link URLs for Android — the activity handles the callback
                     put("success_url", "zule://subscriptions?success=true&service=$serviceId")
                     put("cancel_url", "zule://subscriptions?service=$serviceId")
-                }
+                }.toString())
             }
             val responseBody = response.body<String>()
             val data = json.parseToJsonElement(responseBody) as JsonObject
@@ -72,9 +76,10 @@ class SubscriptionRepository(private val supabase: SupabaseClient) {
     suspend fun cancelSubscription(serviceId: String): Result<Unit> {
         return try {
             supabase.functions.invoke("cancel-subscription") {
-                body = buildJsonObject {
+                contentType(ContentType.Application.Json)
+                setBody(buildJsonObject {
                     put("service_id", serviceId)
-                }
+                }.toString())
             }
             Result.success(Unit)
         } catch (e: Exception) {
@@ -93,10 +98,11 @@ class SubscriptionRepository(private val supabase: SupabaseClient) {
     suspend fun upgradeSubscription(serviceId: String, newPriceId: String): Result<Unit> {
         return try {
             supabase.functions.invoke("upgrade-subscription") {
-                body = buildJsonObject {
+                contentType(ContentType.Application.Json)
+                setBody(buildJsonObject {
                     put("service_id", serviceId)
                     put("new_price_id", newPriceId)
-                }
+                }.toString())
             }
             Result.success(Unit)
         } catch (e: Exception) {

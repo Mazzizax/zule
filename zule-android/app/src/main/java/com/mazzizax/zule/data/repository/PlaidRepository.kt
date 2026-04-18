@@ -3,6 +3,9 @@ package com.mazzizax.zule.data.repository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.functions
 import io.ktor.client.call.body
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -39,7 +42,8 @@ class PlaidRepository(private val supabase: SupabaseClient) {
     suspend fun exchangePublicToken(publicToken: String): Result<Unit> {
         return try {
             supabase.functions.invoke("plaid-exchange-token") {
-                body = buildJsonObject { put("public_token", publicToken) }
+                contentType(ContentType.Application.Json)
+                setBody(buildJsonObject { put("public_token", publicToken) }.toString())
             }
             Result.success(Unit)
         } catch (e: Exception) {
@@ -50,7 +54,8 @@ class PlaidRepository(private val supabase: SupabaseClient) {
     suspend fun pullTransactions(accountId: String): Result<String> {
         return try {
             val response = supabase.functions.invoke("plaid-pull-transactions") {
-                body = buildJsonObject { put("account_id", accountId) }
+                contentType(ContentType.Application.Json)
+                setBody(buildJsonObject { put("account_id", accountId) }.toString())
             }
             val responseBody = response.body<String>()
             Result.success(responseBody)
@@ -82,7 +87,8 @@ class PlaidRepository(private val supabase: SupabaseClient) {
     suspend fun removeCard(accountId: String): Result<Unit> {
         return try {
             supabase.functions.invoke("remove-card") {
-                body = buildJsonObject { put("account_id", accountId) }
+                contentType(ContentType.Application.Json)
+                setBody(buildJsonObject { put("account_id", accountId) }.toString())
             }
             Result.success(Unit)
         } catch (e: Exception) {
