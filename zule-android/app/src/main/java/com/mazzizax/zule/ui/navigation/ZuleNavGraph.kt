@@ -118,14 +118,21 @@ fun ZuleNavGraph(
             val user = (sessionStatus as SessionStatus.Authenticated).session.user
             if (user != null) {
                 val isVerified = user.emailConfirmedAt != null
-                LaunchedEffect(isVerified, pendingRecovery) {
+                val deviceHasPasskey = com.mazzizax.zule.util.DeviceFlags
+                    .isPasskeyEnrolledOnDevice(context)
+                LaunchedEffect(isVerified, pendingRecovery, deviceHasPasskey) {
                     val dest = when {
                         // Recovery deep-link takes precedence: the user tapped
                         // a password-reset link in email; force a new password
                         // before handing them back to normal nav.
                         pendingRecovery -> Routes.PASSWORD_RECOVERY
-                        isVerified -> Routes.MAIN
-                        else -> Routes.VERIFY_EMAIL
+                        !isVerified -> Routes.VERIFY_EMAIL
+                        // Verified + no passkey on this device → nudge enrol.
+                        // User can Skip to fall through to MAIN, or enrol and
+                        // continue to MAIN afterwards. Once DeviceFlags is
+                        // marked, the nudge doesn't repeat on this device.
+                        !deviceHasPasskey -> Routes.PASSKEY_ENROLL
+                        else -> Routes.MAIN
                     }
                     navController.navigate(dest) {
                         popUpTo(0) { inclusive = true }
@@ -181,6 +188,29 @@ fun ZuleNavGraph(
                     },
                     onCancel = {
                         navController.navigate(Routes.LOGIN) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                )
+            }
+
+            composable(Routes.PASSKEY_ENROLL) {
+                com.mazzizax.zule.ui.screen.passkey.PasskeyEnrollScreen(
+                    onEnrolled = {
+                        // PasskeyEnrollViewModel.enrollStrict already called
+                        // DeviceFlags.markPasskeyEnrolled on success; next
+                        // sign-in sees enrolled=true and routes to MAIN.
+                        navController.navigate(Routes.MAIN) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    onSkip = {
+                        // Skip is session-only. LaunchedEffect on the top-
+                        // level sessionStatus observer won't re-fire this
+                        // session (keys haven't changed), so user lands on
+                        // MAIN and stays. On a future sign-out → sign-in
+                        // cycle they'll get re-nudged, which is intended.
+                        navController.navigate(Routes.MAIN) {
                             popUpTo(0) { inclusive = true }
                         }
                     },
