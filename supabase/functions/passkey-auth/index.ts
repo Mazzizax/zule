@@ -59,10 +59,13 @@ async function cleanupExpiredChallenges(supabase: ReturnType<typeof createClient
 }
 
 /**
- * Check rate limit for failed authentication attempts
- * Returns { allowed: boolean, retryAfter?: number }
+ * Check rate limit for failed authentication attempts.
+ * Renamed from checkRateLimit to avoid shadowing the imported shared helper
+ * of the same name (which has a different signature); the shadow caused a
+ * 502 at line ~134 because the shared signature (req, functionName) was
+ * called but resolved to this local (identifier: string) definition.
  */
-async function checkRateLimit(
+async function checkFailedAttemptLockout(
   supabase: ReturnType<typeof createClient>,
   identifier: string
 ): Promise<{ allowed: boolean; retryAfter?: number }> {
@@ -168,7 +171,7 @@ async function handleGetChallenge(
   }
 
   // Check rate limit before processing
-  const rateCheck = await checkRateLimit(supabase, clientIp)
+  const rateCheck = await checkFailedAttemptLockout(supabase, clientIp)
   if (!rateCheck.allowed) {
     return errorResponse(
       `Too many failed attempts. Try again in ${rateCheck.retryAfter} seconds.`,
@@ -259,7 +262,7 @@ async function handleVerifyAssertion(
   const credentialId = authResponse.id
 
   // Check rate limit before processing
-  const rateCheck = await checkRateLimit(supabase, clientIp)
+  const rateCheck = await checkFailedAttemptLockout(supabase, clientIp)
   if (!rateCheck.allowed) {
     return errorResponse(
       `Too many failed attempts. Try again in ${rateCheck.retryAfter} seconds.`,
@@ -532,9 +535,9 @@ async function handleVerifyAssertion(
     p_metadata: { tier, credential_id: credentialId.substring(0, 16) },
   });
 
-  // Return tokens and user info
+  // user_id must never leave this endpoint in plaintext — the attestation
+  // is the only blind carrier of identity intended for Vinzrik.
   return jsonResponse({
-    user_id: credential.user_id,
     tier: tier,
     verification_token: verificationToken,
     attestation: attestation,

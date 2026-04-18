@@ -60,7 +60,14 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
+    val deviceHasPasskey by viewModel.deviceHasPasskey.collectAsState()
+    val forcePasswordMode by viewModel.forcePasswordMode.collectAsState()
+    val sessionExpired by viewModel.sessionExpired.collectAsState()
     val activity = LocalContext.current as Activity
+    // Compact mode: device has a passkey and the user hasn't asked for
+    // password-instead. Email + password fields collapse; only the passkey
+    // button + an opt-out link remain.
+    val compact = deviceHasPasskey && !forcePasswordMode
 
     Box(
         modifier = Modifier
@@ -108,6 +115,26 @@ fun LoginScreen(
                 ),
             )
 
+            // Session expired banner — set by SessionManager when the 8-min
+            // inactivity or 25-min hard timeout fires.
+            if (sessionExpired) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Your session timed out. Sign in again to continue.",
+                    style = TextStyle(
+                        fontFamily = CormorantGaramond,
+                        fontSize = 12.sp,
+                        color = ZuleColors.TextMuted,
+                        textAlign = TextAlign.Center,
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, ZuleColors.Border, RoundedCornerShape(4.dp))
+                        .padding(10.dp)
+                        .clickable { viewModel.acknowledgeSessionExpired() },
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             // Passkey button — matches .btn-passkey CSS:
@@ -149,88 +176,7 @@ fun LoginScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Divider: "or use email"
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = ZuleColors.Border,
-                )
-                Text(
-                    text = "or use email",
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                    style = TextStyle(
-                        fontFamily = CormorantGaramond,
-                        fontSize = 12.sp,
-                        color = ZuleColors.TextMuted,
-                    ),
-                )
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = ZuleColors.Border,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Email field
-            AuthTextField(
-                value = state.email,
-                onValueChange = viewModel::onEmailChange,
-                placeholder = "Email",
-                keyboardType = KeyboardType.Email,
-                enabled = !state.isLoading,
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Password field
-            AuthTextField(
-                value = state.password,
-                onValueChange = viewModel::onPasswordChange,
-                placeholder = "Password",
-                keyboardType = KeyboardType.Password,
-                isPassword = true,
-                enabled = !state.isLoading,
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Sign In button
-            Button(
-                onClick = { viewModel.signIn(onLoginSuccess) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(4.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent,
-                ),
-                enabled = !state.isLoading,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MetalSurfaceBrush, RoundedCornerShape(4.dp)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = if (state.isLoading) "Signing in..." else "Sign In",
-                        style = TextStyle(
-                            fontFamily = CormorantGaramond,
-                            fontWeight = FontWeight.W500,
-                            fontSize = 18.sp,
-                            color = ZuleColors.Background,
-                        ),
-                    )
-                }
-            }
-
-            // Error banner + actionable hint row
+            // Error banner (shared between compact + full modes)
             if (state.error != null) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
@@ -250,18 +196,125 @@ fun LoginScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            if (compact) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Use password instead",
+                    modifier = Modifier.clickable { viewModel.onUsePasswordInstead() },
+                    style = TextStyle(
+                        fontFamily = CormorantGaramond,
+                        fontSize = 13.sp,
+                        color = ZuleColors.Primary,
+                    ),
+                )
+            } else {
+                Spacer(modifier = Modifier.height(16.dp))
 
-            // Forgot password?
-            Text(
-                text = "Forgot password?",
-                modifier = Modifier.clickable(onClick = onNavigateToForgotPassword),
-                style = TextStyle(
-                    fontFamily = CormorantGaramond,
-                    fontSize = 13.sp,
-                    color = ZuleColors.Primary,
-                ),
-            )
+                // Divider: "or use email"
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = ZuleColors.Border,
+                    )
+                    Text(
+                        text = "or use email",
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        style = TextStyle(
+                            fontFamily = CormorantGaramond,
+                            fontSize = 12.sp,
+                            color = ZuleColors.TextMuted,
+                        ),
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = ZuleColors.Border,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Email field
+                AuthTextField(
+                    value = state.email,
+                    onValueChange = viewModel::onEmailChange,
+                    placeholder = "Email",
+                    keyboardType = KeyboardType.Email,
+                    enabled = !state.isLoading,
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Password field
+                AuthTextField(
+                    value = state.password,
+                    onValueChange = viewModel::onPasswordChange,
+                    placeholder = "Password",
+                    keyboardType = KeyboardType.Password,
+                    isPassword = true,
+                    enabled = !state.isLoading,
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Sign In button
+                Button(
+                    onClick = { viewModel.signIn(onLoginSuccess) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(4.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Transparent,
+                    ),
+                    enabled = !state.isLoading,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MetalSurfaceBrush, RoundedCornerShape(4.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = if (state.isLoading) "Signing in..." else "Sign In",
+                            style = TextStyle(
+                                fontFamily = CormorantGaramond,
+                                fontWeight = FontWeight.W500,
+                                fontSize = 18.sp,
+                                color = ZuleColors.Background,
+                            ),
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Forgot password?
+                Text(
+                    text = "Forgot password?",
+                    modifier = Modifier.clickable(onClick = onNavigateToForgotPassword),
+                    style = TextStyle(
+                        fontFamily = CormorantGaramond,
+                        fontSize = 13.sp,
+                        color = ZuleColors.Primary,
+                    ),
+                )
+
+                if (deviceHasPasskey) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Back to passkey sign-in",
+                        modifier = Modifier.clickable { viewModel.onBackToPasskey() },
+                        style = TextStyle(
+                            fontFamily = CormorantGaramond,
+                            fontSize = 12.sp,
+                            color = ZuleColors.TextMuted,
+                        ),
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(20.dp))
 

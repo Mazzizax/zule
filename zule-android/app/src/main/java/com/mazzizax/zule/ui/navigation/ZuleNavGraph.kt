@@ -110,18 +110,26 @@ fun ZuleNavGraph(
         }
         is SessionStatus.Authenticated -> {
             val pendingRecovery by com.mazzizax.zule.util.RecoverySignal.pendingRecovery.collectAsState()
-            val isVerified = authRepository.isEmailVerified()
-            LaunchedEffect(isVerified, pendingRecovery) {
-                val dest = when {
-                    // Recovery deep-link takes precedence: the user tapped a
-                    // password-reset link in email; force a new password
-                    // before handing them back to normal nav.
-                    pendingRecovery -> Routes.PASSWORD_RECOVERY
-                    isVerified -> Routes.MAIN
-                    else -> Routes.VERIFY_EMAIL
-                }
-                navController.navigate(dest) {
-                    popUpTo(0) { inclusive = true }
+            // Passkey sign-in imports the session with user=null and then
+            // calls retrieveUserForCurrentSession to populate it. Reading
+            // isEmailVerified() during that window returns false and flashes
+            // the VERIFY_EMAIL route for a beat. Wait until the user record
+            // is actually loaded before deciding where to land.
+            val user = (sessionStatus as SessionStatus.Authenticated).session.user
+            if (user != null) {
+                val isVerified = user.emailConfirmedAt != null
+                LaunchedEffect(isVerified, pendingRecovery) {
+                    val dest = when {
+                        // Recovery deep-link takes precedence: the user tapped
+                        // a password-reset link in email; force a new password
+                        // before handing them back to normal nav.
+                        pendingRecovery -> Routes.PASSWORD_RECOVERY
+                        isVerified -> Routes.MAIN
+                        else -> Routes.VERIFY_EMAIL
+                    }
+                    navController.navigate(dest) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             }
         }

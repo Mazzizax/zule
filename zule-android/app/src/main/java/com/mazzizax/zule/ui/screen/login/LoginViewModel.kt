@@ -1,14 +1,17 @@
 package com.mazzizax.zule.ui.screen.login
 
 import android.app.Activity
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mazzizax.zule.data.repository.AuthRepository
 import com.mazzizax.zule.data.repository.OrphanedPasskeyException
 import com.mazzizax.zule.data.repository.PasskeyRepository
+import com.mazzizax.zule.util.DeviceFlags
 import com.mazzizax.zule.util.PrivateLog
 import com.mazzizax.zule.util.RecoveryHint
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,12 +40,44 @@ data class LoginUiState(
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
+    @ApplicationContext private val appContext: Context,
     private val authRepository: AuthRepository,
     private val passkeyRepository: PasskeyRepository,
+    private val sessionManager: com.mazzizax.zule.data.SessionManager,
 ) : ViewModel() {
+
+    /**
+     * Set by SessionManager.forceLogout when inactivity (8 min) or hard
+     * timeout (25 min) fires. LoginScreen surfaces a banner when it's true.
+     */
+    val sessionExpired: StateFlow<Boolean> = sessionManager.sessionExpired
+
+    fun acknowledgeSessionExpired() {
+        // Consumed once the user sees the banner.
+        sessionManager.clearSession()
+    }
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
+
+    /**
+     * When true the sign-in screen collapses to a single passkey button and
+     * hides the email/password form. Driven by DeviceFlags — set when this
+     * device successfully registered a passkey, cleared when the last
+     * passkey for this account is deleted or a global sign-out fires.
+     *
+     * User can still fall through to password-based sign-in via the
+     * "Use password instead" affordance on the login screen.
+     */
+    private val _deviceHasPasskey = MutableStateFlow(DeviceFlags.isPasskeyEnrolledOnDevice(appContext))
+    val deviceHasPasskey: StateFlow<Boolean> = _deviceHasPasskey.asStateFlow()
+
+    /** Force-shows the email/password form even when a passkey is enrolled. */
+    private val _forcePasswordMode = MutableStateFlow(false)
+    val forcePasswordMode: StateFlow<Boolean> = _forcePasswordMode.asStateFlow()
+
+    fun onUsePasswordInstead() { _forcePasswordMode.value = true }
+    fun onBackToPasskey() { _forcePasswordMode.value = false }
 
     fun onEmailChange(email: String) {
         _uiState.update { it.copy(email = email, error = null, errorHint = null, errorSupportRef = null) }
@@ -95,6 +130,8 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 passkeyRepository.signInWithPasskeyStrict(activity)
+                DeviceFlags.markPasskeyEnrolled(appContext)
+                _deviceHasPasskey.value = true
                 onSuccess()
             } catch (t: Throwable) {
                 PrivateLog.error("LoginViewModel", "signInWithPasskey failed", t)

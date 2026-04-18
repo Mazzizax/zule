@@ -1,11 +1,14 @@
 package com.mazzizax.zule.ui.screen.security
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mazzizax.zule.data.repository.AuthRepository
 import com.mazzizax.zule.data.repository.PasskeyRepository
 import com.mazzizax.zule.domain.model.Passkey
+import com.mazzizax.zule.util.DeviceFlags
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -54,6 +57,7 @@ data class SecurityUiState(
 
 @HiltViewModel
 class SecurityViewModel @Inject constructor(
+    @ApplicationContext private val appContext: Context,
     private val authRepository: AuthRepository,
     private val passkeyRepository: PasskeyRepository,
 ) : ViewModel() {
@@ -174,6 +178,10 @@ class SecurityViewModel @Inject constructor(
                     deviceName = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL,
                 ).getOrThrow()
 
+                // Mark this device as having an enrolled passkey so the
+                // login screen can collapse to the single passkey button.
+                DeviceFlags.markPasskeyEnrolled(appContext)
+
                 _uiState.update { it.copy(
                     isRegisteringPasskey = false,
                     success = "Passkey registered successfully! You can now use biometrics to sign in.",
@@ -213,6 +221,10 @@ class SecurityViewModel @Inject constructor(
             _uiState.update { it.copy(deletingPasskeyId = passkeyId, error = null) }
             passkeyRepository.deletePasskey(passkeyId)
                 .onSuccess {
+                    // We don't have a stable credential_id ↔ this-device
+                    // mapping, so clear the flag on every delete. Next
+                    // sign-in will re-mark it if a passkey still works.
+                    DeviceFlags.clearPasskeyEnrolled(appContext)
                     _uiState.update { it.copy(
                         deletingPasskeyId = null,
                         success = "Passkey removed",
@@ -235,6 +247,9 @@ class SecurityViewModel @Inject constructor(
             } catch (_: Exception) {
                 // Best-effort
             }
+            // Global sign-out invalidates every session including this one;
+            // the user will need to re-authenticate with password next.
+            DeviceFlags.clearPasskeyEnrolled(appContext)
             onComplete()
         }
     }
@@ -243,7 +258,10 @@ class SecurityViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isDeletingAccount = true, error = null) }
             authRepository.deleteAccount()
-                .onSuccess { onComplete() }
+                .onSuccess {
+                    DeviceFlags.clearPasskeyEnrolled(appContext)
+                    onComplete()
+                }
                 .onFailure {
                     _uiState.update { it.copy(
                         isDeletingAccount = false,

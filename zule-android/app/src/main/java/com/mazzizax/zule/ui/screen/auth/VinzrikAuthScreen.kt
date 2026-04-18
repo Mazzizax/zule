@@ -1,8 +1,18 @@
 package com.mazzizax.zule.ui.screen.auth
 
+import android.app.Activity
 import android.content.Intent
 import io.ktor.client.call.body
 import android.net.Uri
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.res.painterResource
+import com.mazzizax.zule.data.repository.PasskeyRepository
+import com.mazzizax.zule.util.DeviceFlags
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -206,6 +216,12 @@ fun VinzrikAuthScreen(
     }
 
     // ── Login form state ──
+    val activity = LocalContext.current as Activity
+    val passkeyRepo = remember { PasskeyRepository(supabase) }
+    val deviceHasPasskey = remember { DeviceFlags.isPasskeyEnrolledOnDevice(context) }
+    var forcePasswordMode by remember { mutableStateOf(false) }
+    val compact = deviceHasPasskey && !forcePasswordMode
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -235,6 +251,93 @@ fun VinzrikAuthScreen(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             }
+
+            // Passkey button — mints a Supabase session via the strict flow,
+            // calls issue-attestation while signed in, then signs out.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .border(1.dp, ZuleColors.PrimaryDim, RoundedCornerShape(4.dp))
+                    .clickable(enabled = !loading) {
+                        loading = true
+                        error = null
+                        scope.launch {
+                            try {
+                                passkeyRepo.signInWithPasskeyStrict(activity)
+                                DeviceFlags.markPasskeyEnrolled(context)
+
+                                val response = supabase.functions.invoke("issue-attestation")
+                                val bodyStr = response.body<String>()
+                                val bodyJson = kotlinx.serialization.json.Json.parseToJsonElement(bodyStr) as JsonObject
+                                val attestation = bodyJson["attestation"]?.jsonPrimitive?.content
+                                    ?: throw Exception("No attestation returned")
+
+                                val finalUri = Uri.parse(callbackUrl).buildUpon()
+                                    .appendQueryParameter("attestation", attestation)
+                                    .appendQueryParameter("status", "success")
+                                    .build()
+
+                                supabase.auth.signOut()
+
+                                redirecting = true
+                                redirectUrl = finalUri.toString()
+                            } catch (e: Exception) {
+                                error = e.message ?: "Passkey sign-in failed"
+                                loading = false
+                            }
+                        }
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    Icon(
+                        painter = painterResource(com.mazzizax.zule.R.drawable.ic_nav_security),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = ZuleColors.TextPrimary,
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = if (loading) "Authenticating..." else "Sign in with Passkey",
+                        fontFamily = CormorantGaramond,
+                        fontWeight = FontWeight.W500,
+                        fontSize = 18.sp,
+                        color = ZuleColors.TextPrimary,
+                    )
+                }
+            }
+
+            if (compact) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Use password instead",
+                    modifier = Modifier.clickable { forcePasswordMode = true },
+                    fontFamily = CormorantGaramond,
+                    fontSize = 13.sp,
+                    color = ZuleColors.Primary,
+                )
+            } else {
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Divider: "or use email"
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                HorizontalDivider(modifier = Modifier.weight(1f), color = ZuleColors.Border)
+                Text(
+                    text = "or use email",
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    fontFamily = CormorantGaramond,
+                    fontSize = 12.sp,
+                    color = ZuleColors.TextMuted,
+                )
+                HorizontalDivider(modifier = Modifier.weight(1f), color = ZuleColors.Border)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Email field
             OutlinedTextField(
@@ -326,6 +429,7 @@ fun VinzrikAuthScreen(
                     fontSize = 18.sp,
                 )
             }
+            } // end else (non-compact form)
 
             Spacer(modifier = Modifier.height(16.dp))
 

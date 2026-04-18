@@ -59,6 +59,20 @@ class MachineAuthService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        // Fires when the user swipes Zule away from the Recents task list —
+        // i.e., explicit "close the app". Sign the user out so they have to
+        // re-authenticate next launch. Brief backgrounding (notification
+        // check, switching apps, screen off) does not trigger this — only
+        // an explicit task dismissal.
+        kotlinx.coroutines.runBlocking {
+            runCatching {
+                com.mazzizax.zule.data.SupabaseProvider.client.auth.signOut()
+            }
+        }
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onDestroy() {
         scope.cancel()
         super.onDestroy()
