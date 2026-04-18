@@ -28,9 +28,13 @@ object SupabaseProvider {
             flowType = FlowType.PKCE
             scheme = "https"
             host = BuildConfig.AUTH_HOST
+            // MemorySessionManager has no disk backing; it holds the session
+            // in process memory only, so the autoLoad/autoSave flags are
+            // effectively no-ops against it. We leave them at their defaults
+            // (true) because Supabase 3.1.x uses the load step to transition
+            // sessionStatus out of Initializing — flipping it to false keeps
+            // the SDK stuck in Initializing forever.
             sessionManager = MemorySessionManager()
-            autoLoadFromStorage = false
-            autoSaveToStorage = false
         }
         install(Functions)
         install(Postgrest)

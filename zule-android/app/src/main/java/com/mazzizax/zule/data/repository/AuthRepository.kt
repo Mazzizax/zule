@@ -7,15 +7,21 @@ import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.functions.functions
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 @Serializable
 private data class EmailBody(val email: String)
 
 @Serializable
 private data class SignUpBody(val email: String, val password: String)
+
+private val functionsJson = Json { encodeDefaults = false }
 
 /**
  * Translation of AuthContext.tsx auth operations.
@@ -57,7 +63,8 @@ class AuthRepository(
      */
     suspend fun signUp(email: String, password: String) {
         supabase.functions.invoke("auth-signup") {
-            body = SignUpBody(email, password)
+            contentType(ContentType.Application.Json)
+            setBody(functionsJson.encodeToString(SignUpBody.serializer(), SignUpBody(email, password)))
         }
     }
 
@@ -81,7 +88,8 @@ class AuthRepository(
             ?: currentUser()?.email
             ?: throw IllegalStateException("No email available")
         supabase.functions.invoke("auth-resend") {
-            body = EmailBody(target)
+            contentType(ContentType.Application.Json)
+            setBody(functionsJson.encodeToString(EmailBody.serializer(), EmailBody(target)))
         }
     }
 
@@ -92,7 +100,8 @@ class AuthRepository(
      */
     suspend fun requestPasswordReset(email: String) {
         supabase.functions.invoke("auth-reset") {
-            body = EmailBody(email.trim().lowercase())
+            contentType(ContentType.Application.Json)
+            setBody(functionsJson.encodeToString(EmailBody.serializer(), EmailBody(email.trim().lowercase())))
         }
     }
 
