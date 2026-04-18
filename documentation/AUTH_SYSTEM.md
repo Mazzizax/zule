@@ -1,259 +1,243 @@
 # Zule Authentication System
 
-## Overview
+Authoritative description of the authentication and session architecture as it stands in the **live build** of zule on main (through commit `eca89ac`). Reflects the V2 zule fix plan closeout, the blind-card pipeline wiring, and the post-signup passkey enrollment flow.
 
-Zule provides secure authentication for the platform using two methods:
-1. **Email/Password** - Traditional authentication via Supabase Auth
-2. **Passkey/Biometric** - WebAuthn-based passwordless authentication
+This document supersedes any earlier version that described the pre-hardening flow (legacy `passkey-register` / `passkey-auth` as the primary path, `analyzeAndSend` / `shredAndSend` as button names, etc.). Those still exist in the codebase where Vinzrik still depends on them but are no longer the primary paths for zule's own authentication.
 
-Both methods result in a verified user session that can be used across the platform.
+---
 
-## Clients
+## 1. Client surfaces
 
-| Client | Technology | Passkey API | Session Storage |
-|--------|-----------|-------------|-----------------|
-| Web (zule-web/) | React/Vite | Browser WebAuthn API | sessionStorage (per-tab) |
-| Mobile (zule-android/) | Kotlin/Jetpack Compose | Android Credential Manager | EncryptedSharedPreferences |
+| Client | Tech | Passkey API | Session storage | FLAG_SECURE |
+|---|---|---|---|---|
+| `zule-web/` | React + Vite | Browser WebAuthn API | `sessionStorage` (per tab) | N/A (web) |
+| `zule-android/` | Kotlin + Jetpack Compose | AndroidX Credential Manager 1.6.0 | `MemorySessionManager` (RAM only, no disk) | Yes, set in `MainActivity.onCreate` |
 
-## Architecture
+Both clients share the same Supabase Edge Function backend.
+
+## 2. Authentication methods supported
+
+1. **Email + password** — `Register`, `Login`, `Forgot password → Recovery`.
+2. **Passkey (WebAuthn)** — strict server-driven ceremony with platform authenticator, resident key, and user verification all required.
+3. **Machine authorization** — paired machines request a login session; the user approves or denies from their phone via biometric passkey.
+
+Every method ends at a live Supabase session on the client.
+
+## 3. Session lifecycle (zule-android)
+
+### Storage
+- `MemorySessionManager` on the Supabase client — no disk persistence. Process death erases the session unconditionally.
+- `DeviceFlags` (EncryptedSharedPreferences) — a single boolean `passkey_enrolled_v1`, device-scoped, for UX decisions only (not security).
+
+### Timers
+- Inactivity: 8 minutes, resets on every UI touch, translated from the web app's `ACTIVITY_EVENTS` pattern via `SessionTimeoutWrapper`'s `pointerInput` → `SessionManager.onUserActivity()`.
+- Hard cap: 25 minutes, never resets. Expiry fires `forceLogout()` → `auth.signOut()` → `_sessionExpired = true`.
+
+### Explicit invalidation
+- **Swipe-away from Recents** → `MachineAuthService.onTaskRemoved` fires `supabase.auth.signOut()`. Distinct from transient backgrounding (notification check, app switch) which does not sign out.
+- **Explicit sign-out** — from the Security screen.
+- **Sign out all devices** — from Security; calls `signOutGlobal` + clears `DeviceFlags`.
+- **Delete account** — from Security; calls the `delete-account` Edge Function, signs out, clears `DeviceFlags`.
+- **Delete all passkeys** — clears `DeviceFlags` (no stable credential_id → device mapping).
+
+### Legacy purge
+- `ZuleApplication.onCreate` runs once per process start: strips any pre-hardening Supabase session blob that an older build wrote to the default `SharedPreferences`, and deletes the legacy `zule_passkey.xml` if present. Protects upgrading installs from an old disk-persisted session resurfacing against the new memory-only manager.
+
+### FLAG_SECURE
+- Set unconditionally in `MainActivity.onCreate`. Blocks screenshots, screen recording, AssistantUI captures, and screen-sharing across every surface.
+
+## 4. Hardened passkey ceremony (the live path)
+
+The live primary path is the **strict split** Edge Function pair: `passkey-register-begin` / `passkey-register-finish` for enrollment, `passkey-auth-begin` / `passkey-auth-finish` for sign-in. The legacy `passkey-register` / `passkey-auth` Edge Functions remain deployed because Vinzrik still consumes them for the attestation hand-off, but zule's own clients no longer use them.
+
+### Registration (from Security screen or post-signup enrollment prompt)
 
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Web App       │     │  Edge Functions  │     │    Supabase     │
-│  (React/Vite)   │────▶│   (Deno Edge)    │────▶│   (Postgres)    │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-                                │                        │
-┌─────────────────┐             │                        │
-│  Mobile App     │─────────────┘                        │
-│  (Kotlin/JPC)   │                                      │
-└─────────────────┘                                      │
-        │                                                │
-        ▼                                                │
-┌─────────────────┐     ┌─────────────────┐              │
-│  Android Key-   │     │  Windows Cred   │              │
-│  store/Biometric│     │  Provider (C++) │──────────────┘
-└─────────────────┘     └─────────────────┘
-                          (Machine Auth)
+Client                                       Server
+  │                                            │
+  │ POST /passkey-register-begin               │
+  │────────────────────────────────────────────▶
+  │                                            │ admin.auth.getUser(bearer)
+  │                                            │ generateRegistrationOptions(
+  │                                            │   rpID=zule.mazzizax.net,
+  │                                            │   authenticatorAttachment=platform,
+  │                                            │   residentKey=required,
+  │                                            │   userVerification=required,
+  │                                            │   excludeCredentials=existing)
+  │                                            │ store(challenge_key=reg-strict:…,
+  │                                            │       challenge, user_id, expires_at+10min)
+  │ 200 {handle, options}                      │
+  │◀───────────────────────────────────────────│
+  │ CredentialManager.createCredential(options)│
+  │ — biometric prompt, platform auth only     │
+  │ POST /passkey-register-finish              │
+  │  {handle, response}                        │
+  │────────────────────────────────────────────▶
+  │                                            │ lookup challenge by handle
+  │                                            │ verifyRegistrationResponse(
+  │                                            │   response, expectedChallenge,
+  │                                            │   expectedOrigin=EXPECTED_ORIGINS,
+  │                                            │   expectedRPID=zule.mazzizax.net,
+  │                                            │   requireUserVerification=true)
+  │                                            │ persist to user_passkeys with
+  │                                            │   public_key as base64url text
+  │                                            │ delete consumed challenge
+  │ 200 {verified, credentialId}               │
+  │◀───────────────────────────────────────────│
 ```
 
-## Session Security
+A failure at the finish step throws `OrphanedPasskeyException` on the client — the credential is live in Google Password Manager but unknown to the server; retry overwrites the orphan.
 
-- Inactivity timeout: 8 minutes (resets on user interaction)
-- Hard timeout: 25 minutes (never resets)
-- Web: sessionStorage isolation (new tab = new login)
-- Mobile: EncryptedSharedPreferences with AES-256-GCM
-- Web cross-tab kill signal: new login displaces all other tabs
+### Authentication (from Login screen with strict sign-in)
 
-## Passkey Authentication
-
-### Security Model
-
-- **Phishing Resistant** - Credentials are bound to the RP ID (`zule.mazzizax.net`)
-- **No Shared Secrets** - Asymmetric cryptography (private key never leaves device)
-- **Biometric Protection** - Private key unlocked by fingerprint/face via device secure enclave
-- **Replay Protection** - Challenge-response with incrementing counters
-
-### Flow
-
-#### Registration
 ```
-1. Client requests registration options (GET /passkey-register?action=options)
-2. Server generates challenge, stores in DB, returns PublicKeyCredentialCreationOptions
-3. Client calls device passkey API with options
-   - Web: navigator.credentials.create()
-   - Android: CredentialManager.createCredential()
-4. User authenticates with biometric
-5. Device creates key pair, returns RegistrationResponseJSON
-6. Client sends response to server (POST /passkey-register)
-7. Server verifies with @simplewebauthn/server, stores public key
-```
-
-#### Authentication
-```
-1. Client requests challenge (GET /passkey-auth?credential_id=...)
-2. Server generates challenge, stores in DB, returns PublicKeyCredentialRequestOptions
-3. Client calls device passkey API with options
-   - Web: navigator.credentials.get()
-   - Android: CredentialManager.getCredential()
-4. User authenticates with biometric
-5. Device signs challenge, returns AuthenticationResponseJSON
-6. Client sends response to server (POST /passkey-auth)
-7. Server verifies signature with stored public key
-8. Server returns verification_token + attestation
+Client                                       Server
+  │                                            │
+  │ POST /passkey-auth-begin                   │
+  │────────────────────────────────────────────▶
+  │                                            │ generateAuthenticationOptions(
+  │                                            │   rpID=zule.mazzizax.net,
+  │                                            │   userVerification=required,
+  │                                            │   allowCredentials=[] usernameless)
+  │                                            │ store(challenge_key=auth-strict:…,
+  │                                            │       challenge, user_id=null,
+  │                                            │       expires_at+10min)
+  │ 200 {handle, options}                      │
+  │◀───────────────────────────────────────────│
+  │ CredentialManager.getCredential()          │
+  │ — biometric, usernameless discovery        │
+  │ POST /passkey-auth-finish                  │
+  │  {handle, response}                        │
+  │────────────────────────────────────────────▶
+  │                                            │ lookup challenge (auth-strict prefix)
+  │                                            │ lookup credential by id+is_active
+  │                                            │ per-credential rate limit check
+  │                                            │   (5 failures in 5 min → 429)
+  │                                            │ verifyAuthenticationResponse(...)
+  │                                            │   — on counter error: log
+  │                                            │     POTENTIAL_CLONE, return
+  │                                            │     {error:counter_rollback,
+  │                                            │      hint:clone_suspected}
+  │                                            │ update user_passkeys counter+last_used_at
+  │                                            │ admin.generateLink(magiclink, email)
+  │                                            │ anon.verifyOtp(otp) → session
+  │ 200 {verified, access_token, refresh_token,│
+  │      expires_in, token_type, user}         │
+  │◀───────────────────────────────────────────│
+  │ auth.importSession(tokens)                 │
+  │ auth.retrieveUserForCurrentSession(true)   │
 ```
 
-### Edge Functions
+The minted session is a real Supabase session, not a custom one — so every downstream `supabase.auth.*` call works normally.
 
-#### passkey-register
-- **Purpose**: Register new passkeys for authenticated users
-- **Auth**: Requires valid Supabase session (verified via service role)
-- **Endpoints**:
-  - `GET ?action=options` - Get registration options
-  - `GET` - List user's passkeys
-  - `POST` - Register new passkey
-  - `DELETE` - Remove a passkey
+### What's *not* in either response
+- No plaintext `user_id` in any response body (removed in commit `107a629` / function redeploy). `passkey-auth-finish` returns `{verified, access_token, refresh_token, expires_in, token_type, user}`; `user` is the populated Supabase user record returned by the SDK's session import, not a mint-side emission.
+- The legacy `passkey-auth` function continues to return `{tier, verification_token, attestation}` to Vinzrik — the blind-attestation promise is preserved there because plaintext `user_id` was removed from that response too (same commit).
 
-#### passkey-auth
-- **Purpose**: Authenticate users via passkey
-- **Auth**: None required (authenticates via passkey)
-- **Rate Limiting**: 5 failed attempts triggers 15-minute lockout
-- **Endpoints**:
-  - `GET ?credential_id=...` - Get authentication challenge
-  - `POST` - Verify signed assertion
+## 5. Email flows
 
-### Database Schema
+All three rate-limited via per-email + per-IP attempt logs in `auth_email_attempts` (3/email/15min, 10/IP/15min). All three send via Resend with Mazzizax-branded HTML templates. All three generate a Supabase magic/signup/recovery link and rewrite the action URL so it points at `https://${AUTH_HOST}/auth/callback?token_hash=…&type=…` — Android App Links catch that path and resume the app directly.
 
-#### user_passkeys
-```sql
-CREATE TABLE user_passkeys (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  credential_id TEXT UNIQUE NOT NULL,
-  public_key TEXT NOT NULL,
-  device_name TEXT DEFAULT 'Device',
-  authenticator_type TEXT,
-  transports TEXT[],
-  counter INTEGER DEFAULT 0,
-  backed_up BOOLEAN DEFAULT false,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  last_used_at TIMESTAMPTZ
-);
+| Flow | Edge Function | Link type | Client entry |
+|---|---|---|---|
+| Signup confirmation | `auth-signup` | `type=signup` | `AuthRepository.signUp` (wired from Register screen) |
+| Resend sign-in / confirmation link | `auth-resend` | `type=magiclink` | `AuthRepository.resendVerification` |
+| Password reset | `auth-reset` | `type=recovery` | `AuthRepository.requestPasswordReset` (wired from Forgot-password screen) |
+
+`auth-reset` always returns `{ok: true}` regardless of whether the email corresponds to a real account — prevents email enumeration.
+
+### Deep-link callback
+`MainActivity.handleAuthDeepLink` intercepts `https://${AUTH_HOST}/auth/callback?token_hash=…&type=…`, maps `type` to the Supabase `OtpType.Email` enum, sets `RecoverySignal.pendingRecovery = true` if `type=recovery`, and calls `auth.verifyEmailOtp(type, tokenHash)`. The session transitions to Authenticated, the nav graph routes.
+
+## 6. Nav graph routing after Authenticated
+
+`ZuleNavGraph` observes `SessionStatus.Authenticated` and waits for `session.user` to be populated (passkey sign-in imports with `user=null` and fills via `retrieveUserForCurrentSession` — routing before the user loads briefly flashes VERIFY_EMAIL). Once user is present:
+
+```
+when {
+    pendingRecovery (RecoverySignal)  → PASSWORD_RECOVERY
+    !isVerified                        → VERIFY_EMAIL
+    !DeviceFlags.isPasskeyEnrolled     → PASSKEY_ENROLL   (post-signup nudge)
+    else                               → MAIN
+}
 ```
 
-#### passkey_challenges
-```sql
-CREATE TABLE passkey_challenges (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  challenge_key TEXT UNIQUE NOT NULL,
-  challenge TEXT NOT NULL,
-  user_id UUID REFERENCES auth.users(id),
-  expires_at TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-```
+`PASSKEY_ENROLL` shows "Enable fingerprint sign-in" (runs the strict enrol ceremony, marks `DeviceFlags`, routes to MAIN) or "Skip for now" (routes to MAIN; the nudge re-fires on the next sign-in until the user enrols).
 
-### Configuration
+## 7. Login screen — compact mode
 
-#### Relying Party (RP)
-```typescript
-const RP_ID = 'zule.mazzizax.net'
-const RP_NAME = 'Zule'
-```
+When `DeviceFlags.isPasskeyEnrolledOnDevice(context)` is true and the user hasn't clicked "Use password instead", the Login screen hides the email + password fields and the "Forgot password?" link, leaving only the passkey button and the "Use password instead" opt-out. After a sign-out, the flag persists, so the next launch comes up compact — one-tap biometric sign-in.
 
-#### Expected Origins
-```typescript
-const EXPECTED_ORIGINS = [
-  'https://zule.mazzizax.net',
-  'https://goals.mazzizax.com',
-  'https://gatekeeper-nine.vercel.app',           // legacy
-  'https://xenon-engine-web.vercel.app',           // legacy
-  'android:apk-key-hash:-sYXRdwJA3hvue3mKpYrOZ9zSPC7b4mbgzJmdZEDO5w',  // Vinzrik
-  'android:apk-key-hash:Uoi_lyYD2kQgh8Q-hPG3jyij0Bn5n9e8yKnxbdc8zfk',  // Legacy
-  'android:apk-key-hash:7XrT7DwGTOXZgUhB78XwgBc-sQatZaRGvJvEEDhDvPU',  // Zule Mobile (debug)
-]
-```
+After tapping "Use password instead," a "Back to passkey sign-in" link appears below the sign-in button to restore compact mode.
 
-Android APK key hashes are derived from SHA-256 fingerprint of the app signing certificate, base64url encoded. Must be updated when switching from debug to release keystore.
+## 8. Password policy
 
-### Mobile Implementation (Android)
+- **Minimum 12 characters** — enforced client-side in `RegisterViewModel.signUp` and `SecurityViewModel.updatePassword` and `PasswordRecoveryScreen.validate`. Enforced server-side by `config.toml` + the `auth-signup` Edge Function.
+- **HIBP k-anonymity breach check** — runs on every password-set path (signup, change, recovery). Sends only first 5 hex chars of `SHA-1(password)` to `api.pwnedpasswords.com/range`. Rejects passwords found in breach corpus. Fails open on network error (unreachable ≠ blocked signup).
 
-Location: `zule-android/app/src/main/java/com/mazzizax/zule/data/repository/PasskeyRepository.kt`
+## 9. Transaction pipeline (dev mode, 4 phases)
 
-Uses raw HTTP calls (Ktor HttpClient) to edge functions — same pattern as the web app's `fetch()` calls. Does NOT use `supabase.functions.invoke()` because the Supabase Kotlin SDK does not reliably set HTTP methods or query parameters for function calls.
+End-game: collapse into a single auto-trigger on Plaid-pull completion for Play-store builds. Today every phase is a separate button so each step is independently testable.
 
-Key functions:
-- `listPasskeys()` - GET /passkey-register
-- `getRegistrationOptions()` - GET /passkey-register?action=options
-- `registerPasskey()` - POST /passkey-register
-- `deletePasskey()` - DELETE /passkey-register
-- `getAuthChallenge()` - GET /passkey-auth?credential_id=...
-- `verifyPasskeyAuth()` - POST /passkey-auth
+| Phase | zule-web | zule-android | Edge Function / action |
+|---|---|---|---|
+| 0. Pull | "0. Pull" on each account row | "Pull Transactions" on each account row | `plaid-pull-transactions` |
+| 1. Mint | "1. Mint cards" in Transaction Pipeline card | "1. Mint cards" in Transaction Pipeline card | `mint-transaction-cards` → returns `card_attestation` JWT |
+| 2. Send | "2. Send to Vinzrik" | "2. Send to Vinzrik" | fires `vinzrik://receive-cards?attestation=<jwt>` deep link |
+| 3. Shred | "3. Shred raw" | "3. Shred raw" | `shred-minted-transactions` |
 
-Credential Manager integration: `SecurityViewModel.registerPasskey(activity)` handles the full 3-step registration flow. `AuthRequestsViewModel.approveSession(sessionId, activity)` handles biometric approval for machine auth.
+The `card_attestation` JWT is a signed blind payload — decodable by Vinzrik to see the cards, verified by Goals against zule's public key, and stripped of any real-world identifier (Vinzrik's `FORBIDDEN_FIELDS` firewall rejects cards containing `user_id`, `plaid_transaction_id`, `date`, `amount`, `merchant*`, `card_last_four`, `location_*`, `description`, `iso_currency_code`, `plaid_access_token`).
 
-## Machine Auth
+## 10. Machine authentication
 
-Fleet machines run a Windows Credential Provider that replaces the Windows login screen. The user approves login requests from their phone via passkey biometric. A stolen fleet machine is a brick without the phone.
+Already integrated end-to-end: `MachineAuthRepository` polls `machine-auth-pending` via a foreground service (`MachineAuthService`), shows a notification when a pending session arrives, user taps through to approve-or-deny via biometric passkey, approval signs an assertion bound to a per-session session_code which updates `machine_login_sessions.status = "approved"`. Charlemagne's `zule-windows-auth` service watches that row via Supabase Realtime and unlocks on approval.
 
-### Flow
-```
-1. Machine locks → Credential Provider creates session (machine-auth-request)
-2. Login screen shows session code + "Waiting for approval..."
-3. Phone polls machine-auth-pending → shows pending session
-4. User taps Approve → phone gets passkey challenge (machine-auth-approve GET)
-5. Biometric prompt → phone sends assertion (machine-auth-approve POST)
-6. Machine polls machine-auth-status → sees approved
-7. Credential Provider decrypts DPAPI credential → passes to Windows LSA → unlocked
-```
+## 11. Vinzrik attestation hand-off
 
-### Edge Functions
+Two deep-link surfaces on zule-android map to Vinzrik:
 
-| Function | Method | Auth | Purpose |
-|----------|--------|------|---------|
-| machine-auth-request | POST | Machine API key | Create login session |
-| machine-auth-status | GET | Machine API key | Poll session status |
-| machine-auth-pending | GET | User Bearer token | List pending sessions for user's machines |
-| machine-auth-approve | GET | User Bearer token | Get passkey challenge for session approval |
-| machine-auth-approve | POST | User Bearer token | Approve (with passkey) or deny session |
-| machine-register | POST | User Bearer token | Register a new machine |
+- `zule://auth?callback=<vinzrik-url>` → `VinzrikAuthScreen` (Vinzrik-initiated login-to-zule-then-hand-back-attestation).
+- `https://${AUTH_HOST}/auth?token_hash=…&type=…` — Supabase OTP callback, not Vinzrik-related.
 
-### Windows Components
+`VinzrikAuthScreen` offers both email/password and passkey sign-in paths. On successful zule sign-in it calls `issue-attestation` (blind JWT, iss=zule, aud=ghozerauth, no user identifier), signs out of zule locally (keeps attestation only), and fires a return intent to the Vinzrik callback URL with `?attestation=<jwt>&status=success`.
 
-Source: `C:\Users\o2bma\zule-windows-auth\` on Raiden (not in this repo)
+Vinzrik on the other side (current release APK, commit `3137d37` at bundle id `com.mazzizax.vinzrik`) receives the attestation, uses its locally-held `ghost_secret` to compute `ghost_id`, and mints a Goals JWT via Ghozerauth.
 
-- `ZuleCredentialProvider.dll` - COM DLL, registered as Windows Credential Provider
-- `ZuleAuthService.exe` - Windows Service, runs as LocalSystem, manages pipe IPC + backend communication
-- Named pipe `\\.\pipe\ZuleAuth` - IPC between Credential Provider and service
-- `credential.dat` - DPAPI-encrypted Windows password (wide-string binary format)
-- `machine.key` - DPAPI-encrypted machine API key
-- `config.json` - Machine ID, name, backend URL
+## 12. Rate limiting + audit
 
-### Mobile Component
+| Table | What it records | Where it's consulted |
+|---|---|---|
+| `auth_email_attempts` | email, kind (signup/resend/reset), IP, success, timestamp | `_shared/email-rate-limit.ts` for 3/email/15min and 10/IP/15min |
+| `passkey_auth_attempts` | credential_id, user_id, success, reason (`rate_limited` / `counter_rollback` / `verify_threw` / `not_verified`), IP, timestamp | `passkey-auth-finish` for 5 failures in 5 min → 429 lockout |
+| `audit_logs` | every `auth_validated` / `auth_failed` / `passkey_authenticated` / `machine_auth_*` / `rate_limited` event + metadata | cross-function telemetry |
 
-Location: `zule-android/app/src/main/java/com/mazzizax/zule/ui/screen/machineauth/`
+`passkey_challenges` carries the single-use challenge per begin→finish pair; consumed on finish.
 
-- `AuthRequestsScreen.kt` - Shows pending sessions, approve/deny buttons
-- `AuthRequestsViewModel.kt` - Polls machine-auth-pending, handles Credential Manager flow for approval
-- `MachineAuthRepository.kt` - Raw HTTP calls to machine-auth edge functions
+## 13. Legal surfaces
 
-Accessible from Dashboard → Fleet Auth → Auth Requests.
+`LegalFooter` component (Privacy · Terms · Contact) appears on: Login, Register, Security, Forgot Password, Password Recovery. URLs are BuildConfig fields (`LEGAL_PRIVACY_URL`, `LEGAL_TERMS_URL`, `LEGAL_CONTACT_URL`), overridable at integration time. Opens in Chrome Custom Tabs with toolbar color matching the app surface.
 
-## Email/Password Authentication
+## 14. What's live vs what's dormant in the codebase
 
-Standard Supabase Auth flow:
-1. User signs up/signs in via Supabase client
-2. Supabase returns JWT session tokens
-3. Web: sessionStorage per-tab isolation
-4. Mobile: EncryptedSharedPreferences
+**Live in this build (primary paths):**
+- `auth-signup`, `auth-resend`, `auth-reset` (branded email + rate-limited)
+- `passkey-register-begin`, `passkey-register-finish` (strict ceremony)
+- `passkey-auth-begin`, `passkey-auth-finish` (strict, session-minting)
+- `mint-transaction-cards`, `shred-minted-transactions`
+- `delete-account`
+- `plaid-*`, `stripe-*`, `loyalty-cards`, `user-profile`, `machine-auth-*`
 
-## Rate Limiting
+**Dormant but retained:**
+- Legacy `passkey-register` and `passkey-auth` — still deployed because Vinzrik's attestation flow and `issue-attestation` / `mint-session` chain for zule-web's (unmigrated) passkey sign-in continue to call them. Eligible for removal once Vinzrik is rebuilt to hit the new strict pair.
 
-- Failed passkey attempts logged with IP and credential_id
-- After 5 failures in 5 minutes: 15-minute lockout
-- Rate limits apply per IP address
+**Outstanding caveats for distribution:**
+- APKs are debug-signed (`debug.keystore`). Release signing procedure is documented in `PLAY-APP-SIGNING.md` §4 but not executed.
+- Neither zule nor vinzrik has been submitted to Play Console. No listings, no AAB uploads.
+- iOS: nothing built.
+- The blind-card pipeline's 4-phase buttons are intentional dev UI; Play-store builds will collapse the chain into a single auto-trigger on Plaid-pull completion.
 
-## Audit Logging
-
-All auth events logged to `audit_logs`:
-- `passkey_registered` - New passkey registered
-- `passkey_authenticated` - Successful passkey auth
-- `passkey_auth_failed` - Failed attempt (with reason)
-- `passkey_deleted` - Passkey removed
-- `machine_auth_approved` - Machine login approved via biometric
-- `machine_auth_denied` - Machine login denied
-- `machine_auth_approve_failed` - Approval attempt failed
-
-## Dependencies
-
-### Server (Edge Functions)
-- `@simplewebauthn/server` (jsr) - WebAuthn verification
-
-### Web (zule-web/)
-- Browser WebAuthn API (native)
-
-### Mobile (zule-android/)
-- `androidx.credentials` - Android Credential Manager
-- `io.ktor:ktor-client-okhttp` - HTTP client for edge function calls
-- `androidx.security:security-crypto` - EncryptedSharedPreferences
-- `androidx.biometric` - BiometricPrompt
+## 15. Cross-references
+- `PLAY-DATA-SAFETY.md` — Play Console Data Safety form (per-data-type disclosure).
+- `PLAY-APP-SIGNING.md` — upload-key vs app-signing-key procedure, EXPECTED_ORIGINS management, rotation playbooks.
+- `ZULE-FIX-PLAN-V2.md` (on Desktop) — the audit-vs-login-standard document that drove the hardening pass. All 32 defects closed as of commit `eca89ac`.
+- `E3 evolution/` (on Desktop) — post-E2 design notes: Identity Container, Zule Architecture consolidation, Fleet Mechanics merge.
