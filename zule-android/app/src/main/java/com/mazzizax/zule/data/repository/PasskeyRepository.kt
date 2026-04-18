@@ -42,14 +42,6 @@ class OrphanedPasskeyException(
     override val cause: Throwable,
 ) : RuntimeException("Passkey created on device but server registration failed", cause)
 
-/**
- * Passkey operations using raw HTTP calls — same pattern as the web app's
- * fetch() calls in lib/webauthn.ts.
- *
- * The web app does NOT use the Supabase JS client for these calls.
- * It uses raw fetch with explicit method, URL, and Authorization header.
- * This translation does the same with Ktor HttpClient.
- */
 class PasskeyRepository(private val supabase: SupabaseClient) {
 
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = false }
@@ -75,16 +67,10 @@ class PasskeyRepository(private val supabase: SupabaseClient) {
     )
 
     /**
-     * Strict server-driven passkey enrollment, Step A + Step B split.
-     *
-     * Step A: server issues the challenge (passkey-register-begin) → client
-     * calls Credential Manager to create the credential. On success the
-     * credential is live in Google Password Manager.
-     *
-     * Step B: client POSTs the authenticator response to
-     * passkey-register-finish. A failure here leaves the credential
-     * orphaned (live in GPM, unknown to server) — we raise
-     * OrphanedPasskeyException so the ViewModel can surface a retry hint.
+     * Failure of the finish step leaves the credential live in Google
+     * Password Manager but unknown to the server — surfaced as
+     * OrphanedPasskeyException so the caller can prompt a retry (which
+     * overwrites the orphan under WebAuthn replacement semantics).
      */
     suspend fun enrollPasskeyStrict(activity: Activity) {
         val beginBody = client.post("$baseUrl/passkey-register-begin") {
@@ -126,17 +112,6 @@ class PasskeyRepository(private val supabase: SupabaseClient) {
         }
     }
 
-    /**
-     * Strict server-driven passkey sign-in. Replaces the dead client-
-     * generated-challenge branch on LoginViewModel.
-     *
-     * Step 1: server issues authentication challenge (passkey-auth-begin).
-     * Step 2: Credential Manager produces an assertion.
-     * Step 3: server verifies, detects counter rollback as clone evidence,
-     *         and mints a native Supabase session via
-     *         admin.generateLink(magiclink) + anon.verifyOtp.
-     * Step 4: client importSession so the session is live in this process.
-     */
     suspend fun signInWithPasskeyStrict(activity: Activity) {
         val beginBody = client.post("$baseUrl/passkey-auth-begin") {
             contentType(ContentType.Application.Json)

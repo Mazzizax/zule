@@ -8,17 +8,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.mazzizax.zule.R
 
-/**
- * Translation of CSS font stacks:
- *   --font-body: 'Cormorant Garamond', serif
- *   --font-mono: 'Space Mono', 'Courier New', monospace
- *
- * Cormorant Garamond is a variable-weight font (single TTF covers 300-700).
- * Space Mono has Regular (400) and Bold (700) as separate files.
- *
- * Web app uses Cormorant Garamond weights 300 (light), 400 (normal), 500 (medium).
- * Web app uses Space Mono weights 400 (normal), 700 (bold).
- */
 val CormorantGaramond = FontFamily(
     Font(R.font.cormorant_garamond, FontWeight.Light),
     Font(R.font.cormorant_garamond, FontWeight.Normal),
@@ -32,24 +21,6 @@ val SpaceMono = FontFamily(
     Font(R.font.space_mono_bold, FontWeight.Bold),
 )
 
-/**
- * Typography scale matching the web app's CSS usage patterns.
- *
- * CSS references (from styles.css and inline styles):
- *   auth-header h1: 28px, weight 700, letter-spacing 8px
- *   card h2: 11px, weight 600, uppercase, letter-spacing 3px, color gold-dim
- *   nav-link: 16px, weight 400, letter-spacing 0.08em
- *   body: 16px
- *   form-group label: 16px, color text-secondary
- *   form-group input: 17px (auth), 14px (forms)
- *   btn-primary: 18px, weight 500
- *   info-row .label: 16px
- *   info-row .value: 16px
- *   info-note: 13px
- *   passkey-name: 15px
- *   passkey-meta: 12px
- *   .user-email: 11px, mono
- */
 val ZuleTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = CormorantGaramond,

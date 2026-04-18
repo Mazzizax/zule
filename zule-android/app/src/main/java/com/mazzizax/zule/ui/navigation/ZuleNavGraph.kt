@@ -29,18 +29,6 @@ import com.mazzizax.zule.ui.screen.verifyemail.VerifyEmailScreen
 import com.mazzizax.zule.service.MachineAuthService
 import io.github.jan.supabase.auth.status.SessionStatus
 
-/**
- * Translation of App.tsx routing logic.
- *
- * Web app route guards:
- *   PublicRoute → if user exists, redirect to /
- *   ProtectedRoute → if no user, redirect to /login; if not verified, redirect to /verify-email
- *   VerifyEmailGuard → if no user, redirect to /login; if verified, redirect to /
- *
- * On Android, SessionStatus.Authenticated replaces checking user existence.
- * SessionStatus.Initializing replaces the loading state.
- */
-
 object Routes {
     const val LOGIN = "login"
     const val REGISTER = "register"
@@ -89,7 +77,6 @@ fun ZuleNavGraph(
     // Auth state → route guard logic from App.tsx
     when (sessionStatus) {
         is SessionStatus.Initializing -> {
-            // Loading spinner — matches web app's loading-container
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
@@ -150,7 +137,6 @@ fun ZuleNavGraph(
         else -> {}
     }
 
-    // Touch tracking for inactivity timeout — matches web app's ACTIVITY_EVENTS listeners
     com.mazzizax.zule.ui.components.SessionTimeoutWrapper(sessionManager = sessionManager) {
         NavHost(
             navController = navController,

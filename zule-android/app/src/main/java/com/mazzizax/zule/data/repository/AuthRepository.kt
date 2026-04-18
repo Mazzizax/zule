@@ -23,22 +23,6 @@ private data class SignUpBody(val email: String, val password: String)
 
 private val functionsJson = Json { encodeDefaults = false }
 
-/**
- * Translation of AuthContext.tsx auth operations.
- *
- * Web app functions translated:
- *   signIn(email, password) → signInWithPassword + kill signal broadcast + timer start
- *   signUp(email, password) → signUp
- *   signOut() → stopTimers + signOut
- *   resendVerification() → resend({type:'signup', email})
- *   emailVerified → !!user?.email_confirmed_at
- *
- * The kill signal (localStorage.setItem(KILL_SIGNAL_KEY, crypto.randomUUID()))
- * has no Android equivalent — single instance per device.
- *
- * Global signout matches: supabase.auth.signOut({ scope: 'global' })
- * Delete account matches: POST /functions/v1/delete-account then signOut
- */
 class AuthRepository(
     private val supabase: SupabaseClient,
     private val sessionManager: SessionManager,

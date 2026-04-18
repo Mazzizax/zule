@@ -62,25 +62,12 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 /**
- * Translation of pages/Auth.tsx (247 lines).
- *
- * Standalone screen (not in nav). Handles Vinzrik authentication flow.
- *
- * Flow:
- * 1. Vinzrik opens deep link: zule://auth?callback=vinzrik://auth-callback
- * 2. User logs in with email/password
- * 3. On success: call issue-attestation edge function to get signed JWT
- * 4. Sign out from web session (only needed the attestation)
- * 5. Redirect to callback via Intent with attestation (NOT user_id)
- *
- * Three states:
- * - error: invalid or missing callback URL
- * - redirecting: spinner + fallback link
- * - login form: email + password + Sign In + Cancel
- *
- * Privacy statement: "Your credentials are verified by Zule. Your identity stays private with Vinzrik."
+ * Vinzrik-initiated auth hand-off. Entered via `zule://auth?callback=<uri>`.
+ * On sign-in (password or passkey) the user's zule session is minted,
+ * `issue-attestation` produces a blind JWT, zule signs back out, and the
+ * callback URL fires with `?attestation=<jwt>&status=success`. No user
+ * identifier ever reaches the callback.
  */
-
 @Composable
 fun VinzrikAuthScreen(
     callbackUrl: String?,

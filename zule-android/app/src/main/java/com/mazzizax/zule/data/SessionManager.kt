@@ -15,30 +15,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * Translation of the session security logic from AuthContext.tsx
- *
- * Web app behavior (exact translation):
- *
- *   resetInactivityTimer():
- *     clearTimeout(inactivityTimerRef)
- *     inactivityTimerRef = setTimeout(forceLogout, INACTIVITY_TIMEOUT)
- *
- *   startSessionTimers():
- *     loginTimeRef = Date.now()
- *     resetInactivityTimer()
- *     hardTimeoutRef = setTimeout(forceLogout, HARD_TIMEOUT)
- *     ACTIVITY_EVENTS.forEach(addEventListener(resetInactivityTimer))
- *
- *   stopSessionTimers():
- *     clearTimeout(inactivityTimerRef)
- *     clearTimeout(hardTimeoutRef)
- *     ACTIVITY_EVENTS.forEach(removeEventListener(resetInactivityTimer))
- *
- * Android translation:
- *   - Each timeout is a separate coroutine Job with a single delay() call
- *   - onUserActivity() cancels and restarts the inactivity Job (same as clearTimeout + setTimeout)
- *   - Hard timeout Job is started once at login and never restarted
- *   - Touch events detected via Modifier.pointerInput in SessionTimeoutWrapper
+ * 8-min inactivity + 25-min hard session timers. Inactivity resets on
+ * every UI touch (fed from SessionTimeoutWrapper's pointerInput). Hard
+ * cap is absolute from sign-in.
  */
 class SessionManager(
     context: Context,
@@ -69,16 +48,8 @@ class SessionManager(
     private val _sessionExpired = MutableStateFlow(false)
     val sessionExpired: StateFlow<Boolean> = _sessionExpired.asStateFlow()
 
-    /**
-     * Exact translation of resetInactivityTimer() from AuthContext.tsx:
-     *   if (!loginTimeRef.current) return;
-     *   clearTimeout(inactivityTimerRef);
-     *   inactivityTimerRef = setTimeout(() => forceLogout(...), INACTIVITY_TIMEOUT);
-     *
-     * Called on every touch event via SessionTimeoutWrapper.
-     */
     fun onUserActivity() {
-        if (hardTimeoutJob == null) return // no active session — matches if (!loginTimeRef.current) return
+        if (hardTimeoutJob == null) return
         inactivityJob?.cancel()
         inactivityJob = scope.launch {
             delay(INACTIVITY_TIMEOUT_MS)
@@ -86,24 +57,15 @@ class SessionManager(
         }
     }
 
-    /**
-     * Exact translation of startSessionTimers() from AuthContext.tsx:
-     *   loginTimeRef = Date.now()
-     *   resetInactivityTimer()
-     *   hardTimeoutRef = setTimeout(forceLogout, HARD_TIMEOUT)
-     *   ACTIVITY_EVENTS.forEach(addEventListener(resetInactivityTimer))
-     */
     fun startSessionTimers() {
         _sessionExpired.value = false
 
-        // Start inactivity timer (resets on every touch)
         inactivityJob?.cancel()
         inactivityJob = scope.launch {
             delay(INACTIVITY_TIMEOUT_MS)
             forceLogout()
         }
 
-        // Start hard timeout (never resets)
         hardTimeoutJob?.cancel()
         hardTimeoutJob = scope.launch {
             delay(HARD_TIMEOUT_MS)
@@ -111,14 +73,6 @@ class SessionManager(
         }
     }
 
-    /**
-     * Exact translation of stopSessionTimers() from AuthContext.tsx:
-     *   clearTimeout(inactivityTimerRef)
-     *   clearTimeout(hardTimeoutRef)
-     *   inactivityTimerRef = null
-     *   hardTimeoutRef = null
-     *   loginTimeRef = null
-     */
     fun stopSessionTimers() {
         inactivityJob?.cancel()
         inactivityJob = null
@@ -132,14 +86,6 @@ class SessionManager(
         _sessionExpired.value = false
     }
 
-    /**
-     * Exact translation of forceLogout() from AuthContext.tsx:
-     *   clearTimeout(inactivityTimerRef)
-     *   clearTimeout(hardTimeoutRef)
-     *   await supabase.auth.signOut({ scope: 'local' })
-     *   setSession(null)
-     *   setUser(null)
-     */
     private fun forceLogout() {
         inactivityJob?.cancel()
         inactivityJob = null

@@ -12,14 +12,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-/**
- * Translation of Loyalty.tsx API calls.
- *
- * Edge function loyalty-cards dispatches on method:
- *   GET → list cards
- *   POST → add card
- *   DELETE → remove card
- */
 class LoyaltyRepository(private val supabase: SupabaseClient) {
 
     private val json = Json { ignoreUnknownKeys = true }

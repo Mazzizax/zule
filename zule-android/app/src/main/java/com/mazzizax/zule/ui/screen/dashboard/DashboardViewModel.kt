@@ -16,21 +16,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Translation of Dashboard.tsx state management.
- *
- * Web app state and handlers:
- *   profile, loading, error, plaidLoading, removeLoadingId
- *   pullLoadingId, pullResult, analyzeLoading, analyzeResult
- *   gameCards, shredLoading, shredResult, lastAttestation
- *
- *   fetchProfile() → GET user-profile
- *   openPlaidLink() → POST plaid-create-link-token → Plaid widget → exchange → refresh
- *   pullTransactions(accountId) → POST plaid-pull-transactions
- *   analyzeAndSend() → POST mint-transaction-cards
- *   shredAndSend() → POST shred-minted-transactions
- *   removeCard(accountId) → POST remove-card → refresh
- */
 data class DashboardUiState(
     val isLoading: Boolean = true,
     val profile: UserProfile? = null,
@@ -90,11 +75,7 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Translation of openPlaidLink() step 1: get link_token from backend.
-     * Step 2 (opening Plaid Link SDK) happens at the Screen level via PlaidLinkHelper.
-     * Step 3 (exchange token) is exchangePublicToken() below.
-     */
+    /** Step 1 of the Plaid flow — the SDK launch is in DashboardScreen via PlaidLinkHelper. */
     fun createLinkToken(onToken: (String) -> Unit) {
         viewModelScope.launch {
             _uiState.update { it.copy(plaidLoading = true) }
@@ -121,9 +102,6 @@ class DashboardViewModel @Inject constructor(
         _uiState.update { it.copy(plaidLoading = false) }
     }
 
-    /**
-     * Translation of pullTransactions(accountId) from Dashboard.tsx.
-     */
     fun pullTransactions(accountId: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(pullLoadingId = accountId, pullResult = null) }
@@ -174,13 +152,9 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    /** Alias for backward-compat during the rename transition. */
-    fun analyzeAndSend() = mintCards()
-
     /**
-     * Phase 2 — hand the card attestation off to Vinzrik via deep link.
-     * Fire-and-forget: Vinzrik never calls back. Caller (screen) provides a
-     * launcher that starts an Intent with the URI this function produces.
+     * Phase 2 — build the `vinzrik://receive-cards?attestation=<jwt>` URI.
+     * Caller launches the Intent; fire-and-forget (Vinzrik never calls back).
      */
     fun vinzrikPushUri(): android.net.Uri? {
         val att = _uiState.value.lastAttestation ?: return null
@@ -216,9 +190,6 @@ class DashboardViewModel @Inject constructor(
                 }
         }
     }
-
-    /** Alias for backward-compat during the rename transition. */
-    fun shredAndSend() = shredRaw()
 
     fun removeCard(accountId: String) {
         viewModelScope.launch {

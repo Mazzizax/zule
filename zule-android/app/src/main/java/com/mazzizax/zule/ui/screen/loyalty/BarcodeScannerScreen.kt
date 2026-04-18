@@ -44,25 +44,6 @@ import com.mazzizax.zule.ui.theme.MetalSurfaceBrush
 import com.mazzizax.zule.ui.theme.ZuleColors
 import java.util.concurrent.Executors
 
-/**
- * Translation of Loyalty.tsx startScanner/stopScanner barcode detection.
- *
- * Web app behavior:
- *   1. getUserMedia({ video: { facingMode: 'environment' } })
- *   2. video element plays the stream
- *   3. BarcodeDetector.detect(video) in requestAnimationFrame loop
- *   4. Supported formats: code_128, code_39, ean_13, ean_8, qr_code, upc_a, upc_e
- *   5. On detection: setMemberNumber(barcodes[0].rawValue), stopScanner()
- *   6. If BarcodeDetector not supported: warning overlay
- *
- * Android translation:
- *   1. Camera permission request
- *   2. CameraX Preview bound to PreviewView
- *   3. ML Kit BarcodeScanning.getClient() in ImageAnalysis analyzer
- *   4. Same barcode formats (ML Kit supports all of them by default)
- *   5. On detection: callback with rawValue, close scanner
- *   6. No "not supported" case — ML Kit works on all Android devices
- */
 @Composable
 fun BarcodeScannerOverlay(
     onBarcodeScanned: (String) -> Unit,

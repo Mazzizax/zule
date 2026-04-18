@@ -58,23 +58,6 @@ import com.mazzizax.zule.ui.theme.CormorantGaramond
 import com.mazzizax.zule.ui.theme.MetalSurfaceBrush
 import com.mazzizax.zule.ui.theme.ZuleColors
 
-/**
- * Translation of Security.tsx (363 lines).
- *
- * Four stacked cards:
- *   1. Passkeys: description, passkey list (key icon, device name, metadata, red Remove), Register button
- *   2. Change Password: new + confirm fields (8 char min), Update Password button
- *   3. Sessions: description, Sign Out All Devices, divider, Delete Account (two sequential confirms)
- *   4. Account Information: email, created date, last sign-in
- *
- * Web CSS references:
- *   .passkey-item: flex, justify-content space-between, align-items center, padding 12px,
- *     border 1px var(--border), border-radius 4px, margin-bottom 8px
- *   .passkey-name: font-size 15px, color var(--text-primary), display flex, align-items center, gap 8px
- *   .passkey-meta: font-size 12px, color var(--text-muted)
- *   .btn-danger-small: font-size 12px, color var(--danger), border 1px var(--danger)
- */
-
 private fun formatDate(dateStr: String?): String {
     if (dateStr == null) return "Never"
     return try {
@@ -725,12 +708,6 @@ private fun SecurityPrimaryButton(
     }
 }
 
-/**
- * Secondary button matching the inline-styled buttons in Security.tsx:
- *   font: Cormorant Garamond 14px weight 500, letter-spacing 0.06em
- *   color: var(--text-secondary), border: 1px var(--border)
- *   background: none, padding: 6px 14px, border-radius: 4px
- */
 @Composable
 private fun SecondaryButton(
     text: String,

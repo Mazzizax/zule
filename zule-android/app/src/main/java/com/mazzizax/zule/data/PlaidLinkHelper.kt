@@ -8,19 +8,9 @@ import com.plaid.link.result.LinkExit
 import com.plaid.link.result.LinkSuccess
 
 /**
- * Translation of Dashboard.tsx openPlaidLink() Plaid Link widget integration.
- *
- * Web app flow:
- *   1. Plaid.create({ token: link_token, onSuccess, onExit })
- *   2. handler.open()
- *   3. onSuccess(public_token) → exchange token → refresh profile
- *   4. onExit() → stop loading
- *
- * Android equivalent:
- *   1. registerForActivityResult(OpenPlaidLink()) — must happen before setContent in onCreate
- *   2. launcher.launch(LinkTokenConfiguration) — opens Plaid Link Android SDK
- *   3. LinkSuccess → exchange public token → refresh profile
- *   4. LinkExit → stop loading
+ * Plaid Link activity-result holder. Must be constructed before setContent
+ * in MainActivity.onCreate — registerForActivityResult requires registration
+ * during STARTED, not during a recomposition.
  */
 class PlaidLinkHelper(activity: ComponentActivity) {
 

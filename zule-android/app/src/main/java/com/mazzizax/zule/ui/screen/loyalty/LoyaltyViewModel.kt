@@ -12,19 +12,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Translation of Loyalty.tsx state + effects.
- *
- * Web state:
- *   cards: LoyaltyCard[]
- *   loading: boolean
- *   programName: string
- *   memberNumber: string
- *   adding: boolean
- *   scanning: boolean (barcode scanner state — placeholder on Android)
- *   removeLoadingId: string | null
- */
-
 data class LoyaltyUiState(
     val cards: List<LoyaltyCard> = emptyList(),
     val loading: Boolean = true,

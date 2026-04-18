@@ -12,22 +12,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Translation of Profile.tsx state management.
- *
- * Web app state:
- *   profile: UserProfile | null
- *   loading: boolean
- *   saving: boolean
- *   error: string | null
- *   success: string | null
- *   displayName: string
- *   timezone: string ('UTC' default)
- *
- * Web app actions:
- *   fetchProfile() → GET /functions/v1/user-profile
- *   handleSave() → PUT /functions/v1/user-profile { display_name, timezone }
- */
 data class ProfileUiState(
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,

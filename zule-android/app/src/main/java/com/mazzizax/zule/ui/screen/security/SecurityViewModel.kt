@@ -19,29 +19,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Translation of Security.tsx state management.
- *
- * Web app state:
- *   newPassword: string
- *   confirmPassword: string
- *   changingPassword: boolean
- *   error: string | null
- *   success: string | null
- *   passkeys: Passkey[]
- *   loadingPasskeys: boolean
- *   registeringPasskey: boolean
- *   deletingPasskeyId: string | null
- *   deleting: boolean (account deletion)
- *
- * Web app actions:
- *   handleChangePassword() → supabase.auth.updateUser({ password })
- *   handleRegisterPasskey() → registerPasskey(user.id, user.email, undefined)
- *   handleDeletePasskey(id) → deletePasskey(id)
- *   handleSignOutAllDevices() → supabase.auth.signOut({ scope: 'global' })
- *   handleDeleteAccount() → POST /functions/v1/delete-account then signOut
- *   loadPasskeys() → listPasskeys()
- */
 data class SecurityUiState(
     val newPassword: String = "",
     val confirmPassword: String = "",
@@ -154,24 +131,6 @@ class SecurityViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Translation of Security.tsx handleRegisterPasskey:
-     *   setRegisteringPasskey(true)
-     *   const result = await registerPasskey(user.id, user.email, undefined)
-     *   if (result.success) { setSuccess(...); await loadPasskeys() }
-     *   else { setError(result.error) }
-     *   setRegisteringPasskey(false)
-     *
-     * registerPasskey() in webauthn.ts:
-     *   1. GET passkey-register?action=options → server options + challenge_key
-     *   2. navigator.credentials.create({ publicKey: options }) → attestation
-     *   3. POST passkey-register with challenge_key + response + device_name
-     *
-     * Android translation:
-     *   1. passkeyRepository.getRegistrationOptions() → options JSON + challenge_key
-     *   2. CredentialManager.createCredential(activity, CreatePublicKeyCredentialRequest(optionsJson))
-     *   3. passkeyRepository.registerPasskey(challengeKey, responseJson, deviceName)
-     */
     fun registerPasskey(activity: android.app.Activity) {
         viewModelScope.launch {
             _uiState.update { it.copy(isRegisteringPasskey = true, error = null, success = null) }

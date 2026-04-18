@@ -45,10 +45,6 @@ object ZuleColors {
     val SidebarBackground = Color(0xFF0C0B09)
 }
 
-/**
- * Translation of --metal-text CSS gradient:
- * linear-gradient(135deg, #A08968 0%, #D4BC9A 25%, #C4A882 50%, #E0D0B8 75%, #A08968 100%)
- */
 val MetalTextBrush = Brush.linearGradient(
     colors = listOf(
         Color(0xFFA08968),
@@ -59,10 +55,6 @@ val MetalTextBrush = Brush.linearGradient(
     )
 )
 
-/**
- * Translation of --metal-surface CSS gradient:
- * linear-gradient(135deg, #A08968 0%, #C4A882 40%, #D4BC9A 60%, #A08968 100%)
- */
 val MetalSurfaceBrush = Brush.linearGradient(
     colors = listOf(
         Color(0xFFA08968),
@@ -72,13 +64,6 @@ val MetalSurfaceBrush = Brush.linearGradient(
     )
 )
 
-/**
- * Metallic tier badge gradients from Dashboard.tsx metals object.
- *
- * rose: linear-gradient(145deg, #8a7560..#C4A882..#E0D0B8..#D4BC9A..#A08968..#C4A882..#E0D0B8..#8a7560)
- * titanium: linear-gradient(145deg, #7a8590..#B0BEC5..#CFD8DC..#B0BEC5..#8a9aa5..#B0BEC5..#CFD8DC..#7a8590)
- * gunmetal: linear-gradient(145deg, #3a3e44..#4d5259..#626870..#6e747c..#5a6068..#4d5259..#626870..#6e747c..#5a6068..#3a3e44)
- */
 val RoseGoldBrush = Brush.linearGradient(
     colors = listOf(
         Color(0xFF8A7560), Color(0xFFC4A882), Color(0xFFE0D0B8),
@@ -102,7 +87,6 @@ val GunmetalBrush = Brush.linearGradient(
     )
 )
 
-// Text colors for metallic badges (from metals.text in Dashboard.tsx/Subscriptions.tsx)
 val RoseGoldTextColor = Color(0xFF1A1510)
 val TitaniumTextColor = Color(0xFF1A1E22)
 val GunmetalTextColor = Color(0xFF111214)

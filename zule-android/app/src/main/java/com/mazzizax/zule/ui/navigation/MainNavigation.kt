@@ -66,29 +66,12 @@ import com.mazzizax.zule.ui.theme.MetalTextBrush
 import com.mazzizax.zule.ui.theme.SpaceMono
 import com.mazzizax.zule.ui.theme.ZuleColors
 
-/**
- * Kotlin + Jetpack Compose translation of Layout.tsx
- *
- * The web app's mobile view: fixed top header with Zule icon + ZULE metallic title + hamburger,
- * slide-in overlay menu from the right with 4 nav links (Dashboard, Identity, Security, Services)
- * and Sign Out. Sticky "Zero-knowledge User License Enclave" header above content.
- *
- * The four SVG icons from the web app are referenced as vector drawables:
- *   ic_nav_dashboard (compass rose)
- *   ic_nav_identity (dragon)
- *   ic_nav_security (shuriken)
- *   ic_nav_services (gem)
- *   ic_signout (fire dragon)
- * These must be created as Android vector drawables from the original SVG path data.
- */
-
 data class NavItem(
     val route: String,
     val label: String,
     val iconRes: Int,
 )
 
-// Exact nav items from Layout.tsx navItems array
 val navItems = listOf(
     NavItem("dashboard", "Dashboard", R.drawable.ic_nav_dashboard),
     NavItem("profile", "Identity", R.drawable.ic_nav_identity),

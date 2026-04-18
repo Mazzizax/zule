@@ -49,25 +49,6 @@ import com.mazzizax.zule.ui.theme.CormorantGaramond
 import com.mazzizax.zule.ui.theme.MetalSurfaceBrush
 import com.mazzizax.zule.ui.theme.ZuleColors
 
-/**
- * Translation of Profile.tsx.
- *
- * Single card "Personal Information":
- *   - Email (disabled field with hint)
- *   - Display Name (editable, 50 char max)
- *   - Timezone dropdown (11 exact options from TIMEZONES const)
- *   - Save Changes button
- *
- * Web CSS references:
- *   .form-group: margin-bottom 20px
- *   .form-group label: font-size 16px, color var(--text-secondary), margin-bottom 8px
- *   .form-group input: font-size 14px, background var(--bg-input), border 1px var(--border),
- *     border-radius 4px, padding 12px 14px, color var(--text-primary)
- *   .input-disabled: opacity 0.5, cursor not-allowed
- *   .form-hint: font-size 12px, color var(--text-muted), margin-top 6px
- *   select: same styling as input
- */
-
 private val TIMEZONES = listOf(
     "UTC",
     "America/New_York",
@@ -329,10 +310,6 @@ private fun EditableTextField(
     )
 }
 
-/**
- * Timezone dropdown matching the <select> in Profile.tsx.
- * Styled to match form input appearance.
- */
 @Composable
 private fun TimezoneDropdown(
     selected: String,

@@ -9,15 +9,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import com.mazzizax.zule.data.SessionManager
 
-/**
- * Wraps the app content and tracks touch events for the inactivity timeout.
- *
- * Translation of the web app's document.addEventListener for
- * ['mousedown', 'keydown', 'scroll', 'touchstart'] that calls
- * resetInactivityTimer() in AuthContext.tsx.
- *
- * On Android, touch is the primary input — we track Press events.
- */
+/** Feeds every UI touch into SessionManager.onUserActivity() to reset the inactivity timer. */
 @Composable
 fun SessionTimeoutWrapper(
     sessionManager: SessionManager,

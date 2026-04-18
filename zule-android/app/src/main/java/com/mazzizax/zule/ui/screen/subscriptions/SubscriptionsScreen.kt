@@ -55,23 +55,6 @@ import com.mazzizax.zule.ui.theme.TitaniumBrush
 import com.mazzizax.zule.ui.theme.TitaniumTextColor
 import com.mazzizax.zule.ui.theme.ZuleColors
 
-/**
- * Translation of pages/Subscriptions.tsx (498 lines).
- *
- * Two views:
- * 1. Service list — five clickable cards
- * 2. Tier detail — back button, service name, tier grid with metallic buttons
- *
- * Checkout: Custom Chrome Tab (not popup).
- * Upgrade: inline confirmation.
- * Cancel: inline confirmation with checkbox. Goals cannot be cancelled.
- *
- * Hardcoded tier data exactly matches the web source including
- * stripe_price_ids, product_ids, limits, and features arrays.
- */
-
-// ── Data structures matching Subscriptions.tsx ──
-
 data class ServiceTier(
     val id: String,
     val name: String,
@@ -91,7 +74,6 @@ data class Service(
     val tiers: List<ServiceTier>,
 )
 
-// Exact service/tier data from Subscriptions.tsx lines 57-107
 val services = listOf(
     Service(
         id = "conversations-with-xenon",
@@ -146,10 +128,6 @@ val services = listOf(
 
 // ── Metal styling helpers ──
 
-/**
- * Returns the Brush, text color, border color, and highlight color for a metal name.
- * Matches the metals object in Subscriptions.tsx lines 8-30.
- */
 private data class MetalStyle(
     val brush: Brush,
     val textColor: Color,
@@ -493,7 +471,6 @@ private fun TierCard(
     val canChange = tier.stripePriceId != null && !isActive
     val loadingKey = "${service.id}-${tier.stripePriceId}"
 
-    // Button label logic — exact match of Subscriptions.tsx lines 374-379
     val label = when {
         isGoals -> "Purchased"
         isOneTime && atLimit -> "Owned"

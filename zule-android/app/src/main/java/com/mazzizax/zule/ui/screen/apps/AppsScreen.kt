@@ -32,15 +32,6 @@ import com.mazzizax.zule.ui.theme.CormorantGaramond
 import com.mazzizax.zule.ui.theme.MetalTextBrush
 import com.mazzizax.zule.ui.theme.ZuleColors
 
-/**
- * Translation of pages/Apps.tsx (60 lines).
- *
- * "App Connections" metallic uppercase title. Subtitle.
- * 2-column grid (FlowRow for responsive layout).
- * Samsung Health (heart-fire emoji) + PlayStation (gamepad emoji).
- * Both "Coming Soon." Note at bottom.
- */
-
 private data class AppInfo(
     val id: String,
     val name: String,

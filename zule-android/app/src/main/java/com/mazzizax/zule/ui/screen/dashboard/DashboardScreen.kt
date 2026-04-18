@@ -50,32 +50,11 @@ import com.mazzizax.zule.ui.theme.TitaniumBrush
 import com.mazzizax.zule.ui.theme.TitaniumTextColor
 import com.mazzizax.zule.ui.theme.ZuleColors
 
-/**
- * Translation of Dashboard.tsx (688 lines).
- *
- * Two-column card grid: Account card + Subscriptions card.
- * Full-width: Connected Accounts, App Connections, Loyalty Programs.
- *
- * Web CSS references:
- *   .card: background var(--bg-card), border 1px var(--border), border-radius 4px, padding 24px
- *   .card h2: 11px uppercase, weight 600, letter-spacing 3px, color var(--zule-gold-dim)
- *   .card-grid: display grid, grid-template-columns repeat(auto-fit, minmax(300px, 1fr)), gap 16px
- *   .info-row: flex, justify-content space-between, padding 10px 0, border-bottom 1px var(--border)
- *   .info-row .label: color var(--text-secondary)
- *   .info-row .value: color var(--text-primary)
- *   .info-note: color var(--text-secondary), font-size 13px
- *   .btn-primary: metallic gradient, Cormorant Garamond 18px weight 500
- */
-
 private val SERVICE_DISPLAY_NAME = mapOf(
     "goals" to "Goals",
     "aca" to "Advanced Cognitive Assistant",
 )
 
-/**
- * Map service_id + tier to metallic brush/text color.
- * Matches Dashboard.tsx TIER_METAL and metals objects.
- */
 private val TIER_METAL = mapOf(
     "goals" to mapOf("standard" to "rose", "premium" to "titanium", "citizen" to "gunmetal"),
     "aca" to mapOf("standard" to "rose", "enthusiast" to "titanium", "padawan" to "gunmetal"),
@@ -211,7 +190,7 @@ fun DashboardScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // ── Transaction Pipeline ──
-        // Translation of Dashboard.tsx pullTransactions, analyzeAndSend, shredAndSend
+        // Dev-mode Transaction Pipeline — 0.Pull → 1.Mint → 2.Send → 3.Shred.
         if (state.plaidAccounts.isNotEmpty()) {
             ZuleCard(modifier = Modifier.fillMaxWidth()) {
                 // Pull Transactions per account
@@ -450,10 +429,6 @@ private fun InfoRow(
     }
 }
 
-/**
- * Subscription row with metallic tier badge.
- * Matches the inline-styled .metal-btn from Dashboard.tsx.
- */
 @Composable
 private fun SubscriptionRow(
     subscription: Subscription,
@@ -513,13 +488,7 @@ private fun SubscriptionDefaultRow(onClick: () -> Unit) {
     HorizontalDivider(thickness = 1.dp, color = ZuleColors.Border)
 }
 
-/**
- * Metallic tier badge matching Dashboard.tsx .metal-btn inline styles:
- *   min-width: 120px, text-align: center
- *   padding: 8px 12px, border-radius: 4px
- *   font: Cormorant Garamond 12px weight 600, uppercase, letter-spacing 0.14em
- *   background: metallic gradient
- */
+/** Metallic tier badge — brush/text color chosen from TIER_METAL. */
 @Composable
 private fun MetallicBadge(
     text: String,
@@ -548,14 +517,6 @@ private fun MetallicBadge(
     }
 }
 
-/**
- * Plaid account item matching the per-account card in Dashboard.tsx.
- *
- * Each account shows:
- *   - Institution name + connected date info row
- *   - Status banner (amber for login_required, blue for new_accounts_available)
- *   - Remove button
- */
 @Composable
 private fun PlaidAccountItem(
     account: PlaidAccount,
@@ -589,8 +550,6 @@ private fun PlaidAccountItem(
             )
         }
 
-        // Status: new_accounts_available - blue banner with Add Accounts button
-        // Matches Dashboard.tsx line 597-609
         if (account.status == "new_accounts_available") {
             Spacer(modifier = Modifier.height(4.dp))
             Row(
@@ -625,8 +584,6 @@ private fun PlaidAccountItem(
             }
         }
 
-        // Status: login_required / pending_expiration / pending_disconnect - amber banner with Update button
-        // Matches Dashboard.tsx line 612-628
         if (account.status != null && UPDATE_STATUSES.contains(account.status)) {
             Spacer(modifier = Modifier.height(4.dp))
             val statusText = when (account.status) {

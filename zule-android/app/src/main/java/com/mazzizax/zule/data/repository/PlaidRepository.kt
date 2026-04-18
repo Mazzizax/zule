@@ -11,18 +11,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-/**
- * Translation of Dashboard.tsx Plaid operations.
- *
- * All Plaid edge functions expect POST:
- *   plaid-create-link-token → POST
- *   plaid-exchange-token → POST
- *   plaid-update-link-token → POST
- *   plaid-pull-transactions → POST
- *   mint-transaction-cards → POST
- *   shred-minted-transactions → POST
- *   remove-card → POST
- */
 class PlaidRepository(private val supabase: SupabaseClient) {
 
     private val json = Json { ignoreUnknownKeys = true }

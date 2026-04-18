@@ -19,14 +19,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-/**
- * Machine auth operations using raw HTTP — same pattern as web app fetch() calls.
- *
- * machine-auth-pending (GET): list pending sessions
- * machine-auth-approve (GET ?action=challenge&session_id=X&credential_id=Y): get passkey challenge
- * machine-auth-approve (POST { session_id, challenge_key, response }): approve with passkey
- * machine-auth-approve (POST { session_id, action: 'deny' }): deny
- */
 class MachineAuthRepository(private val supabase: SupabaseClient) {
 
     private val json = Json { ignoreUnknownKeys = true }

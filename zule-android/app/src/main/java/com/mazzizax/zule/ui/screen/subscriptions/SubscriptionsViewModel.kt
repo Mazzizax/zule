@@ -14,20 +14,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Translation of Subscriptions.tsx state + effects.
- *
- * Web state:
- *   selectedService: string | null (from searchParams or click)
- *   subscriptions: Subscription[] (from user-profile GET)
- *   purchases: { product_id: string }[] (from user-profile GET)
- *   checkoutLoading: string | null (key = "serviceId-stripePriceId")
- *   cancelConfirm: boolean
- *   cancelLoading: boolean
- *   upgradeTarget: { serviceId, tierId, tierName, priceId, price } | null
- *   upgradeLoading: boolean
- */
-
 data class Purchase(val productId: String)
 
 data class UpgradeTarget(
@@ -80,13 +66,7 @@ class SubscriptionsViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Creates a Stripe checkout session and returns the checkout URL.
-     * The screen composable opens this URL in a Custom Chrome Tab.
-     *
-     * Web app: handleSubscribe → POST create-checkout → window.open(url)
-     * Android: POST create-checkout → return URL → CustomTabsIntent
-     */
+    /** Caller opens the returned URL in a Chrome Custom Tab. */
     fun subscribe(
         serviceId: String,
         stripePriceId: String,
@@ -112,10 +92,6 @@ class SubscriptionsViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Prompts the upgrade confirmation inline.
-     * Web app: setUpgradeTarget({...})
-     */
     fun showUpgradeConfirmation(target: UpgradeTarget) {
         _uiState.update { it.copy(upgradeTarget = target) }
     }
@@ -124,10 +100,6 @@ class SubscriptionsViewModel @Inject constructor(
         _uiState.update { it.copy(upgradeTarget = null) }
     }
 
-    /**
-     * Executes the upgrade (switch tier).
-     * Web app: handleUpgrade → POST upgrade-subscription → wait 2s → refresh
-     */
     fun confirmUpgrade() {
         val target = _uiState.value.upgradeTarget ?: return
         _uiState.update { it.copy(upgradeLoading = true) }
@@ -156,10 +128,6 @@ class SubscriptionsViewModel @Inject constructor(
         _uiState.update { it.copy(cancelConfirm = false) }
     }
 
-    /**
-     * Cancels the active subscription for the given service.
-     * Web app: handleCancel → POST cancel-subscription → refresh
-     */
     fun confirmCancel(serviceId: String) {
         _uiState.update { it.copy(cancelLoading = true) }
 

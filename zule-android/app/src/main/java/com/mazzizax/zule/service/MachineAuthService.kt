@@ -23,12 +23,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Foreground service for monitoring machine auth requests.
- * Polls machine-auth-pending every 3 seconds when authenticated.
- * Shows notification when a machine requests login approval.
- *
- * The web app doesn't have this — it's a mobile-specific feature
- * from the build guide for background auth request monitoring.
+ * Polls machine-auth-pending every 3 seconds while the user is
+ * authenticated; surfaces a notification when a pending session appears.
  */
 class MachineAuthService : Service() {
 

@@ -44,16 +44,6 @@ import com.mazzizax.zule.ui.theme.MetalTextBrush
 import com.mazzizax.zule.ui.theme.SpaceMono
 import com.mazzizax.zule.ui.theme.ZuleColors
 
-/**
- * Translation of pages/Loyalty.tsx (265 lines).
- *
- * "Loyalty Programs" metallic title + subtitle.
- * Add card form: program name input, member number input with camera scan button (icon-only).
- * Scan button opens barcode scanner (separate composable, placeholder onClick for now).
- * Add Card button.
- * Card list: program name, monospace member number, red Remove button.
- */
-
 @Composable
 fun LoyaltyScreen(
     viewModel: LoyaltyViewModel = hiltViewModel(),
