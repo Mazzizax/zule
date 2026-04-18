@@ -1,10 +1,10 @@
-# Strip all logging in release
+# Strip verbose/debug/info logging in release but keep w/e so PrivateLog.safe()
+# (HTTP codes, class names, support refs — PII-free) survives for release
+# diagnostics.
 -assumenosideeffects class android.util.Log {
     public static int v(...);
     public static int d(...);
     public static int i(...);
-    public static int w(...);
-    public static int e(...);
 }
 
 # Kotlin Serialization
@@ -26,3 +26,17 @@
 
 # Credential Manager
 -keep class androidx.credentials.** { *; }
+-keep class androidx.credentials.exceptions.** { *; }
+
+# AndroidX Lifecycle ViewModel — preserve constructors for reflection-based
+# ViewModel instantiation.
+-keep class * extends androidx.lifecycle.ViewModel { <init>(...); }
+-keep class * extends androidx.lifecycle.AndroidViewModel { <init>(...); }
+
+# App-local data classes — Supabase serialization relies on them at runtime.
+-keep class com.mazzizax.zule.data.** { *; }
+-keep class com.mazzizax.zule.data.repository.** { *; }
+
+# Suppress spurious warnings from transitive deps.
+-dontwarn org.slf4j.**
+-dontwarn org.conscrypt.**

@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Zule</string>
+
+    <!-- Referenced by <meta-data android:name="asset_statements"> in the
+         manifest. Points Android App Links verifier at the public
+         /.well-known/assetlinks.json that lists the allowed signing
+         certificates for this package. -->
+    <string name="asset_statements" translatable="false">
+        [{
+          \"include\": \"https://zule.mazzizax.net/.well-known/assetlinks.json\"
+        }]
+    </string>
 </resources>

@@ -45,6 +45,9 @@ object Routes {
     const val LOGIN = "login"
     const val REGISTER = "register"
     const val VERIFY_EMAIL = "verify-email"
+    const val FORGOT_PASSWORD = "forgot-password"
+    const val PASSWORD_RECOVERY = "password-recovery"
+    const val PASSKEY_ENROLL = "passkey-enroll"
     const val MAIN = "main"
     const val AUTH = "auth"
 }
@@ -106,9 +109,17 @@ fun ZuleNavGraph(
             return
         }
         is SessionStatus.Authenticated -> {
+            val pendingRecovery by com.mazzizax.zule.util.RecoverySignal.pendingRecovery.collectAsState()
             val isVerified = authRepository.isEmailVerified()
-            LaunchedEffect(isVerified) {
-                val dest = if (isVerified) Routes.MAIN else Routes.VERIFY_EMAIL
+            LaunchedEffect(isVerified, pendingRecovery) {
+                val dest = when {
+                    // Recovery deep-link takes precedence: the user tapped a
+                    // password-reset link in email; force a new password
+                    // before handing them back to normal nav.
+                    pendingRecovery -> Routes.PASSWORD_RECOVERY
+                    isVerified -> Routes.MAIN
+                    else -> Routes.VERIFY_EMAIL
+                }
                 navController.navigate(dest) {
                     popUpTo(0) { inclusive = true }
                 }
@@ -135,9 +146,33 @@ fun ZuleNavGraph(
                     onNavigateToRegister = {
                         navController.navigate(Routes.REGISTER)
                     },
+                    onNavigateToForgotPassword = {
+                        navController.navigate(Routes.FORGOT_PASSWORD)
+                    },
                     onLoginSuccess = {
                         val dest = if (authRepository.isEmailVerified()) Routes.MAIN else Routes.VERIFY_EMAIL
                         navController.navigate(dest) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                )
+            }
+
+            composable(Routes.FORGOT_PASSWORD) {
+                com.mazzizax.zule.ui.screen.password.ForgotPasswordScreen(
+                    onBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(Routes.PASSWORD_RECOVERY) {
+                com.mazzizax.zule.ui.screen.password.PasswordRecoveryScreen(
+                    onComplete = {
+                        navController.navigate(Routes.MAIN) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    onCancel = {
+                        navController.navigate(Routes.LOGIN) {
                             popUpTo(0) { inclusive = true }
                         }
                     },

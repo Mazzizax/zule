@@ -43,9 +43,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import android.app.Activity
-import android.net.Uri
-import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.ui.platform.LocalContext
+import com.mazzizax.zule.ui.components.HintActionRow
+import com.mazzizax.zule.ui.components.LegalFooter
 import com.mazzizax.zule.ui.theme.CormorantGaramond
 import com.mazzizax.zule.ui.theme.MetalSurfaceBrush
 import com.mazzizax.zule.ui.theme.MetalTextBrush
@@ -54,7 +54,9 @@ import com.mazzizax.zule.ui.theme.ZuleColors
 @Composable
 fun LoginScreen(
     onNavigateToRegister: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit,
     onLoginSuccess: () -> Unit,
+    onHintAction: (com.mazzizax.zule.util.RecoveryHint) -> Unit = {},
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -118,7 +120,7 @@ fun LoginScreen(
                     .height(48.dp)
                     .border(1.dp, ZuleColors.PrimaryDim, RoundedCornerShape(4.dp))
                     .clickable(enabled = !state.isLoading && !state.passkeyLoading) {
-                        viewModel.signInWithPasskey(activity)
+                        viewModel.signInWithPasskey(activity, onLoginSuccess)
                     },
                 contentAlignment = Alignment.Center,
             ) {
@@ -228,6 +230,39 @@ fun LoginScreen(
                 }
             }
 
+            // Error banner + actionable hint row
+            if (state.error != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = state.error ?: "",
+                    style = TextStyle(
+                        fontFamily = CormorantGaramond,
+                        fontSize = 13.sp,
+                        color = ZuleColors.Primary,
+                        textAlign = TextAlign.Center,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                HintActionRow(
+                    hint = state.errorHint,
+                    supportRef = state.errorSupportRef,
+                    onAction = onHintAction,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Forgot password?
+            Text(
+                text = "Forgot password?",
+                modifier = Modifier.clickable(onClick = onNavigateToForgotPassword),
+                style = TextStyle(
+                    fontFamily = CormorantGaramond,
+                    fontSize = 13.sp,
+                    color = ZuleColors.Primary,
+                ),
+            )
+
             Spacer(modifier = Modifier.height(20.dp))
 
             // Footer: "Don't have an account? Create Account"
@@ -254,34 +289,8 @@ fun LoginScreen(
                 )
             }
 
-            // Privacy · Terms links — matches web footer
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                val ctx = LocalContext.current
-                Text(
-                    text = "Privacy",
-                    modifier = Modifier.clickable {
-                        CustomTabsIntent.Builder().build()
-                            .launchUrl(ctx, Uri.parse("https://zule.mazzizax.net/privacy"))
-                    },
-                    style = TextStyle(fontSize = 11.sp, color = ZuleColors.TextPrimary.copy(alpha = 0.5f)),
-                )
-                Text(
-                    text = " · ",
-                    style = TextStyle(fontSize = 11.sp, color = ZuleColors.TextPrimary.copy(alpha = 0.5f)),
-                )
-                Text(
-                    text = "Terms",
-                    modifier = Modifier.clickable {
-                        CustomTabsIntent.Builder().build()
-                            .launchUrl(ctx, Uri.parse("https://zule.mazzizax.net/terms"))
-                    },
-                    style = TextStyle(fontSize = 11.sp, color = ZuleColors.TextPrimary.copy(alpha = 0.5f)),
-                )
-            }
+            Spacer(modifier = Modifier.height(8.dp))
+            LegalFooter()
         }
     }
 }

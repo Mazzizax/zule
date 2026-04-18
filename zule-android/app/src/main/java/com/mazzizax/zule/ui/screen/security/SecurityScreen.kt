@@ -288,6 +288,10 @@ fun SecurityScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+
+        com.mazzizax.zule.ui.components.LegalFooter()
+
+        Spacer(modifier = Modifier.height(16.dp))
     }
 
     // ── Dialogs ──

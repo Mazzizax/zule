@@ -255,34 +255,8 @@ fun RegisterScreen(
                     )
                 }
 
-                // Privacy · Terms links
                 Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    val ctx = LocalContext.current
-                    Text(
-                        text = "Privacy",
-                        modifier = Modifier.clickable {
-                            CustomTabsIntent.Builder().build()
-                                .launchUrl(ctx, Uri.parse("https://zule.mazzizax.net/privacy"))
-                        },
-                        style = TextStyle(fontSize = 11.sp, color = ZuleColors.TextPrimary.copy(alpha = 0.5f)),
-                    )
-                    Text(
-                        text = " · ",
-                        style = TextStyle(fontSize = 11.sp, color = ZuleColors.TextPrimary.copy(alpha = 0.5f)),
-                    )
-                    Text(
-                        text = "Terms",
-                        modifier = Modifier.clickable {
-                            CustomTabsIntent.Builder().build()
-                                .launchUrl(ctx, Uri.parse("https://zule.mazzizax.net/terms"))
-                        },
-                        style = TextStyle(fontSize = 11.sp, color = ZuleColors.TextPrimary.copy(alpha = 0.5f)),
-                    )
-                }
+                com.mazzizax.zule.ui.components.LegalFooter()
             }
         }
     }

@@ -130,16 +130,62 @@ verify_jwt = false
 
 [functions.create-checkout]
 # Requires authenticated user
-verify_jwt = true
+verify_jwt = false
+# ES256 gateway bug on 2026 sb_publishable keys: default gateway verification
+# rejects valid tokens. Validate in-code via admin.auth.getUser(accessToken)
+# inside each function body instead.
 
 [functions.create-portal-session]
 # Requires authenticated user
-verify_jwt = true
+verify_jwt = false
+# ES256 gateway bug on 2026 sb_publishable keys: default gateway verification
+# rejects valid tokens. Validate in-code via admin.auth.getUser(accessToken)
+# inside each function body instead.
 
 [functions.create-payment]
 # Requires authenticated user
-verify_jwt = true
+verify_jwt = false
+# ES256 gateway bug on 2026 sb_publishable keys: default gateway verification
+# rejects valid tokens. Validate in-code via admin.auth.getUser(accessToken)
+# inside each function body instead.
 
 [functions.create-verification-session]
 # Requires authenticated user
-verify_jwt = true
+verify_jwt = false
+# ES256 gateway bug on 2026 sb_publishable keys: default gateway verification
+# rejects valid tokens. Validate in-code via admin.auth.getUser(accessToken)
+# inside each function body instead.
+
+# ---------------------------------------------------------------
+# Auth hardening: email flows (signup / resend / reset) through Resend with
+# branded templates and App-Link-aware redirect_to.
+# ---------------------------------------------------------------
+
+[functions.auth-signup]
+verify_jwt = false
+
+[functions.auth-resend]
+verify_jwt = false
+
+[functions.auth-reset]
+verify_jwt = false
+
+# ---------------------------------------------------------------
+# Passkey strict-ceremony split (server-issued challenge, platform authenticator
+# required, resident key required, UV required, counter-rollback clone
+# detection, per-credential rate limit, native Supabase session minting).
+# Coexists with the legacy passkey-register / passkey-auth (attestation
+# flow for Vinzrik), which remain untouched.
+# ---------------------------------------------------------------
+
+[functions.passkey-register-begin]
+verify_jwt = false
+
+[functions.passkey-register-finish]
+verify_jwt = false
+
+[functions.passkey-auth-begin]
+verify_jwt = false
+
+[functions.passkey-auth-finish]
+verify_jwt = false

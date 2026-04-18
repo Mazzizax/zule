@@ -9,6 +9,13 @@ import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.functions.functions
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.Serializable
+
+@Serializable
+private data class EmailBody(val email: String)
+
+@Serializable
+private data class SignUpBody(val email: String, val password: String)
 
 /**
  * Translation of AuthContext.tsx auth operations.
@@ -42,10 +49,15 @@ class AuthRepository(
         sessionManager.startSessionTimers()
     }
 
+    /**
+     * Routes signup through the auth-signup Edge Function so the confirmation
+     * email is branded and the link points directly at our App-Linked host.
+     * The Supabase SDK's default signUpWith(Email) email path bounces through
+     * SUPABASE_URL/auth/v1/verify which Android App Links do not intercept.
+     */
     suspend fun signUp(email: String, password: String) {
-        supabase.auth.signUpWith(Email) {
-            this.email = email
-            this.password = password
+        supabase.functions.invoke("auth-signup") {
+            body = SignUpBody(email, password)
         }
     }
 
@@ -59,9 +71,29 @@ class AuthRepository(
         supabase.auth.signOut(io.github.jan.supabase.auth.SignOutScope.GLOBAL)
     }
 
-    suspend fun resendVerification() {
-        val email = currentUser()?.email ?: throw IllegalStateException("No email available")
-        supabase.auth.resendEmail(io.github.jan.supabase.auth.OtpType.Email.SIGNUP, email)
+    /**
+     * Re-sends a sign-in/confirmation link via auth-resend. The magic-link
+     * type doubles as email confirmation for unverified accounts and as a
+     * plain sign-in link for verified ones.
+     */
+    suspend fun resendVerification(email: String? = null) {
+        val target = email?.trim()?.lowercase()
+            ?: currentUser()?.email
+            ?: throw IllegalStateException("No email available")
+        supabase.functions.invoke("auth-resend") {
+            body = EmailBody(target)
+        }
+    }
+
+    /**
+     * Fires a password-reset email via auth-reset. Server always returns
+     * ok:true to prevent email enumeration; this method succeeds even if
+     * the address has no registered account.
+     */
+    suspend fun requestPasswordReset(email: String) {
+        supabase.functions.invoke("auth-reset") {
+            body = EmailBody(email.trim().lowercase())
+        }
     }
 
     suspend fun updatePassword(newPassword: String) {

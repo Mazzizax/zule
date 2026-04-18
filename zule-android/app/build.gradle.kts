@@ -20,6 +20,17 @@ android {
 
         buildConfigField("String", "SUPABASE_URL", "\"https://sgjulzvgcyotebbexfue.supabase.co\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"sb_publishable_xFOHnMnSq51MLWo1WlZxRQ_79esD8cM\"")
+
+        // Host that signs App Links assetlinks.json for the OTP callback flow
+        // (email confirmation, magic link, password recovery). Override per
+        // environment; production zule signs at zule.mazzizax.net.
+        manifestPlaceholders["appAuthHost"] = "zule.mazzizax.net"
+        buildConfigField("String", "AUTH_HOST", "\"zule.mazzizax.net\"")
+
+        // Legal / support URLs — opened via Chrome Custom Tabs from LegalFooter.
+        buildConfigField("String", "LEGAL_PRIVACY_URL", "\"https://zule.mazzizax.net/privacy\"")
+        buildConfigField("String", "LEGAL_TERMS_URL", "\"https://zule.mazzizax.net/terms\"")
+        buildConfigField("String", "LEGAL_CONTACT_URL", "\"https://mazzizax.org/contact\"")
     }
 
     buildTypes {
