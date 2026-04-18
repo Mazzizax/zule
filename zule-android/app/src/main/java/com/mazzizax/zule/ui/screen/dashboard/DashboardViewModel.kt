@@ -47,6 +47,7 @@ data class DashboardUiState(
     val analyzeResult: String? = null,
     val shredLoading: Boolean = false,
     val shredResult: String? = null,
+    val lastAttestation: String? = null,
     val error: String? = null,
 )
 
@@ -137,36 +138,87 @@ class DashboardViewModel @Inject constructor(
     }
 
     /**
-     * Translation of analyzeAndSend() from Dashboard.tsx.
+     * Phase 1 — mint card_attestation from unminted Plaid transactions.
+     * Extracts the attestation JWT from the response and stores it in
+     * `lastAttestation` so phase 2 (sendToVinzrik) can fire the deep link.
      */
-    fun analyzeAndSend() {
+    fun mintCards() {
         viewModelScope.launch {
-            _uiState.update { it.copy(analyzeLoading = true, analyzeResult = null) }
+            _uiState.update { it.copy(analyzeLoading = true, analyzeResult = null, lastAttestation = null) }
             plaidRepository.mintTransactionCards()
                 .onSuccess { responseBody ->
-                    _uiState.update { it.copy(analyzeLoading = false, analyzeResult = "Cards minted", shredResult = null) }
+                    val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+                    val root = runCatching {
+                        json.parseToJsonElement(responseBody) as kotlinx.serialization.json.JsonObject
+                    }.getOrNull()
+                    val attestation = root
+                        ?.get("card_attestation")
+                        ?.let { if (it is kotlinx.serialization.json.JsonPrimitive) it.content else null }
+                    val count = root
+                        ?.get("card_count")
+                        ?.let { if (it is kotlinx.serialization.json.JsonPrimitive) it.content.toIntOrNull() else null }
+                        ?: 0
+                    _uiState.update {
+                        it.copy(
+                            analyzeLoading = false,
+                            analyzeResult = if (count == 0) "No new transactions to mint"
+                            else "Minted $count game event cards",
+                            lastAttestation = attestation,
+                            shredResult = null,
+                        )
+                    }
                 }
                 .onFailure {
-                    _uiState.update { it.copy(analyzeLoading = false, error = "Failed to analyze transactions") }
+                    _uiState.update { it.copy(analyzeLoading = false, error = "Failed to mint cards") }
                 }
         }
     }
 
+    /** Alias for backward-compat during the rename transition. */
+    fun analyzeAndSend() = mintCards()
+
     /**
-     * Translation of shredAndSend() from Dashboard.tsx.
+     * Phase 2 — hand the card attestation off to Vinzrik via deep link.
+     * Fire-and-forget: Vinzrik never calls back. Caller (screen) provides a
+     * launcher that starts an Intent with the URI this function produces.
      */
-    fun shredAndSend() {
+    fun vinzrikPushUri(): android.net.Uri? {
+        val att = _uiState.value.lastAttestation ?: return null
+        return android.net.Uri.parse("vinzrik://receive-cards").buildUpon()
+            .appendQueryParameter("attestation", att)
+            .build()
+    }
+
+    fun noteSentToVinzrik() {
+        _uiState.update { it.copy(shredResult = "Sent to Vinzrik. Confirm on Vinzrik, then shred.") }
+    }
+
+    /**
+     * Phase 3 — shred raw transactions on zule's side. Cards should already
+     * have been handed off via sendToVinzrik before this runs.
+     */
+    fun shredRaw() {
         viewModelScope.launch {
             _uiState.update { it.copy(shredLoading = true, shredResult = null) }
             plaidRepository.shredMintedTransactions()
-                .onSuccess { responseBody ->
-                    _uiState.update { it.copy(shredLoading = false, shredResult = "Transactions shredded", analyzeResult = null) }
+                .onSuccess {
+                    _uiState.update {
+                        it.copy(
+                            shredLoading = false,
+                            shredResult = "Transactions shredded",
+                            analyzeResult = null,
+                            lastAttestation = null,
+                        )
+                    }
                 }
                 .onFailure {
                     _uiState.update { it.copy(shredLoading = false, error = "Failed to shred transactions") }
                 }
         }
     }
+
+    /** Alias for backward-compat during the rename transition. */
+    fun shredAndSend() = shredRaw()
 
     fun removeCard(accountId: String) {
         viewModelScope.launch {

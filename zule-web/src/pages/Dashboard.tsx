@@ -406,16 +406,16 @@ export default function Dashboard() {
     }
   };
 
-  const shredAndSend = async () => {
-    if (!lastAttestation) return;
-
+  // Phase 3 — shred raw transactions on zule's side. Cards should already
+  // have been handed off to vinzrik via sendToVinzrik before this is called;
+  // after shred, the raw rows are gone and zule no longer has a copy.
+  const shredRaw = async () => {
     const token = await getFreshToken();
     if (!token) return;
 
     setShredLoading(true);
     setShredResult(null);
     try {
-      // Shred raw transactions
       const shredRes = await fetch(
         `${import.meta.env.ZULE_URL}/functions/v1/shred-minted-transactions`,
         {
@@ -430,8 +430,7 @@ export default function Dashboard() {
 
       const shredData = shredRes.ok ? await shredRes.json() : null;
 
-      // Cards handed off — clear from Zule's state
-      setShredResult(`Shredded ${shredData?.shredded || 0} raw transactions. Cards dispatched.`);
+      setShredResult(`Shredded ${shredData?.shredded || 0} raw transactions.`);
       setGameCards(null);
       setLastAttestation(null);
       setAnalyzeResult(null);
@@ -442,7 +441,20 @@ export default function Dashboard() {
     }
   };
 
-  const analyzeAndSend = async () => {
+  // Phase 2 — hand the card attestation off to Vinzrik via deep link.
+  // Fire-and-forget by design: Vinzrik never calls back. If Vinzrik isn't
+  // installed, the browser will show no-app-handles-url and nothing happens.
+  const sendToVinzrik = () => {
+    if (!lastAttestation) return;
+    const uri = `vinzrik://receive-cards?attestation=${encodeURIComponent(lastAttestation)}`;
+    setShredResult(`Sent ${gameCards?.length ?? 0} cards to Vinzrik. Confirm on Vinzrik, then shred.`);
+    window.location.href = uri;
+  };
+
+  // Phase 1 — mint card_attestation from unminted transactions. Decodes the
+  // JWT payload (base64url, no signature check; display-only) to preview
+  // the cards before the user hits Send.
+  const mintCards = async () => {
     const token = await getFreshToken();
     if (!token) return;
 
@@ -650,6 +662,61 @@ export default function Dashboard() {
             disabled={plaidLoading}
           >
             {plaidLoading ? 'Connecting...' : 'Link Card'}
+          </button>
+        </div>
+      </div>
+
+      {/* Transaction Pipeline (Dev) — three-phase manual flow.
+          End-game: collapse into a single background trigger on Plaid pull
+          completion. Kept as three explicit buttons during build so each
+          phase is independently testable. */}
+      <div className="card">
+        <h2>Transaction Pipeline</h2>
+        <div className="info-note">
+          <p>
+            Dev-mode manual flow. Mint card attestation from unminted transactions,
+            send the blind-card JWT to Vinzrik via deep link, then shred the raw
+            rows on this side.
+          </p>
+        </div>
+
+        {analyzeResult && (
+          <div style={{ marginTop: '12px', padding: '8px 10px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '13px' }}>
+            {analyzeResult}
+          </div>
+        )}
+        {shredResult && (
+          <div style={{ marginTop: '8px', padding: '8px 10px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '13px' }}>
+            {shredResult}
+          </div>
+        )}
+        {gameCards && gameCards.length > 0 && (
+          <div style={{ marginTop: '10px', padding: '8px 10px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '12px', fontFamily: 'monospace', whiteSpace: 'pre-wrap', maxHeight: '240px', overflow: 'auto' }}>
+            {JSON.stringify(gameCards, null, 2)}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: '8px', marginTop: '16px', flexWrap: 'wrap' }}>
+          <button
+            className="btn-primary"
+            onClick={mintCards}
+            disabled={analyzeLoading}
+          >
+            {analyzeLoading ? 'Minting...' : '1. Mint cards'}
+          </button>
+          <button
+            className="btn-primary"
+            onClick={sendToVinzrik}
+            disabled={!lastAttestation}
+          >
+            2. Send to Vinzrik
+          </button>
+          <button
+            className="btn-primary"
+            onClick={shredRaw}
+            disabled={shredLoading}
+          >
+            {shredLoading ? 'Shredding...' : '3. Shred raw'}
           </button>
         </div>
       </div>

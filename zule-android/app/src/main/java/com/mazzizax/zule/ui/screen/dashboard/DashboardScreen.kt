@@ -254,11 +254,11 @@ fun DashboardScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Analyze and Send
+                // Phase 1 — mint card_attestation from unminted transactions.
                 ZulePrimaryButton(
-                    text = if (state.analyzeLoading) "Analyzing..." else "Analyze and Send",
+                    text = if (state.analyzeLoading) "Minting..." else "1. Mint cards",
                     enabled = !state.analyzeLoading,
-                    onClick = { viewModel.analyzeAndSend() },
+                    onClick = { viewModel.mintCards() },
                 )
 
                 if (state.analyzeResult != null) {
@@ -268,11 +268,30 @@ fun DashboardScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Shred and Send
+                // Phase 2 — hand the attestation to Vinzrik via deep link.
                 ZulePrimaryButton(
-                    text = if (state.shredLoading) "Shredding..." else "Shred and Send",
-                    enabled = !state.shredLoading && state.analyzeResult != null,
-                    onClick = { viewModel.shredAndSend() },
+                    text = "2. Send to Vinzrik",
+                    enabled = state.lastAttestation != null,
+                    onClick = {
+                        val uri = viewModel.vinzrikPushUri() ?: return@ZulePrimaryButton
+                        runCatching {
+                            mainActivity.startActivity(
+                                android.content.Intent(android.content.Intent.ACTION_VIEW, uri)
+                            )
+                            viewModel.noteSentToVinzrik()
+                        }.onFailure {
+                            // Vinzrik not installed — ActivityNotFoundException
+                        }
+                    },
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Phase 3 — purge raw transactions on zule's side.
+                ZulePrimaryButton(
+                    text = if (state.shredLoading) "Shredding..." else "3. Shred raw",
+                    enabled = !state.shredLoading,
+                    onClick = { viewModel.shredRaw() },
                 )
 
                 if (state.shredResult != null) {
