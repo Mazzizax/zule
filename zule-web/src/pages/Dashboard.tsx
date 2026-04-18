@@ -598,6 +598,11 @@ export default function Dashboard() {
       {/* Connected Accounts (Plaid) */}
       <div className="card">
         <h2>Connected Accounts</h2>
+        {pullResult && (
+          <div style={{ marginBottom: '12px', padding: '8px 10px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '13px' }}>
+            {pullResult}
+          </div>
+        )}
         {profile?.plaid_accounts && profile.plaid_accounts.length > 0 ? (
           <>
             {profile.plaid_accounts.map((acct) => (
@@ -639,6 +644,13 @@ export default function Dashboard() {
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                  <button
+                    onClick={() => pullTransactions(acct.id)}
+                    disabled={pullLoadingId === acct.id}
+                    style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '14px', fontWeight: 500, letterSpacing: '0.06em', color: 'var(--text-secondary)', background: 'none', border: '1px solid var(--border)', padding: '6px 14px', borderRadius: '4px', cursor: 'pointer' }}
+                  >
+                    {pullLoadingId === acct.id ? 'Pulling...' : '0. Pull'}
+                  </button>
                   <button
                     onClick={() => removeCard(acct.id)}
                     disabled={removeLoadingId === acct.id}
