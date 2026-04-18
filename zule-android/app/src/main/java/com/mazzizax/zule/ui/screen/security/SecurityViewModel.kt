@@ -4,9 +4,12 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mazzizax.zule.data.repository.AuthRepository
+import com.mazzizax.zule.data.repository.OrphanedPasskeyException
 import com.mazzizax.zule.data.repository.PasskeyRepository
 import com.mazzizax.zule.domain.model.Passkey
 import com.mazzizax.zule.util.DeviceFlags
+import com.mazzizax.zule.util.PwnedPasswordException
+import com.mazzizax.zule.util.PwnedPasswords
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -109,14 +112,24 @@ class SecurityViewModel @Inject constructor(
             _uiState.update { it.copy(error = "New passwords do not match") }
             return
         }
-        if (state.newPassword.length < 8) {
-            _uiState.update { it.copy(error = "Password must be at least 8 characters") }
+        // 12-char minimum matches zule's server-side config.toml policy and the
+        // register / recovery flows. Any password change path below 12 chars
+        // would be rejected by the server anyway.
+        if (state.newPassword.length < 12) {
+            _uiState.update { it.copy(error = "Password must be at least 12 characters") }
             return
         }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isChangingPassword = true, error = null, success = null) }
             try {
+                // HIBP k-anonymity breach check. Same gate as register and
+                // forgot-password; was missing here. Fail-open on network.
+                val hibp = PwnedPasswords.check(state.newPassword)
+                if (hibp is PwnedPasswords.Result.Pwned) {
+                    throw PwnedPasswordException(hibp.breachCount)
+                }
+
                 authRepository.updatePassword(state.newPassword)
                 _uiState.update {
                     it.copy(
@@ -126,11 +139,15 @@ class SecurityViewModel @Inject constructor(
                         success = "Password updated successfully",
                     )
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 _uiState.update {
                     it.copy(
                         isChangingPassword = false,
-                        error = "Failed to update password",
+                        error = when (e) {
+                            is PwnedPasswordException ->
+                                "Pick a different password — this one appears in ${e.breachCount} known breaches."
+                            else -> "Failed to update password"
+                        },
                     )
                 }
             }
@@ -159,24 +176,13 @@ class SecurityViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isRegisteringPasskey = true, error = null, success = null) }
             try {
-                // Step 1: Get registration options from server
-                val optionsResponse = passkeyRepository.getRegistrationOptions().getOrThrow()
-
-                // Step 2: Trigger system passkey UI + biometric via Credential Manager
-                val credentialManager = androidx.credentials.CredentialManager.create(activity)
-                val request = androidx.credentials.CreatePublicKeyCredentialRequest(
-                    requestJson = optionsResponse.options.toString(),
-                )
-                val credentialResponse = credentialManager.createCredential(activity, request)
-                val pkResponse = credentialResponse as androidx.credentials.CreatePublicKeyCredentialResponse
-                val responseJson = pkResponse.registrationResponseJson
-
-                // Step 3: Send attestation to server for verification
-                passkeyRepository.registerPasskey(
-                    challengeKey = optionsResponse.challengeKey,
-                    responseJson = responseJson,
-                    deviceName = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL,
-                ).getOrThrow()
+                // Strict server-driven enrollment via passkey-register-begin /
+                // passkey-register-finish. Options: platform authenticator
+                // required, resident key required, UV required. Step A/B split
+                // with OrphanedPasskeyException so a Credential-Manager success
+                // followed by a server-finish failure surfaces as a retry-
+                // oriented state instead of a silent orphan in GPM.
+                passkeyRepository.enrollPasskeyStrict(activity)
 
                 // Mark this device as having an enrolled passkey so the
                 // login screen can collapse to the single passkey button.
@@ -187,14 +193,16 @@ class SecurityViewModel @Inject constructor(
                     success = "Passkey registered successfully! You can now use biometrics to sign in.",
                 ) }
                 loadPasskeys()
-            } catch (e: Exception) {
+            } catch (t: Throwable) {
                 _uiState.update { it.copy(
                     isRegisteringPasskey = false,
                     error = when {
-                        e.message?.contains("cancelled", ignoreCase = true) == true ||
-                        e.message?.contains("canceled", ignoreCase = true) == true ->
+                        t is OrphanedPasskeyException ->
+                            "Passkey was created on this device but we couldn't save it to the server. Try again — we'll overwrite the orphan."
+                        t.message?.contains("cancelled", ignoreCase = true) == true ||
+                        t.message?.contains("canceled", ignoreCase = true) == true ->
                             "Registration was cancelled or not allowed"
-                        else -> e.message ?: "Failed to register passkey"
+                        else -> t.message ?: "Failed to register passkey"
                     },
                 ) }
             }
