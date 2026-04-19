@@ -555,7 +555,24 @@ Deno.serve(async (req) => {
 
     console.log(`[ENRICH] User ${user.id.substring(0, 8)}...: enriched ${cards.length} cards (${poolClaimsToInsert.length} pool claims)`)
 
-    // 8. RETURN ATTESTATION
+    // 8. AUDIT LOG
+    // Zule-side only. Keyed by user_id (which never leaves this side). Metadata
+    // is operational — card counts, not merchants/amounts — so no financial
+    // detail leaks via the audit trail.
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null
+    await supabase.rpc('log_audit_event', {
+      p_user_id: user.id,
+      p_action: 'transactions_minted',
+      p_category: 'plaid',
+      p_ip_address: clientIp,
+      p_user_agent: req.headers.get('user-agent'),
+      p_metadata: {
+        card_count: cards.length,
+        pool_claims: poolClaimsToInsert.length,
+      },
+    })
+
+    // 9. RETURN ATTESTATION
     return jsonResponse({
       card_attestation: cardAttestation,
       card_count: cards.length,
