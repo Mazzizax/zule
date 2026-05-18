@@ -12,6 +12,11 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 const RESEND_FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL")!;
 const APP_AUTH_HOST = Deno.env.get("APP_AUTH_HOST") ?? "zule.mazzizax.net";
 
+// Public registration mothballed (Sage 2026-05-18): the signup confirmation
+// email is NOT sent, so new accounts can never be activated. Existing/
+// confirmed accounts are unaffected. Flip back to `true` to relaunch.
+const SIGNUP_CONFIRMATION_EMAIL_ENABLED = false;
+
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
@@ -88,6 +93,14 @@ Deno.serve(async (req) => {
   // user click, not server redirects, so that path opens in-browser.
   const actionLink = `https://${APP_AUTH_HOST}/auth/callback` +
     `?token_hash=${encodeURIComponent(tokenHash)}&type=signup`;
+
+  if (!SIGNUP_CONFIRMATION_EMAIL_ENABLED) {
+    // Registration soft-closed: skip the confirmation email entirely.
+    // Response stays identical to a success so the change is silent and
+    // discloses nothing to clients/probes.
+    await logEmailAttempt(admin, email, "signup", ip, true);
+    return jsonResponse({ ok: true }, 200, origin);
+  }
 
   const send = await resend.emails.send({
     from: RESEND_FROM_EMAIL,
