@@ -2,14 +2,6 @@
   "buildCommand": "npm install && npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "redirects": [
-    {
-      "source": "/:path(.*)",
-      "has": [{ "type": "host", "value": "gatekeeper-nine.vercel.app" }],
-      "destination": "https://zule.mazzizax.net/:path",
-      "permanent": false
-    }
-  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
