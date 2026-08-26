@@ -21,6 +21,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 
 /**
  * Polls machine-auth-pending every 3 seconds while the user is
@@ -31,7 +34,15 @@ class MachineAuthService : Service() {
     companion object {
         const val ACTION_STOP = "com.mazzizax.zule.STOP_MACHINE_AUTH"
         private const val CHANNEL_ID = "machine_auth_channel"
+        // Separate channel for the actual pending-request alert. Channel
+        // importance is fixed at creation time and Android ignores a later
+        // per-notification setPriority() override on API 26+ — sharing the
+        // LOW-importance "still monitoring" channel meant this alert could
+        // never make a sound, vibrate, or show heads-up, regardless of the
+        // PRIORITY_HIGH set on the notification itself.
+        private const val ALERT_CHANNEL_ID = "machine_auth_alert_channel"
         private const val NOTIFICATION_ID = 1001
+        private const val ALERT_NOTIFICATION_ID = 1002
         private const val POLL_INTERVAL_MS = 3000L
     }
 
@@ -75,14 +86,28 @@ class MachineAuthService : Service() {
     }
 
     private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Machine Auth",
-            NotificationManager.IMPORTANCE_LOW,
-        ).apply {
-            description = "Monitors for machine login requests"
-        }
-        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        val nm = getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(
+            NotificationChannel(
+                CHANNEL_ID,
+                "Machine Auth",
+                NotificationManager.IMPORTANCE_LOW,
+            ).apply {
+                description = "Monitors for machine login requests"
+            }
+        )
+        // IMPORTANCE_HIGH is what actually produces sound + heads-up display;
+        // PRIORITY_HIGH on the Notification itself does nothing on its own.
+        nm.createNotificationChannel(
+            NotificationChannel(
+                ALERT_CHANNEL_ID,
+                "Machine Login Requests",
+                NotificationManager.IMPORTANCE_HIGH,
+            ).apply {
+                description = "Alerts when a fleet machine requests login approval"
+                enableVibration(true)
+            }
+        )
     }
 
     private fun buildNotification(): Notification {
@@ -100,6 +125,10 @@ class MachineAuthService : Service() {
             .build()
     }
 
+    // Session IDs already alerted on, so we don't re-notify every 3s for the
+    // same pending request while it's still waiting.
+    private val alertedSessionIds = mutableSetOf<String>()
+
     private fun startPolling() {
         scope.launch {
             val supabase = SupabaseProvider.client
@@ -111,9 +140,21 @@ class MachineAuthService : Service() {
                             method = HttpMethod.Get
                         }
                         val body = response.body<String>()
-                        if (body.contains("\"id\"")) {
+                        // Real shape: {"sessions":[{"session_id":...,"machine_name":...}]}.
+                        // The previous body.contains("\"id\"") check could never match this
+                        // (no field is named exactly "id"), so no alert ever fired.
+                        val sessions = Json.parseToJsonElement(body).jsonObject["sessions"]?.jsonArray
+                        val newSessions = sessions?.mapNotNull { it.jsonObject["session_id"]?.toString()?.trim('"') }
+                            ?.filter { it !in alertedSessionIds }
+                            ?: emptyList()
+                        if (newSessions.isNotEmpty()) {
+                            alertedSessionIds.addAll(newSessions)
                             showPendingNotification()
                         }
+                        // Sessions that are no longer pending (approved/denied/expired)
+                        // can be alerted on again if they somehow reappear later.
+                        val stillPendingIds = sessions?.mapNotNull { it.jsonObject["session_id"]?.toString()?.trim('"') }?.toSet() ?: emptySet()
+                        alertedSessionIds.retainAll(stillPendingIds)
                     }
                 } catch (_: Exception) {
                     // Continue polling
@@ -129,14 +170,19 @@ class MachineAuthService : Service() {
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
             .setContentTitle("Machine Login Request")
             .setContentText("A machine is requesting login approval")
             .setSmallIcon(android.R.drawable.ic_lock_lock)
             .setContentIntent(pendingIntent)
+            // Full-screen intent: on a HIGH-importance channel, this is what
+            // actually interrupts a locked/idle phone the way an incoming
+            // call does, instead of waiting to be noticed in the shade.
+            .setFullScreenIntent(pendingIntent, true)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .build()
-        getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID + 1, notification)
+        getSystemService(NotificationManager::class.java).notify(ALERT_NOTIFICATION_ID, notification)
     }
 }
